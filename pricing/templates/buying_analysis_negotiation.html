@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Buying Analysis – Negotiation{% endblock %}
+
+{% block content %}
+  <h2 style="margin-bottom: 16px; font-size: 16px; font-weight: 600; color: #fff;">
+    CASH GENERATORS BUYING ANALYSIS
+  </h2>
+
+  <!-- Item Information -->
+  <form id="buying-analysis-form">
+    <div style="margin-bottom: 24px;">
+      <h3 style="font-size: 14px; color: #aaa; margin-bottom: 8px;">Item Information</h3>
+
+      <label for="item-name">Item Name</label>
+      <input type="text" id="item-name" name="item_name" placeholder="e.g. iPhone 17 Pro" required>
+
+      <label for="serial-number">Serial #</label>
+      <input type="text" id="serial-number" name="serial_number" placeholder="AB123456789">
+
+      <label for="description">Description</label>
+      <textarea id="description" name="description" placeholder="Latest model, 128GB, great condition..." required></textarea>
+    </div>
+
+    <!-- Negotiation Parameters -->
+    <div style="margin-bottom: 24px;">
+      <h3 style="font-size: 14px; color: #aaa; margin-bottom: 8px;">Negotiation Setup</h3>
+
+      <label for="min-margin">Minimum Margin (%)</label>
+      <input type="number" id="min-margin" name="min_margin" step="0.1" value="37.5" min="0" max="100">
+
+      <label for="condition">Condition</label>
+      <select id="condition" name="condition">
+        <option value="A">A – Excellent</option>
+        <option value="B">B – Good</option>
+        <option value="C">C – Fair</option>
+      </select>
+    </div>
+
+    <!-- Analyse Button -->
+    <div class="form-actions">
+      <button type="button" id="analyze-btn">Analyse Pricing</button>
+    </div>
+  </form>
+{% endblock %}

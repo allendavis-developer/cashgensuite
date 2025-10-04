@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Delete Rule{% endblock %}
+
+{% block content %}
+<h2>Delete Rule</h2>
+<p>Are you sure you want to delete the rule: <strong>{{ rule.get_rule_type_display }} - {{ rule.match_value }}</strong>?</p>
+
+<form method="post">
+  {% csrf_token %}
+  <button type="submit" class="btn" style="background:#660000">Yes, Delete</button>
+  <a href="{% url 'category_detail' category.id %}" class="btn">Cancel</a>
+</form>
+{% endblock %}

@@ -1,0 +1,425 @@
+{% extends "analysis/base_item_analysis.html" %}
+
+{% block title %}Buying Analysis{% endblock %}
+
+{% block header_title %}BUYING ANALYSIS{% endblock %}
+
+{% block panel_title %}INPUT PANEL{% endblock %}
+
+{% block input_panel_content %}
+{% csrf_token %}
+<div class="input-row">
+  <div class="input-group" style="flex: 2;">
+    <label class="input-label">Item Name</label>
+    <input type="text" id="item-name" class="input-field" placeholder="iPhone 14" required>
+  </div>
+</div>
+
+<div class="input-group">
+  <label class="input-label">Description</label>
+  <textarea id="description" class="input-field description-field" placeholder="Good condition, minor scratches, original box included..." required></textarea>
+</div>
+
+<div class="input-group">
+  <label class="input-label">Minimum Margin (%)</label>
+  <input type="number" id="minimum-margin" class="input-field" placeholder="37.5" value="37.5" step="0.1" min="0" max="100">
+</div>
+
+<button type="button" id="analyze-btn" class="analyze-button" onclick="analyzeItem()">
+  <span id="button-text">ANALYZE PRICING</span>
+  <span id="button-spinner" class="loading-spinner hidden"></span>
+</button>
+{% endblock %}
+
+{% block extra_style %}
+{{ block.super }}
+
+.analysis-scroll-container {
+  max-height: 300px; /* Adjust this height as needed */
+  min-height: 150px;
+  overflow-y: auto;
+  resize: vertical; /* Allow user to resize */
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 20px;
+  background-color: #0a0a0a;
+}
+
+.price-panels-container {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+  margin-bottom: 20px;
+}
+
+.price-panel {
+  flex: 1;
+  background-color: #111111;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.price-panel-label {
+  font-size: 16px;
+  color: #888;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.price-panel-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+  text-align: center
+}
+
+.buying-range-display {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  width: 100%;
+  align-items: center;
+  justify-content: center; 
+}
+
+.buying-price-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+}
+
+
+.buying-price-separator {
+  font-size: 24px;
+  color: #666;
+}
+
+
+.buying-price-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #4ade80;
+}
+
+.buying-price-sublabel {
+  font-size: 10px;
+  color: #666;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.price-separator {
+  width: 1px;
+  background-color: #333;
+  align-self: stretch;
+}
+
+.reasoning-panels-container {
+  display: flex;
+  gap: 0;
+  align-items: stretch;
+  margin-bottom: 0; /* Remove bottom margin since it's inside scroll container */
+}
+
+.reasoning-panel {
+  flex: 1;
+  background-color: #111111;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.reasoning-panels-container .reasoning-panel:first-child {
+  border-right: none;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.reasoning-panels-container .reasoning-panel:last-child {
+  border-left: none;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.reasoning-separator {
+  width: 1px;
+  background-color: #333;
+  align-self: stretch;
+}
+
+.reasoning-panel-label {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.reasoning-panel-text {
+  color: #ccc;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+
+
+/* Hide the entire analysis section by default */
+.analysis-results {
+  display: none;
+  background-color: #111111;    
+  padding-top: 10px
+}
+
+/* Hide the default analysis section elements */
+.recommended-price {
+  display: none;
+}
+
+.reasoning {
+  display: none;
+}
+{% endblock %}
+
+{% block buying_price_panel %}
+<div class="analysis-results" id="analysis-results">
+  <div class="analysis-scroll-container">
+    <div class="price-panels-container">
+      <div class="price-panel">
+        <div class="price-panel-label">Recommended Selling Price</div>
+        <div class="price-panel-value" id="recommended-price-display">£0.00</div>
+      </div>
+
+      <div class="price-panel">
+        <div class="price-panel-label">Recommended Buying Range</div>
+        <div class="buying-range-display">
+            <div class="buying-price-item">
+                <div class="buying-price-value" id="buying-price-min">£0.00</div>
+                <div class="buying-price-sublabel">Min</div>
+            </div>
+
+            <div class="buying-price-separator">—</div>
+
+            <div class="buying-price-item">
+                <div class="buying-price-value" id="buying-price-max">£0.00</div>
+                <div class="buying-price-sublabel">Max</div>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reasoning-panels-container">
+      <div class="reasoning-panel">
+        <div class="reasoning-panel-label">Reasoning - Selling Price</div>
+        <div class="reasoning-panel-text" id="reasoning-text-content">
+          Analysis will appear here...
+        </div>
+      </div>
+
+      <div class="reasoning-separator"></div>
+
+      <div class="reasoning-panel">
+        <div class="reasoning-panel-label">Reasoning - Buying Price</div>
+        <div class="reasoning-panel-text" id="reasoning-buying-text">
+          Buying analysis will appear here...
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+{% endblock %}
+
+{% block extra_script %}
+function calculateBuyingRange(sellingPrice, marginPercent) {
+    const numPrice = parseFloat(sellingPrice.replace(/[^0-9.]/g, ''));
+    const margin = parseFloat(marginPercent) / 100;
+    
+    // Calculate max buying price based on margin
+    // If margin is 37.5%, then buying price = selling price / (1 + 0.375)
+    const maxBuying = numPrice / (1 + margin);
+    
+    // Min is 10% less than max
+    const minBuying = maxBuying * 0.9;
+    
+    return {
+        min: `£${minBuying.toFixed(2)}`,
+        max: `£${maxBuying.toFixed(2)}`
+    };
+}
+
+function displayAnalysis(reasoning, suggestedPrice, buyingRange, buyingReasoning) {
+    const analysisResults = document.getElementById('analysis-results');
+    const recommendedPrice = document.getElementById('recommended-price');
+    const recommendedPriceDisplay = document.getElementById('recommended-price-display');
+    const buyingPriceMin = document.getElementById('buying-price-min');
+    const buyingPriceMax = document.getElementById('buying-price-max');
+    const reasoningText = document.getElementById('reasoning-text');
+    const buyingReasoningText = document.getElementById('reasoning-buying-text');
+
+    const reasoningTextContent = document.getElementById('reasoning-text-content');
+    const analysisTime = document.getElementById('analysis-time');
+
+    // Show the analysis results section
+    analysisResults.style.display = 'block';
+    
+    // Update both price displays (original and new panel)
+    recommendedPrice.textContent = suggestedPrice;
+    recommendedPriceDisplay.textContent = suggestedPrice;
+    
+    // Update both reasoning displays
+    if (reasoningText) reasoningText.innerHTML = reasoning;
+    if (reasoningTextContent) reasoningTextContent.innerHTML = reasoning;
+    if (buyingReasoningText) buyingReasoningText.innerHTML = buyingReasoning
+
+    const competitorNumber = document.getElementById('competitor-number');
+    const competitorCount = competitorNumber ? parseInt(competitorNumber.textContent) : 0;
+
+    // use AI’s values directly
+    if (buyingRange) {
+        buyingPriceMin.textContent = buyingRange.min;
+        buyingPriceMax.textContent = buyingRange.max;
+    }
+
+    analysisTime.textContent = 'just now';
+
+    analysisResults.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Add event listener to recalculate when margin changes
+document.addEventListener('DOMContentLoaded', function() {
+    const marginInput = document.getElementById('minimum-margin');
+    
+    marginInput.addEventListener('input', function() {
+        // If analysis has been run, recalculate buying range
+        const recommendedPrice = document.getElementById('recommended-price-display');
+        const analysisResults = document.getElementById('analysis-results');
+        
+        if (analysisResults.style.display === 'block' && recommendedPrice && recommendedPrice.textContent && recommendedPrice.textContent !== '£0.00') {
+            const marginPercent = this.value || 37.5;
+            const buyingRange = calculateBuyingRange(recommendedPrice.textContent, marginPercent);
+            
+            document.getElementById('buying-price-min').textContent = buyingRange.min;
+            document.getElementById('buying-price-max').textContent = buyingRange.max;
+        }
+    });
+});
+
+async function analyzeItem() {
+    const itemName = document.getElementById('item-name').value.trim();
+    const description = document.getElementById('description').value.trim();
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const buttonText = document.getElementById('button-text');
+    const buttonSpinner = document.getElementById('button-spinner');
+
+    if (!itemName || !description) {
+        return;
+    }
+
+    analyzeBtn.disabled = true;
+    buttonText.classList.add('hidden');
+    buttonSpinner.classList.remove('hidden');
+
+    try {
+        const response = await fetch(window.location.href, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                item_name: itemName,
+                description: description
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            updateCompetitorData(data.competitor_data || '', data.competitor_count || 0);
+
+            // call the buying range API BEFORE displayAnalysis
+            const buyingResponse = await fetch("/api/buying-range-analysis/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify({
+                    item_name: itemName,
+                    description: description,
+                    suggested_price: data.suggested_price,
+                    margin: document.getElementById('minimum-margin').value || 37.5
+                })
+            });
+
+            const buyingData = await buyingResponse.json();
+            console.log("Buying range AI response:", buyingData);
+
+            let minPrice = "£0.00";
+            let maxPrice = "£0.00";
+
+            if (buyingData.success && buyingData.ai_response) {
+                // Example AI output: "FINAL:35%-45%"
+                const match = buyingData.ai_response.match(/FINAL:(\d+)%\s*[-–]\s*(\d+)%/i);
+                if (match) {
+                    const minPct = parseFloat(match[1]);
+                    const maxPct = parseFloat(match[2]);
+                    const basePrice = parseFloat(data.suggested_price.replace(/[^0-9.]/g, ''));
+                    minPrice = `£${(basePrice * (minPct / 100)).toFixed(2)}`;
+                    maxPrice = `£${(basePrice * (maxPct / 100)).toFixed(2)}`;
+                }
+            }
+
+            displayAnalysis(data.reasoning, data.suggested_price, { min: minPrice, max: maxPrice }, buyingData.ai_response);
+        } else {
+            alert(`Error: ${data.error}`);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Network error. Please try again.');
+    } finally {
+        analyzeBtn.disabled = false;
+        buttonText.classList.remove('hidden');
+        buttonSpinner.classList.add('hidden');
+    }
+}
+
+document.getElementById('description').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && e.ctrlKey) {
+        e.preventDefault();
+        analyzeItem();
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const prefilledItem = "{{ prefilled_item|escapejs }}";
+    const prefilledMarketItem = "{{ prefilled_market_item|escapejs }}";
+    const prefilledDescription = "{{ prefilled_description|escapejs }}";
+    const prefilledSerial = "{{ prefilled_serial|escapejs }}";
+
+    if (prefilledItem) {
+        document.getElementById('item-name').value = prefilledItem;
+    } else if (prefilledMarketItem) {
+        document.getElementById('item-name').value = prefilledMarketItem;
+    }
+
+    if (prefilledSerial) {
+        document.getElementById('serial-number').value = prefilledSerial;
+    }
+
+    if (prefilledDescription) {
+        document.getElementById('description').value = prefilledDescription;
+    }
+
+    if ((prefilledItem || prefilledMarketItem) && prefilledDescription) {
+        setTimeout(() => {
+            analyzeItem();
+        }, 500);
+    }
+});
+{% endblock %}

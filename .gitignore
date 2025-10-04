@@ -1,0 +1,34 @@
+# Python
+*.pyc
+
+# Django
+*.log
+*.pot
+*.pyc
+db.sqlite3
+media/
+staticfiles/
+
+# Environments
+.env
+venv/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+
+# Optional
+agreements_data.json
+demo.png
+
+automation/playwright_user_data
+automation/user_sessions
+
+cashgen/__pycache__/
+pricing/__pycache__/
+automation/__pycache__/
+tests/__pycache__/
+
+.pytest_cache/
+

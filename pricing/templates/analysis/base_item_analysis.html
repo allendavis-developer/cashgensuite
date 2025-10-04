@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{% block title %}Pricing Analysis{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  a { color: #ffffff !important; text-decoration: underline; }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: #000000;
+    color: #ffffff;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-size: 14px;
+  }
+
+  .header {
+    padding: 20px;
+    border-bottom: 1px solid #333333;
+    background-color: #111111;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .header h1 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+  }
+
+  .main-content {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+
+  .input-panel {
+    width: 400px;
+    border-right: 1px solid #333333;
+    background-color: #111111;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .competitor-panel {
+    flex: 1;
+    background-color: #0a0a0a;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  .panel-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #888888;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .input-group {
+    margin-bottom: 16px;
+  }
+
+  .input-label {
+    display: block;
+    font-size: 11px;
+    color: #888888;
+    margin-bottom: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .input-field {
+    width: 100%;
+    padding: 12px;
+    background-color: #1a1a1a;
+    border: 1px solid #333333;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    border-radius: 4px;
+  }
+
+  .input-field:focus {
+    outline: none;
+    border-color: #555555;
+    background-color: #222222;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 12px;
+  }
+
+  .description-field {
+    min-height: 100px;
+    resize: vertical;
+  }
+
+  .analyze-button {
+    padding: 16px 24px;
+    background-color: #ffffff;
+    color: #000000;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 20px;
+    border-radius: 4px;
+  }
+
+  .analyze-button:hover:not(:disabled) {
+    background-color: #e6e6e6;
+  }
+
+  .analyze-button:disabled {
+    background-color: #333333;
+    color: #666666;
+    cursor: not-allowed;
+  }
+
+  .competitor-count {
+    font-size: 12px;
+    color: #666666;
+    margin-bottom: 16px;
+  }
+
+  .competitor-table {
+    border: 1px solid #333333;
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+
+  .competitor-table th,
+  .competitor-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #333333;
+    font-size: 13px;
+  }
+
+  .competitor-table th {
+    background-color: #1a1a1a;
+    color: #888888;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+  }
+
+  .market-stats {
+    background-color: #111111;
+    padding: 16px;
+    border: 1px solid #333333;
+    margin-bottom: 20px;
+    border-radius: 4px;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+
+  .stat-label {
+    color: #888888;
+    text-transform: uppercase;
+    font-size: 11px;
+  }
+
+  .stat-value {
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  .warning {
+    background-color: #1a1100;
+    border: 1px solid #444400;
+    padding: 12px;
+    margin-bottom: 20px;
+    color: #ffff88;
+    font-size: 12px;
+    border-radius: 4px;
+  }
+
+  .analysis-section {
+    background-color: #111111;
+    border-top: 1px solid #333333;
+    padding: 20px;
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+
+  .analysis-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .analysis-status {
+    font-size: 12px;
+    color: #00ff00;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .analysis-time {
+    font-size: 11px;
+    color: #666666;
+  }
+
+  .recommended-price {
+    font-size: 24px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 20px;
+  }
+
+  .reasoning {
+    margin-bottom: 20px;
+  }
+
+  .reasoning-title {
+    font-size: 12px;
+    color: #888888;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .reasoning-text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #cccccc;
+  }
+
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .controls label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #888888;
+    text-transform: uppercase;
+    margin-right: 4px;
+  }
+
+  .controls select {
+    padding: 6px 10px;
+    background-color: #1a1a1a;
+    border: 1px solid #333333;
+    border-radius: 4px;
+    color: #ffffff;
+    font-size: 12px;
+    cursor: pointer;
+    min-width: 140px;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+  }
+
+  .controls select:focus {
+    outline: none;
+    border-color: #555555;
+    background-color: #222222;
+  }
+
+  .loading-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #333333;
+    border-top: 2px solid #ffffff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  {% block extra_style %}{% endblock %}
+</style>
+</head>
+<body>
+
+<div class="header" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+  {% block back_button %}
+  <a href="{% url 'home' %}" class="menu-card" style="
+      padding:6px 12px;
+      background:#444;
+      color:#fff;
+      border-radius:4px;
+      text-decoration:none;
+      font-size:12px;
+  ">BACK TO HOME PAGE</a>
+  {% endblock %}
+
+
+  <h1>{% block header_title %}PRICING ANALYSIS{% endblock %}</h1>
+  <div style="font-size: 11px; color: #666666;">CASH GENERATOR SYSTEM</div>
+</div>
+
+<div class="main-content">
+  <div class="input-panel">
+    <div class="panel-title">{% block panel_title %}INPUT PANEL{% endblock %}</div>
+    {% block input_panel_content %}{% endblock %}
+  </div>
+
+  <div class="competitor-panel">
+    <div class="panel-title">COMPETITOR DATA</div>
+
+    <div class="controls">
+      <label for="sort-price">Sort by:</label>
+      <select id="sort-price">
+        <option value="none">None</option>
+        <option value="asc">Lowest → Highest</option>
+        <option value="desc">Highest → Lowest</option>
+      </select>
+
+      <label for="filter-source">Filter by:</label>
+      <select id="filter-source">
+        <option value="all">All Sources</option>
+        <option value="CashConverters">CashConverters</option>
+        <option value="CashGenerator">CashGenerator</option>
+        <option value="CeX">CeX</option>
+        <option value="eBay">eBay</option>
+      </select>
+    </div>
+
+    <div class="competitor-count" id="competitor-count">
+      SOURCES FOUND: <span id="competitor-number">0</span>
+    </div>
+
+    <table class="competitor-table" id="competitor-table">
+      <thead>
+        <tr>
+          <th>SOURCE</th>
+          <th>ITEM</th>
+          <th>PRICE</th>
+          <th>STORE</th>
+          <th>RELEVANT?</th>
+        </tr>
+      </thead>
+      <tbody id="competitor-tbody">
+        <tr>
+          <td colspan="4" style="text-align: center; color: #666666; font-style: italic;">
+            {% block competitor_empty_state %}No competitor data available{% endblock %}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="market-stats" id="market-stats" style="display: none;">
+      <div class="stat-row">
+        <span class="stat-label">MARKET RANGE:</span>
+        <span class="stat-value" id="price-range">-</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">AVERAGE:</span>
+        <span class="stat-value" id="price-average">-</span>
+      </div>
+    </div>
+
+    <div class="warning" id="data-warning" style="display: none;">
+      ⚠ LIMITED DATA<br>
+      Only <span id="warning-count">0</span> competitors found. Consider additional research.
+    </div>
+  </div>
+</div>
+
+<div class="analysis-section" id="analysis-section" style="display: none;">
+  <div class="analysis-header">
+    <div class="analysis-status">{% block analysis_status %}⚡ ANALYSIS COMPLETE{% endblock %}</div>
+    <div class="analysis-time" id="analysis-time">{% block analysis_time %}just now{% endblock %}</div>
+  </div>
+
+  <div class="recommended-price">
+    RECOMMENDED PRICE: <span id="recommended-price">-</span>
+  </div>
+
+  <div class="reasoning">
+    <div class="reasoning-title">REASONING:</div>
+    <div class="reasoning-text" id="reasoning-text">
+      {% block reasoning_placeholder %}Analysis will appear here...{% endblock %}
+    </div>
+  </div>
+
+  {% block analysis_actions %}{% endblock %}
+
+</div>
+  {% block buying_price_panel %}{% endblock %}
+
+{% block modals %}{% endblock %}
+
+<script>
+// Shared utility functions
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+let allCompetitorRows = [];
+
+function updateCompetitorData(competitorData, competitorCount) {
+    const tbody = document.getElementById('competitor-tbody');
+    const competitorNumber = document.getElementById('competitor-number');
+    const marketStats = document.getElementById('market-stats');
+    const dataWarning = document.getElementById('data-warning');
+    const warningCount = document.getElementById('warning-count');
+
+    competitorNumber.textContent = competitorCount;
+    allCompetitorRows = [];
+
+    if (competitorCount === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #666666; font-style: italic;">No competitor data available</td></tr>';
+        marketStats.style.display = 'none';
+        dataWarning.style.display = 'none';
+        return;
+    }
+
+    const lines = typeof competitorData === 'string' ? competitorData.trim().split('\n').filter(line => line.trim()) : competitorData;
+    const prices = [];
+    tbody.innerHTML = '';
+
+    lines.forEach(line => {
+        const parts = typeof line === 'string' ? line.split(' | ') : line;
+        if (parts.length >= 5) {
+            const competitor = typeof line === 'string' ? parts[0] : line.split(' | ')[0];
+            const listingTitle = typeof line === 'string' ? parts[1] : line.split(' | ')[1];
+            const price = typeof line === 'string' ? parts[2] : line.split(' | ')[2];
+            const storeName = typeof line === 'string' ? parts[3] : line.split(' | ')[3];
+            const url = typeof line === 'string' ? parts[4] : line.split(' | ')[4];
+
+            const numericPrice = parseFloat(price.replace(/[^0-9.-]+/g, ""));
+            if (!isNaN(numericPrice)) prices.push(numericPrice);
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${competitor}</td>
+                <td><a href="${url}" target="_blank" rel="noopener noreferrer">${listingTitle}</a></td>
+                <td>${price}</td>
+                <td>${storeName}</td>
+                <td>Yes</td>
+            `;
+            allCompetitorRows.push(row);
+        }
+    });
+
+    if (prices.length > 0) {
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+
+        document.getElementById('price-range').textContent = `£${minPrice} - £${maxPrice}`;
+        document.getElementById('price-average').textContent = `£${avgPrice.toFixed(0)}`;
+        marketStats.style.display = 'block';
+
+        if (competitorCount <= 2) {
+            warningCount.textContent = competitorCount;
+            dataWarning.style.display = 'block';
+        } else {
+            dataWarning.style.display = 'none';
+        }
+    }
+
+    const itemName = document.getElementById('item-name');
+    applySortAndFilter();
+
+     // Trigger AI check automatically after table is ready
+    if (competitorCount > 0) {
+          checkIrrelevantCompetitors(itemName.value); // <-- supply the current search query
+    }
+}
+
+function applySortAndFilter() {
+    const tbody = document.getElementById('competitor-tbody');
+    let rows = [...allCompetitorRows];
+
+    const sortValue = document.getElementById('sort-price').value;
+    const filterValue = document.getElementById('filter-source').value.toLowerCase();
+
+    // 1️⃣ Filtering
+    rows = rows.filter(row => {
+        if (row.cells[0].colSpan === 4) return false;
+        const source = row.cells[0].textContent.trim().toLowerCase();
+        return filterValue === 'all' || source === filterValue;
+    });
+
+    // 2️⃣ Sorting
+    if (sortValue !== 'none') {
+        // price sort
+        rows.sort((a, b) => {
+            const priceA = parseFloat(a.cells[2].textContent.replace(/[^0-9.-]+/g, "")) || 0;
+            const priceB = parseFloat(b.cells[2].textContent.replace(/[^0-9.-]+/g, "")) || 0;
+            return sortValue === 'asc' ? priceA - priceB : priceB - priceA;
+        });
+    } else if (filterValue === 'all') {
+        // ✅ Custom default ordering
+        const sourceOrder = {
+            "cashgenerator": 1,  // cg
+            "cex": 2,
+            "cashconverters": 3, // cc
+            "ebay": 4
+        };
+
+        rows.sort((a, b) => {
+            const sourceA = a.cells[0].textContent.trim().toLowerCase();
+            const sourceB = b.cells[0].textContent.trim().toLowerCase();
+            return (sourceOrder[sourceA] || 99) - (sourceOrder[sourceB] || 99);
+        });
+    }
+
+    // 3️⃣ Render
+    tbody.innerHTML = '';
+    if (rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #666666; font-style: italic;">No competitor data matches filter</td></tr>';
+    } else {
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    document.getElementById('competitor-number').textContent = rows.length;
+}
+
+
+document.getElementById('sort-price').addEventListener('change', applySortAndFilter);
+document.getElementById('filter-source').addEventListener('change', applySortAndFilter);
+
+async function checkIrrelevantCompetitors(searchQuery) {
+    const tbody = document.getElementById('competitor-tbody');
+    const rows = [...tbody.querySelectorAll('tr')];
+
+    // Extract competitor titles from the table
+    const competitorList = rows
+        .filter(row => row.cells.length >= 2)  // skip empty rows
+        .map(row => row.cells[1].textContent.trim());
+        
+
+    if (!competitorList.length) {
+        console.log("No competitor listings found in table.");
+        return;
+    }
+
+    
+    // Grab the item description
+    const itemDescription = document.getElementById('description') 
+        ? document.getElementById('description').value.trim() 
+        : "";
+
+
+    // Send POST to your new backend view
+    try {
+        const response = await fetch("/detect_irrelevant_competitors/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                search_query: searchQuery,
+                item_description: itemDescription,
+                competitor_list: competitorList
+            })
+        });
+
+        const result = await response.json();
+        const irrelevantIndices = result.irrelevant_indices;
+        console.log(irrelevantIndices)
+
+        rows.forEach((row, i) => {
+            if (row.cells.length >= 5) { // make sure the RELEVANT? column exists
+                const isRelevant = !irrelevantIndices.includes(i);
+                row.cells[4].textContent = isRelevant ? "Yes" : "No";
+
+                row.style.opacity = isRelevant ? "1" : "0.3";
+            }
+        });
+
+    } catch (err) {
+        console.error("Error calling AI endpoint:", err);
+    }
+}
+
+
+{% block extra_script %}{% endblock %}
+
+</script>
+
+</body>
+</html>

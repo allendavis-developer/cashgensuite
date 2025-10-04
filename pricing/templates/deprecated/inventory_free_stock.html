@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Free Stock Inventory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Inter', sans-serif; background-color: #000; color: #fff; margin:0; padding:20px; }
+  table { width:100%; border-collapse: collapse; }
+  th, td { padding: 12px; border: 1px solid #333; text-align: left; }
+  th { background-color: #111; color: #888; font-size: 12px; text-transform: uppercase; }
+  td { background-color: #0a0a0a; font-size: 14px; }
+  button { padding: 6px 12px; background-color: #fff; color:#000; border:none; cursor:pointer; font-weight:600; border-radius:4px; }
+  .hidden { display: none !important; }
+  #marketitem-modal { position: fixed; top:0; left:0; width:100%; height:100%; background-color: rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index:1000; }
+  #marketitem-modal .modal-content { background-color:#111; padding:20px; border-radius:8px; width:500px; max-width:90%; }
+  #marketitem-modal h3 { margin-top:0; }
+  #marketitem-modal input, #marketitem-modal select { width:100%; padding:8px; margin-bottom:12px; background-color:#222; border:1px solid #333; color:#fff; border-radius:4px; box-sizing:border-box; }
+  #marketitem-modal .modal-actions { text-align:right; }
+  #marketitem-modal .modal-actions button { margin-left:8px; }
+  .loading { opacity:0.6; }
+  .error-msg { color:#f88; }
+  .success-msg { color:#8f8; }
+  .info-msg { color:#88f; }
+  .debug-info { background-color:#222; padding:10px; border-radius:4px; margin-top:10px; font-size:12px; color:#aaa; }
+</style>
+</head>
+<body>
+
+<h2>Inventory (Moved to Free)</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Agreement #</th>
+      <th>Expiry Date</th>
+      <th>Customer</th>
+      <th>Item</th>
+      <th>Description</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in inventory_items %}
+    <tr
+        data-linked-market-item="{{ item.market_item.title|default:'' }}"
+        data-competitor-count="{{ item.market_item.listings.count|default:0 }}"
+        data-serial-number="{{ item.serial_number|default:'' }}">
+
+      <td>{% if item.agreement %}{{ item.agreement.agreement_number }}{% else %}-{% endif %}</td>
+      <td>{% if item.agreement %}{{ item.agreement.expiry_date }}{% else %}-{% endif %}</td>
+      <td>{% if item.agreement %}{{ item.agreement.customer }}{% else %}-{% endif %}</td>
+      <td>{{ item.title }}</td>
+      <td>{{ item.description|default:"-" }}</td>
+      <td>
+        <button class="analyse-btn">Analyse Price For Listing on Shop</button>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div id="marketitem-modal" class="hidden">
+  <div class="modal-content">
+    <h3>Select Market Item</h3>
+    <p>Search or select a Market Item:</p>
+    <input type="text" id="marketitem-input" placeholder="Type to search...">
+    <select id="marketitem-select" size="5"></select>
+      <!-- Add this right below the select box -->
+    <div id="or-text" style="text-align:center; font-size:24px; color:#888; margin:8px 0; display:none;">OR</div>
+      <label for="exclude-input" style="font-size:12px; color:#888;">Exclude keywords (comma-separated)</label>
+      <input type="text" id="exclude-input" placeholder="e.g. pro, max, refurbished">
+  <button id="save-exclude-btn" style="background-color:#0a6; color:#fff; font-weight:600; margin-top:4px;" onclick="saveExcludeKeywords()">Save Keywords</button>
+
+
+    <div id="new-marketitem-section" class="hidden" style="margin-bottom:12px;">
+      <p style="font-size:11px; color:#ccc;">This search term will be used by the scraper if you create a new Market Item.</p>
+      <button id="create-new-btn" onclick="createAndLinkMarketItem()" style="display:none; background-color:#0a6; color:#fff; font-weight:600; margin-top:4px;">Create & Link New MarketItem</button>
+    </div>
+
+    <div id="search-status"></div>
+    <div class="debug-info hidden" id="debug-info"></div>
+    <div class="modal-actions">
+      <button onclick="closeMarketItemModal()">Cancel</button>
+      <button id="confirm-btn" onclick="confirmMarketItem()">Link</button>
+      <button id="unlink-btn" onclick="unlinkMarketItem()" style="display:none; background-color:#f33; color:#fff;">Unlink</button>
+      <button id="analyze-btn" onclick="directAnalyze()" style="display:none; background-color:#0066cc; color:#fff;">Analyse</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function showMarketItemModal(itemTitle, linkedMarketItem = null) {
+    const modal = document.getElementById('marketitem-modal');
+    const input = document.getElementById('marketitem-input');
+    const select = document.getElementById('marketitem-select');
+    const statusDiv = document.getElementById('search-status');
+    const debugDiv = document.getElementById('debug-info');
+    const confirmBtn = document.getElementById('confirm-btn');
+    const unlinkBtn = document.getElementById('unlink-btn');
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const newMarketSection = document.getElementById('new-marketitem-section');
+    const createNewBtn = document.getElementById('create-new-btn');
+    const orText = document.getElementById('or-text');
+    const excludeInput = document.getElementById('exclude-input');
+    const saveExcludeBtn = document.getElementById('save-exclude-btn');
+
+    modal.classList.remove('hidden');
+    select.innerHTML = '';
+    debugDiv.classList.add('hidden');
+    statusDiv.innerHTML = '';
+
+    input.disabled = false;
+    select.style.display = 'block';
+    input.value = linkedMarketItem || itemTitle;
+
+    // Determine linked/unlinked state
+    const isLinked = !!linkedMarketItem;
+    const activeBtn = document.querySelector('.analyse-btn.active');
+    const row = activeBtn ? activeBtn.closest('tr') : null;
+
+    // Pre-fill exclude keywords if linked
+    if (isLinked && row.dataset.excludeKeywords) {
+        excludeInput.value = row.dataset.excludeKeywords;
+    } else {
+        excludeInput.value = '';
+    }
+
+    // Make the exclude section visible for both linked/unlinked
+    excludeInput.parentElement.style.display = 'block';
+    saveExcludeBtn.style.display = isLinked ? 'inline-block' : 'inline-block';
+
+
+    // Button visibility
+    confirmBtn.style.display = isLinked ? 'none' : 'inline-block';
+    unlinkBtn.style.display = isLinked ? 'inline-block' : 'none';
+    analyzeBtn.style.display = isLinked ? 'inline-block' : 'none';
+
+    // Show "Create New" section only if unlinked
+    if(!isLinked){
+        newMarketSection.classList.remove('hidden');
+        createNewBtn.style.display = 'inline-block';
+        orText.style.display = 'block';
+
+    } else {
+        newMarketSection.classList.add('hidden');
+        createNewBtn.style.display = 'none';
+        orText.style.display = 'none';
+    }
+
+    // Fetch suggestions for dropdown
+    const query = linkedMarketItem || itemTitle;
+    fetch(`/marketitem_suggestions?q=${encodeURIComponent(query)}`)
+        .then(res => res.json())
+        .then(data => {
+            const suggestions = data.suggestions || [];
+            debugDiv.innerHTML = `<strong>Debug Info:</strong><br>Query: "${data.query}"<br>Results: ${suggestions.length}`;
+            select.innerHTML = '';
+
+            if(suggestions.length === 0){
+                const noOption = document.createElement('option');
+                noOption.value = '';
+                noOption.textContent = 'No matches found';
+                select.appendChild(noOption);
+
+                statusDiv.innerHTML = `<p class="info-msg">${isLinked ? `No matches for "${linkedMarketItem}"` : 'No matching Market Items found.'}</p>`;
+            } else {
+                suggestions.forEach(title => {
+                    const option = document.createElement('option');
+                    option.value = title;
+                    option.textContent = title;
+                    select.appendChild(option);
+                });
+                select.selectedIndex = 0;
+
+                statusDiv.innerHTML = `<p class="success-msg">${isLinked ? `Linked to "${linkedMarketItem}".` : `Found ${suggestions.length} matches.`}</p>`;
+            }
+        })
+        .catch(err => {
+            statusDiv.innerHTML = `<p class="error-msg">Search error: ${err.message}</p>`;
+        });
+
+    setupRealTimeSearch();
+}
+
+
+function confirmMarketItem() {
+    const input = document.getElementById('marketitem-input');
+    const select = document.getElementById('marketitem-select');
+    const activeBtn = document.querySelector('.analyse-btn.active');
+    const row = activeBtn ? activeBtn.closest('tr') : null;
+    const orText = document.getElementById('or-text');
+
+
+    let selectedTitle = select && select.options.length && select.selectedIndex>-1 ? select.value.trim() : input.value.trim();
+    if(!selectedTitle){ alert("Please select or enter a MarketItem."); return; }
+
+    fetch('/link_inventory_to_marketitem/', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken'),'Accept':'application/json' },
+        body: JSON.stringify({ inventory_title: row.querySelector('td:nth-child(4)').textContent.trim(), marketitem_title:selectedTitle })
+    })
+    .then(res=>res.json())
+    .then(data=>{
+        const statusDiv=document.getElementById('search-status');
+        if(data.success){
+            row.dataset.linkedMarketItem = selectedTitle;
+            row.dataset.competitorCount = data.competitor_count;
+
+            document.getElementById('confirm-btn').style.display='none';
+            document.getElementById('unlink-btn').style.display='inline-block';
+            document.getElementById('analyze-btn').style.display='inline-block';
+
+             // Hide "Create New" section
+            const newMarketSection = document.getElementById('new-marketitem-section');
+            newMarketSection.classList.add('hidden');
+            document.getElementById('create-new-btn').style.display = 'none';
+            orText.style.display = 'none';
+
+
+            input.disabled = false;
+            select.style.display = 'block';
+
+            statusDiv.innerHTML=`<p class="success-msg">InventoryItem linked to "${selectedTitle}". Found ${data.competitor_count} competitor listings. Search bar remains active if you want to change the link.</p>`;
+        } else {
+            statusDiv.innerHTML=`<p class="error-msg">Error: ${data.error}</p>`;
+        }
+    })
+    .catch(err=>{ alert("Request failed: "+err); });
+}
+
+function unlinkMarketItem() {
+    const statusDiv = document.getElementById('search-status');
+    const activeBtn = document.querySelector('.analyse-btn.active');
+    const row = activeBtn ? activeBtn.closest('tr') : null;
+    if (!row || !row.dataset.linkedMarketItem) { alert("Not linked."); return; }
+
+    const itemTitle = row.querySelector('td:nth-child(4)').textContent.trim();
+
+    fetch('/unlink_inventory_from_marketitem/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify({ inventory_title: itemTitle, marketitem_title: row.dataset.linkedMarketItem })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            // Update dataset
+            row.dataset.linkedMarketItem = "";
+
+            // Refresh modal for UNLINKED state
+            showMarketItemModal(itemTitle, null);
+
+            statusDiv.innerHTML = `<p class="success-msg">Unlinked from item. You can now select or create a new MarketItem.</p>`;
+        } else {
+            statusDiv.innerHTML = `<p class="error-msg">Error: ${data.error || 'unknown'}</p>`;
+        }
+    })
+    .catch(err => {
+        statusDiv.innerHTML = `<p class="error-msg">Unlink failed: ${err.message}</p>`;
+    });
+}
+
+
+function directAnalyze() {
+    const activeBtn = document.querySelector('.analyse-btn.active');
+    const row = activeBtn ? activeBtn.closest('tr') : null;
+    const itemTitle = row.querySelector('td:nth-child(4)').textContent.trim();
+    const description = row.querySelector('td:nth-child(5)').textContent.trim();
+    const linkedMarketItem = row.dataset.linkedMarketItem;
+    const serialNumber = row.dataset.serialNumber || '';
+
+    if (!linkedMarketItem) { alert('Item must be linked first.'); return; }
+
+    const url = `/individual-item-analyser/?item=${encodeURIComponent(itemTitle)}&market_item=${encodeURIComponent(linkedMarketItem)}&description=${encodeURIComponent(description)}&serial=${encodeURIComponent(serialNumber)}`;
+    window.open(url, '_blank');
+}
+
+function setupRealTimeSearch() {
+    const input = document.getElementById('marketitem-input');
+    let timeout;
+    input.addEventListener('input', function() {
+        clearTimeout(timeout);
+        const query = this.value.trim();
+        if(query.length < 2) return;
+
+        timeout = setTimeout(() => {
+            const statusDiv = document.getElementById('search-status');
+            const select = document.getElementById('marketitem-select');
+            const newMarketSection = document.getElementById('new-marketitem-section');
+            const createNewBtn = document.getElementById('create-new-btn');
+            select.innerHTML = '';
+            statusDiv.innerHTML = '<p class="info-msg">Searching...</p>';
+
+            fetch(`/marketitem_suggestions?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(data => {
+                    const suggestions = data.suggestions || [];
+                    const debugDiv = document.getElementById('debug-info');
+                    debugDiv.innerHTML = `<strong>Debug Info:</strong><br>Query: "${data.query || query}"<br>Results: ${suggestions.length}`;
+                    select.innerHTML = '';
+
+                    if(suggestions.length === 0){
+                        statusDiv.innerHTML = `<p class="error-msg">No matches found for "${query}"</p>`;
+                    } else {
+                        suggestions.forEach(title => {
+                            const option = document.createElement('option');
+                            option.value = title;
+                            option.textContent = title;
+                            select.appendChild(option);
+                        });
+                        statusDiv.innerHTML = `<p class="success-msg">Found ${suggestions.length} matches.</p>`;
+                    }
+
+                    // Only hide "Create New" if item is linked
+                    const activeBtn = document.querySelector('.analyse-btn.active');
+                    const row = activeBtn ? activeBtn.closest('tr') : null;
+                    const isLinked = row && row.dataset.linkedMarketItem;
+                    if(!isLinked){
+                        newMarketSection.classList.remove('hidden');
+                        createNewBtn.style.display = 'inline-block';
+                    } else {
+                        newMarketSection.classList.add('hidden');
+                        createNewBtn.style.display = 'none';
+                    }
+                })
+                .catch(err => {
+                    select.innerHTML = '';
+                    statusDiv.innerHTML = `<p class="error-msg">Search error: ${err.message}</p>`;
+                });
+        }, 300);
+    });
+
+
+
+}
+
+
+document.addEventListener('DOMContentLoaded', ()=>{
+    document.querySelectorAll('.analyse-btn').forEach(btn=>{
+        btn.addEventListener('click', e=>{
+            const row=e.target.closest('tr');
+            const itemTitle=row.querySelector('td:nth-child(4)').textContent;
+            const linkedMarketItem=row.dataset.linkedMarketItem || null;
+            document.querySelectorAll('.analyse-btn').forEach(b=>b.classList.remove('active'));
+            e.target.classList.add('active');
+
+            showMarketItemModal(itemTitle, linkedMarketItem);
+
+        });
+    });
+
+    document.getElementById('marketitem-select').addEventListener('change', function() {
+        document.getElementById('marketitem-input').value = this.value;
+    });
+});
+
+function closeMarketItemModal() {
+    document.getElementById('marketitem-modal').classList.add('hidden');
+    document.getElementById('debug-info').classList.add('hidden');
+}
+
+function getCookie(name){
+    let cookieValue=null;
+    if(document.cookie && document.cookie!==''){
+        const cookies=document.cookie.split(';');
+        for(let cookie of cookies){
+            cookie=cookie.trim();
+            if(cookie.startsWith(name+'=')){ cookieValue=decodeURIComponent(cookie.substring(name.length+1)); break; }
+        }
+    }
+    return cookieValue;
+}
+
+function createAndLinkMarketItem() {
+    const input = document.getElementById('marketitem-input');
+    const excludeInput = document.getElementById('exclude-input');
+    const activeBtn = document.querySelector('.analyse-btn.active');
+    const row = activeBtn ? activeBtn.closest('tr') : null;
+    const statusDiv = document.getElementById('search-status'); // show messages here
+    const newMarketSection = document.getElementById('new-marketitem-section');
+
+    if (!row) {
+        statusDiv.innerHTML = `<p class="error-msg">No inventory item selected.</p>`;
+        return;
+    }
+
+    const inventoryTitle = row.querySelector('td:nth-child(4)').textContent.trim();
+    const marketitemTitle = input.value.trim();
+    const excludeKeywords = excludeInput.value.trim();
+
+    if (!marketitemTitle) {
+        statusDiv.innerHTML = `<p class="error-msg">Please enter a title for the new MarketItem.</p>`;
+        return;
+    }
+
+    statusDiv.innerHTML = `<p class="info-msg">Creating MarketItem...</p>`;
+
+    fetch('/link_inventory_to_marketitem/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({
+            inventory_title: inventoryTitle,
+            marketitem_title: marketitemTitle,
+            exclude_keywords: excludeKeywords
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            // Update row dataset
+            row.dataset.linkedMarketItem = marketitemTitle;
+            row.dataset.competitorCount = data.competitor_count;
+
+            // Refresh modal with linked state
+            showMarketItemModal(inventoryTitle, marketitemTitle);
+
+            statusDiv.innerHTML = `<p class="success-msg">MarketItem "${marketitemTitle}" created and linked successfully!</p>`;
+        } else {
+            if (data.duplicate) {
+                // Red error text if title already exists
+                statusDiv.innerHTML = `<p class="error-msg">MarketItem "${marketitemTitle}" already exists. Please choose a different title or select it from the list.</p>`;
+            } else {
+                statusDiv.innerHTML = `<p class="error-msg">Error creating MarketItem: ${data.error || "Unknown error"}</p>`;
+            }
+        }
+    })
+    .catch(err => {
+        statusDiv.innerHTML = `<p class="error-msg">Request failed: ${err.message}</p>`;
+    });
+}
+
+function saveExcludeKeywords() {
+    const excludeInput = document.getElementById('exclude-input');
+    const activeBtn = document.querySelector('.analyse-btn.active');
+    const row = activeBtn ? activeBtn.closest('tr') : null;
+    const statusDiv = document.getElementById('search-status');
+
+    if (!row || !row.dataset.linkedMarketItem) {
+        statusDiv.innerHTML = `<p class="error-msg">No linked MarketItem selected.</p>`;
+        return;
+    }
+
+    const marketitemTitle = row.dataset.linkedMarketItem;
+    const excludeKeywords = excludeInput.value.trim();
+
+    fetch('/update_marketitem_keywords/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            marketitem_title: marketitemTitle,
+            exclude_keywords: excludeKeywords
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            row.dataset.excludeKeywords = excludeKeywords;
+            statusDiv.innerHTML = `<p class="success-msg">${data.message}</p>`;
+        } else {
+            statusDiv.innerHTML = `<p class="error-msg">Error: ${data.error}</p>`;
+        }
+    })
+    .catch(err => {
+        statusDiv.innerHTML = `<p class="error-msg">Request failed: ${err.message}</p>`;
+    });
+}
+
+
+</script>
+
+</body>
+</html>

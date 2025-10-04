@@ -1,0 +1,87 @@
+{% extends "analysis/base_item_analysis.html" %}
+
+{% block back_button %} {% endblock %}
+{% block title %}Pricing Analysis - View{% endblock %}
+
+{% block header_title %}PRICING ANALYSIS - VIEW{% endblock %}
+
+{% block panel_title %}ANALYSIS DATA{% endblock %}
+
+{% block input_panel_content %}
+<div class="input-row">
+  <div class="input-group" style="flex: 2;">
+    <label class="input-label">Item Name</label>
+    <input type="text" id="item-name" class="input-field readonly-field" readonly>
+  </div>
+</div>
+
+<div class="input-group">
+  <label class="input-label">Description</label>
+  <textarea id="description" class="input-field description-field readonly-field" readonly></textarea>
+</div>
+
+<div class="input-group">
+  <label class="input-label">Serial Number</label>
+  <input type="text" id="serial-number" class="input-field readonly-field" readonly>
+</div>
+{% endblock %}
+
+{% block competitor_empty_state %}Select an item to view competitor data{% endblock %}
+
+{% block analysis_status %}📊 ANALYSIS LOADED{% endblock %}
+
+{% block analysis_time %}-{% endblock %}
+
+{% block reasoning_placeholder %}Select an item to view analysis...{% endblock %}
+
+{% block analysis_actions %}
+<button id="confirm-list-btn" class="analyze-button" style="margin-bottom:20px;">
+  CONFIRM & LIST
+</button>
+{% endblock %}
+
+{% block extra_style %}
+.readonly-field {
+  background-color: #0f0f0f !important;
+  cursor: default;
+}
+{% endblock %}
+
+{% block extra_script %}
+async function loadAnalysisById(analysisId) {
+    try {
+        const response = await fetch(`/api/price-analysis/${analysisId}/`);
+        const data = await response.json();
+
+        if (data.success) {
+            document.getElementById('item-name').value = data.item_title || '';
+            document.getElementById('description').value = data.item_description || '';
+            document.getElementById('serial-number').value = data.serial_number || '';
+
+            document.getElementById('recommended-price').textContent = `£${data.suggested_price}`;
+            document.getElementById('reasoning-text').textContent = data.reasoning || 'No reasoning provided';
+
+            if (data.created_at) {
+                const date = new Date(data.created_at);
+                document.getElementById('analysis-time').textContent = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            }
+
+            document.getElementById('analysis-section').style.display = 'block';
+            updateCompetitorData(data.competitor_data || '', data.competitor_count || 0);
+        } else {
+            alert(`Error: ${data.error}`);
+        }
+    } catch (err) {
+        console.error('Error fetching analysis:', err);
+        alert('Could not fetch analysis data.');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const analysisId = urlParams.get('analysis_id');
+    if (analysisId) {
+        loadAnalysisById(analysisId);
+    }
+});
+{% endblock %}
