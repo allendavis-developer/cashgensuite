@@ -1,0 +1,26 @@
+# Web scraping and automation
+playwright
+
+# Web framework
+django
+psycopg2-binary
+
+# HTTP requests
+requests
+aiohttp
+
+# Environment variables
+python-dotenv
+
+# AI/ML
+google-generativeai
+
+pytest
+pytest-django
+
+# Desktop launcher
+pywebview
+
+#IDK
+whitenoise
+gunicorn
