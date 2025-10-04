@@ -14,6 +14,11 @@ from pathlib import Path
 import dj_database_url
 import os
 
+# getting our environment variables
+from dotenv import load_dotenv
+
+load_dotenv()  # loads .env in the same folder
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -27,7 +32,7 @@ SECRET_KEY = 'django-insecure-sejy(f$g##4iz)6!y%3#-+h$&f^)5cekrh^tz(med@4luj-b=9
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['cashgensuite.onrender.com']
+ALLOWED_HOSTS = ['cashgensuite.onrender.com', '127.0.0.1']
 
 
 # Application definition
@@ -133,9 +138,3 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'  # ✅ directory where collectstatic will
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-# getting our environment variables
-import os
-from dotenv import load_dotenv
-
-load_dotenv()  # loads .env in the same folder
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")

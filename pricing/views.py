@@ -108,8 +108,6 @@ def split_reasoning_and_price(ai_response: str):
     return ai_response.strip(), "N/A"
 
 
-
-
 def get_prefilled_data(request):
     """Extract prefilled data from request parameters"""
     return {
@@ -140,12 +138,38 @@ def process_item_analysis(data):
 
     if local_scrape_data:
         print("Using local scraper data from browser")
-        competitor_data_for_ai = local_scrape_data
-        competitor_data_for_frontend = local_scrape_data
-    else:
-        print("Falling back to backend scraping")
-        competitor_data_for_ai, competitor_data_for_frontend = get_or_scrape_competitor_data(item_name)
 
+        # Update DB directly from local_scrape_data
+        if isinstance(local_scrape_data, list):
+            from pricing.models import MarketItem, CompetitorListing
+
+            # Get or create the MarketItem
+            market_item, _ = MarketItem.objects.get_or_create(
+                title__iexact=item_name, defaults={"title": item_name}
+            )
+
+             # OPTIMIZED: Bulk operations instead of loop
+            # First, delete existing listings for this market_item to avoid duplicates
+            CompetitorListing.objects.filter(market_item=market_item).delete()
+
+            # Prepare all listings for bulk creation
+            listings_to_create = []
+            for entry in local_scrape_data:
+                listings_to_create.append(
+                    CompetitorListing(
+                        market_item=market_item,
+                        competitor=entry.get("competitor", "Unknown"),
+                        title=entry.get("title", "Untitled"),
+                        price=entry.get("price", 0.0),
+                        store_name=entry.get("store_name") or "N/A",
+                        url=entry.get("url", "#")
+                    )
+                )
+
+            # Single database hit for all listings
+            CompetitorListing.objects.bulk_create(listings_to_create, ignore_conflicts=True)
+
+            competitor_data_for_ai, competitor_data_for_frontend = get_or_scrape_competitor_data(item_name)
     
     # Generate AI analysis
     ai_response, reasoning, suggested_price = generate_price_analysis(
@@ -906,6 +930,7 @@ def detect_irrelevant_competitors(request):
         )
 
         prompt = "\n".join(prompt_lines)
+
 
         # Call Gemini
         ai_response = call_gemini_sync(prompt)
