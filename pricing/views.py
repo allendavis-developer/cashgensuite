@@ -135,8 +135,17 @@ def process_item_analysis(data):
     item_name = (data.get("item_name") or "").strip()
     description = (data.get("description") or "").strip()
     
-    # Get competitor data with scraping if needed
-    competitor_data_for_ai, competitor_data_for_frontend = get_or_scrape_competitor_data(item_name)
+    # Check if frontend already sent local scrape data
+    local_scrape_data = data.get("local_scrape_data")
+
+    if local_scrape_data:
+        print("Using local scraper data from browser")
+        competitor_data_for_ai = local_scrape_data
+        competitor_data_for_frontend = local_scrape_data
+    else:
+        print("Falling back to backend scraping")
+        competitor_data_for_ai, competitor_data_for_frontend = get_or_scrape_competitor_data(item_name)
+
     
     # Generate AI analysis
     ai_response, reasoning, suggested_price = generate_price_analysis(
