@@ -420,24 +420,6 @@ from automation.scraper_utils import save_prices
 COMPETITORS = ["CashConverters", "CashGenerator", "CEX", "eBay"]
 
 def scrape_all_competitors(item_name: str):
-    try:
-        print(f"Requesting local automation agent to scrape '{item_name}'...")
-        response = requests.post(
-            "http://127.0.0.1:8001/scrape-prices",
-            json={"query": item_name, "competitors": COMPETITORS},
-            timeout=300,
-        )
-        data = response.json()
-        if data.get("success"):
-            print(f"✅ Scrape completed for {item_name}")
-        else:
-            print(f"⚠️ Scraper agent returned error: {data.get('error')}")
-    except requests.exceptions.ConnectionError:
-        print("❌ Automation agent not running. Please start it locally.")
-    except Exception as e:
-        print(f"⚠️ Scrape request failed: {e}")
-
-
     """
     Run the scraper for all configured competitors and save results to DB.
     """
