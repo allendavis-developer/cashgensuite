@@ -325,6 +325,30 @@ async function analyzeItem() {
     buttonSpinner.classList.remove('hidden');
 
     try {
+        // Step 1️⃣ — Try local scraper first
+        let localResults = null;
+        try {
+            const scrapeResponse = await callLocalAgent("/scrape-prices", {
+                query: itemName,
+                competitors: ["CEX", "eBay"],
+            });
+
+            if (scrapeResponse && scrapeResponse.ok) {
+                const scrapeData = await scrapeResponse.json();
+                if (scrapeData.success) {
+                    console.log("✅ Local scraper results:", scrapeData.results);
+                    localResults = scrapeData.results;
+                } else {
+                    console.warn("⚠️ Local scraper returned an error:", scrapeData.error);
+                }
+            } else {
+                console.warn("⚠️ Local scraper unreachable or returned non-OK status.");
+            }
+        } catch (scrapeErr) {
+            console.warn("⚠️ Local agent not running:", scrapeErr);
+        }
+
+        // Step 2️⃣ — Always send to Django backend, including local results if available
         const response = await fetch(window.location.href, {
             method: 'POST',
             headers: {
@@ -333,7 +357,8 @@ async function analyzeItem() {
             },
             body: JSON.stringify({
                 item_name: itemName,
-                description: description
+                description: description,
+                local_scrape_data: localResults // may be null
             })
         });
 
@@ -342,7 +367,7 @@ async function analyzeItem() {
         if (data.success) {
             updateCompetitorData(data.competitor_data || '', data.competitor_count || 0);
 
-            // call the buying range API BEFORE displayAnalysis
+            // Step 3️⃣ — Run the AI buying range analysis
             const buyingResponse = await fetch("/api/buying-range-analysis/", {
                 method: "POST",
                 headers: {
@@ -364,7 +389,6 @@ async function analyzeItem() {
             let maxPrice = "£0.00";
 
             if (buyingData.success && buyingData.ai_response) {
-                // Example AI output: "FINAL:35%-45%"
                 const match = buyingData.ai_response.match(/FINAL:(\d+)%\s*[-–]\s*(\d+)%/i);
                 if (match) {
                     const minPct = parseFloat(match[1]);
@@ -375,12 +399,17 @@ async function analyzeItem() {
                 }
             }
 
-            displayAnalysis(data.reasoning, data.suggested_price, { min: minPrice, max: maxPrice }, buyingData.ai_response);
+            displayAnalysis(
+                data.reasoning,
+                data.suggested_price,
+                { min: minPrice, max: maxPrice },
+                buyingData.ai_response
+            );
         } else {
             alert(`Error: ${data.error}`);
         }
     } catch (error) {
-        console.error('Error:', error);
+        console.error('❌ Error:', error);
         alert('Network error. Please try again.');
     } finally {
         analyzeBtn.disabled = false;
@@ -388,6 +417,7 @@ async function analyzeItem() {
         buttonSpinner.classList.add('hidden');
     }
 }
+
 
 document.getElementById('description').addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && e.ctrlKey) {

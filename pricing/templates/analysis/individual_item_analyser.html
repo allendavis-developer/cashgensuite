@@ -249,42 +249,39 @@ async function analyzeItem() {
         // Step 1️⃣ — try local scraper
         let localResults = null;
         try {
-        const scrapeResponse = await fetch('http://127.0.0.1:8001/scrape-prices', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-            query: itemName,
-            competitors: ["CashConverters", "CashGenerator", "CEX", "eBay"]
-            })
-        });
+            const scrapeResponse = await callLocalAgent("/scrape-prices", {
+                query: itemName,
+                competitors: ["CashConverters", "CashGenerator", "CEX", "eBay"],
+            });
 
-        if (scrapeResponse.ok) {
-            const scrapeData = await scrapeResponse.json();
-            if (scrapeData.success) {
-                console.log("✅ Local scraper results:", scrapeData.results);
-                localResults = scrapeData.results;
+            if (scrapeResponse.ok) {
+                const scrapeData = await scrapeResponse.json();
+                if (scrapeData.success) {
+                    console.log("✅ Local scraper results:", scrapeData.results);
+                    localResults = scrapeData.results;
+                } else {
+                    console.warn("Local scraper error:", scrapeData.error);
+                }
             } else {
-                console.warn("Local scraper error:", scrapeData.error);
+                console.warn("Local scraper unreachable or returned error");
             }
-        } else {
-            console.warn("Local scraper unreachable or returned error");
-        }
+
         } catch (scrapeErr) {
             console.warn("Local scraper not running:", scrapeErr);
         }
 
         // Step 2️⃣ — post to Django with or without local results
         const response = await fetch(window.location.href, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-            item_name: itemName,
-            description: description,
-            local_scrape_data: localResults // optional
-        })
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                item_name: itemName,
+                description: description,
+                local_scrape_data: localResults // optional
+            })
         });
 
         const data = await response.json();
@@ -295,6 +292,7 @@ async function analyzeItem() {
         } else {
             alert(`Error: ${data.error}`);
         }
+
     } catch (error) {
         console.error('Error:', error);
         alert('Network error. Please try again.');
@@ -304,6 +302,7 @@ async function analyzeItem() {
         buttonSpinner.classList.add('hidden');
     }
 }
+
 
 document.getElementById('description').addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && e.ctrlKey) {

@@ -3,14 +3,13 @@ from django.urls import path
 import pricing.views as v
 
 urlpatterns = [
-    # ----------------------------- VIEWS -----------------------------
+    # ----------------------------- PAGES -----------------------------
     path('', v.home_view, name='home'),
     path('admin/', admin.site.urls),
     path('individual-item-analysis/', v.individual_item_analysis_view, name='individual_item_analysis'),
     path('individual-item-analyser/', v.individual_item_analyser_view, name='individual_item_analyser'),
     path('item-buying-analyser/', v.item_buying_analyser_view, name='item_buying_analyser'),
     path("inventory/free/", v.inventory_free_stock_view, name="inventory_free_stock"),
-    path("buying-analysis-negotiation/", v.buying_analysis_negotiation, name="buying_analysis_negotiation"),
 
     # ------------------ CATEGORY AND GLOBAL RULES --------------------------------
     path("categories/", v.category_list, name="category_list"),
@@ -28,8 +27,6 @@ urlpatterns = [
     path("rules/add/<int:category_pk>/", v.add_rule, name="add_rule"),
     path("rules/<int:pk>/edit/", v.edit_rule, name="edit_rule"),
     path("rules/<int:pk>/delete/", v.delete_rule, name="delete_rule"),
-
-    # ------------------------ END RULES ---------------------------
 
     # ----------------------------- API -----------------------------
     path('marketitem_suggestions', v.marketitem_suggestions, name='marketitem_suggestions'),

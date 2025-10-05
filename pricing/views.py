@@ -706,11 +706,6 @@ def item_buying_analyser_view(request):
     # GET (render page)
     return render(request, "analysis/item_buying_analyser.html", {"prefilled_data": prefilled_data})
 
-def buying_analysis_negotiation(request):
-    context = {
-        "year": timezone.now().year,
-    }
-    return render(request, "buying_analysis_negotiation.html", context)
 
 # Note: This is technically not in the home page right now
 def inventory_free_stock_view(request):
