@@ -612,45 +612,6 @@ def bulk_analyse_items(request):
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
-from automation.scrape_nospos import scrape_barcodes
-import asyncio
-@csrf_exempt
-def scrape_nospos_view(request):
-    if request.method != "POST":
-        return JsonResponse({"success": False, "error": "Invalid request method"})
-
-    try:
-        body = json.loads(request.body)
-        barcodes = body.get("barcodes", [])
-        if not barcodes:
-            return JsonResponse({"success": False, "error": "No barcodes provided"})
-
-        # Run the async scraping function
-        asyncio.run(scrape_barcodes(barcodes))
-
-        return JsonResponse({"success": True})
-    except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)})
-
-
-@csrf_exempt
-def scan_barcodes(request):
-    if request.method != "POST":
-        return JsonResponse({"success": False, "error": "POST request required"}, status=405)
-
-    try:
-        data = json.loads(request.body)
-        barcodes = data.get("barcodes", [])
-        if not barcodes:
-            return JsonResponse({"success": False, "error": "No barcodes provided"})
-
-        # Run the async scraping function and get results
-        results = asyncio.run(scrape_barcodes(barcodes))
-
-        return JsonResponse({"success": True, "products": results})
-    except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)}, status=500)
-
 
 @require_GET
 def price_analysis_detail(request, analysis_id):

@@ -330,7 +330,7 @@ async function analyzeItem() {
         try {
             const scrapeResponse = await callLocalAgent("/scrape-prices", {
                 query: itemName,
-                competitors: ["CEX", "eBay"],
+                competitors: ["CashConverters", "CashGenerator", "CEX", "eBay"],
             });
 
             if (scrapeResponse && scrapeResponse.ok) {

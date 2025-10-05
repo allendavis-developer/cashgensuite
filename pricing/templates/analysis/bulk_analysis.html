@@ -277,7 +277,28 @@ function removeRow(button, barcode) {
   }
 }
 
-// Start scraping via backend - ONLY for new/pending items
+// TODO: This is repeated in base_item_analysis and very WET. Figure out a way to make it DRY. Local automation agent helper
+async function callLocalAgent(endpoint, payload = {}) {
+  const agentUrl = "http://127.0.0.1:8001"; // local FastAPI agent
+  const fullUrl = `${agentUrl}${endpoint}`;
+  try {
+    const res = await fetch(fullUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.error("Could not connect to local automation agent:", err);
+    alert("❌ Could NOT connect to local agent. Is it running?");
+    return null;
+  }
+}
+
+
+// Start scraping via local agent - ONLY for new/pending items
 async function startScraping() {
   const tbody = document.getElementById("barcodeTable");
   const rows = tbody.querySelectorAll('tr');
@@ -290,7 +311,7 @@ async function startScraping() {
       const nameCell = row.cells[3].textContent.trim();
 
       // If name is empty, this barcode hasn't been scraped yet
-      if (barcode && nameCell == '-') {
+      if (barcode && nameCell === '-') {
         pendingBarcodes.push(barcode);
       }
     }
@@ -303,15 +324,17 @@ async function startScraping() {
 
   const statusDiv = document.getElementById("scrape-status");
   statusDiv.className = "";
-  statusDiv.innerHTML = `Scraping ${pendingBarcodes.length} new item(s) <span class='spinner'></span>`;
+  statusDiv.innerHTML = `Scraping ${pendingBarcodes.length} new item(s) locally <span class='spinner'></span>`;
 
   try {
-    const response = await fetch("/scan-barcodes/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ barcodes: pendingBarcodes })
-    });
-    const data = await response.json();
+    // 🔥 Use local FastAPI agent instead of Django
+    const data = await callLocalAgent("/scrape-barcodes", { barcodes: pendingBarcodes });
+
+    if (!data) {
+      statusDiv.className = "error";
+      statusDiv.textContent = "❌ Could not reach local agent.";
+      return;
+    }
 
     if (data.success) {
       // Update existing rows with scraped data
@@ -337,12 +360,13 @@ async function startScraping() {
             };
           }
 
+          // Populate dropdown as before
           populateMarketItemDropdown(row, product.market_item || '');
         }
       });
 
       statusDiv.className = "success";
-      statusDiv.textContent = `Scraping completed for ${data.products.length} new barcode(s).`;
+      statusDiv.textContent = `✅ Local scraping completed for ${data.products.length} new barcode(s).`;
 
       // Update button based on whether we have any pending items left
       const scrapeBtn = document.getElementById("scrapeBtn");
@@ -362,17 +386,20 @@ async function startScraping() {
       }
 
       isFirstScrape = false;
-
       window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+
     } else {
       statusDiv.className = "error";
-      statusDiv.textContent = `❌ Error: ${data.error}`;
+      statusDiv.textContent = `❌ Error: ${data.error || "Unknown error"}`;
     }
+
   } catch (err) {
+    console.error("Scrape error:", err);
     statusDiv.className = "error";
     statusDiv.textContent = `❌ Request failed: ${err.message}`;
   }
 }
+
 
 async function analyseBarcodes() {
     const tbody = document.getElementById("barcodeTable");
