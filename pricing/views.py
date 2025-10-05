@@ -201,8 +201,7 @@ def get_or_scrape_competitor_data(item_name):
     
     # If no competitor data exists, trigger scraping
     if not competitor_data_for_ai.strip():
-        print(f"No competitor listings found for '{item_name}'. Triggering scrape...")
-        scrape_all_competitors(item_name)
+        print(f"No competitor listings found for '{item_name}'")
         
         # Re-fetch after scraping
         competitor_data_for_ai = get_competitor_data(item_name, include_url=False)
@@ -375,82 +374,6 @@ def unlink_inventory_from_marketitem(request):
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
-@csrf_exempt
-@require_POST
-def launch_playwright_listing(request):
-    """
-    Endpoint to launch Playwright automation for item listing
-    """
-    try:
-        data = json.loads(request.body)
-        item_name = data.get('item_name', '').strip()
-        description = data.get('description', '').strip()
-        price = data.get('price', '').strip()
-        serial_number = data.get('serial_number', '').strip()
-
-        if not all([item_name, description, price]):
-            return JsonResponse({
-                'success': False,
-                'error': 'Missing required fields'
-            })
-
-        # Clean price (remove £ symbol)
-        clean_price = price.replace('£', '').strip()
-
-        import sys
-        # Determine the absolute path to the Playwright script
-        if getattr(sys, 'frozen', False):
-            # PyInstaller executable
-            base_path = sys._MEIPASS  # temp folder PyInstaller extracts to
-        else:
-            # Running in IDE / normal Python
-            base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-
-        script_path = os.path.join(base_path, 'automation', 'playwright_listing.py')
-
-        # Run subprocess with sys.executable (the current Python interpreter)
-        result = subprocess.run([
-            sys.executable,
-            script_path,
-            '--item_name', item_name,
-            '--description', description,
-            '--price', clean_price,
-            '--serial_number', serial_number,
-        ], capture_output=True, text=True, timeout=300)  # 5 minute timeout
-
-
-        print("---- Playwright script output ----")
-        print(result.stdout)
-        print("---- Playwright script errors ----")
-        print(result.stderr)
-        print("---- End of playwright script output ----")
-
-        print(result.returncode)
-        if result.returncode == 0:
-            return JsonResponse({
-                'success': True,
-                'message': 'Listing automation completed successfully'
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'error': f'Automation failed: {result.stderr}'
-            })
-
-    except subprocess.TimeoutExpired:
-        return JsonResponse({
-            'success': False,
-            'error': 'Automation timed out after 5 minutes'
-        })
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        })
-
-
-from automation.scraper_utils import save_prices
-COMPETITORS = ["CashConverters", "CashGenerator", "CEX", "eBay"]
 
 def scrape_all_competitors(item_name: str):
     """
@@ -537,7 +460,6 @@ def bulk_analyse_items(request):
             # If no competitor data found, trigger scraping
             if not competitor_data_for_ai.strip():
                 print(f"No competitor listings found for '{search_query}'. Triggering scrape...")
-                scrape_all_competitors(search_query)
 
                 # Re-fetch after scraping
                 competitor_data_for_ai = get_competitor_data(search_query, include_url=False)
