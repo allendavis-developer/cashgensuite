@@ -752,8 +752,7 @@ async function checkIrrelevantCompetitors(searchQuery) {
 }
 
 function computeSourceAverages() {
-    const tbody = document.getElementById('competitor-tbody');
-    const rows = [...tbody.querySelectorAll('tr')];
+    const rows = allCompetitorRows; // Use all rows, not filtered DOM
 
     const sourceData = {};
 
