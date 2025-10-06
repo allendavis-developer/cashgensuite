@@ -35,26 +35,39 @@ def call_gemini_sync(prompt: str) -> str:
     except Exception as e:
         print("Gemini API error:", e)
         return "Sorry, I couldn't get a response from Gemini."
-    
+
 
 def build_price_analysis_prompt(
-    item_name: str,
-    description: str,
-    competitor_data: str,
-    cost_price: str = "",
-    market_item_title: str = ""
+        item_name: str,
+        description: str,
+        competitor_data: str,
+        cost_price: str = "",
+        market_item_title: str = "",
+        urgency: int = 3  # Add this parameter with default value
 ) -> str:
     """
     Constructs the prompt for Gemini AI to suggest an ideal selling price.
+    urgency: 1 (no rush) to 5 (urgent/quick sale needed)
     """
+
+    urgency_context = {
+        1: "No rush to sell - prioritize maximum profit",
+        2: "Standard timeline - balance profit and sellability",
+        3: "Moderate urgency - prefer faster turnover",
+        4: "High urgency - prioritize quick sale",
+        5: "Very urgent - must sell quickly, price aggressively"
+    }
+
+    urgency_text = urgency_context.get(urgency, urgency_context[3])
 
     prompt = (
         f"Item Title: {item_name}\n"
         f"Market Item: {market_item_title}\n"
         f"Description: {description}\n\n"
+        f"Sale Urgency: {urgency}/5 - {urgency_text}\n\n"  # Add this line
         f"Competitor Listings:\n{competitor_data}\n\n"
         f"Please mention this cost price in your answer: {cost_price}\n\n"
-        "Based on the competitor prices and item details, suggest an ideal selling price. "
+        "Based on the competitor prices, item details, and sale urgency, suggest an ideal selling price. "
         "Be concise, professional and matter-of-fact. "
         "Do not split your reasoning into sections. Have it as one paragraph."
         "ALWAYS quote competitor data (with the competitor name, store location) to justify reasoning. "
@@ -62,6 +75,10 @@ def build_price_analysis_prompt(
         "Please ignore data from stores which have no listings that match the exact model and do not mention them in your reasonings."
         "Consider the desirability of the item (how much people want it) and the "
         "sellability of the item (how easy it is to sell to a general population). "
+        # Add urgency guidance
+        "IMPORTANT: Factor in the sale urgency level when suggesting price. "
+        "Higher urgency (4-5) should result in more competitive/lower prices for faster turnover. "
+        "Lower urgency (1-2) allows for higher profit margins. "
         "For example, the newest Mac laptop is very desirable, but due to its price, not very "
         "sellable, although there will be a niche that will buy it. "
         "Do not hallucinate product descriptions that aren't there. As of now, you only have the item name"
@@ -132,7 +149,8 @@ def process_item_analysis(data):
     # Extract and clean data
     item_name = (data.get("item_name") or "").strip()
     description = (data.get("description") or "").strip()
-    
+    urgency = int(data.get("urgency", 3))  # Add this line, default to 3
+
     # Check if frontend already sent local scrape data
     local_scrape_data = data.get("local_scrape_data")
 
@@ -170,12 +188,12 @@ def process_item_analysis(data):
             CompetitorListing.objects.bulk_create(listings_to_create, ignore_conflicts=True)
 
             competitor_data_for_ai, competitor_data_for_frontend = get_or_scrape_competitor_data(item_name)
-    
+
     # Generate AI analysis
     ai_response, reasoning, suggested_price = generate_price_analysis(
-        item_name, description, competitor_data_for_ai
+        item_name, description, competitor_data_for_ai, urgency  # Add urgency parameter
     )
-    
+
     # Save analysis to database
     analysis_result = save_analysis_to_db(
         item_name, description, reasoning, suggested_price, competitor_data_for_frontend
@@ -210,17 +228,18 @@ def get_or_scrape_competitor_data(item_name):
     return competitor_data_for_ai, competitor_data_for_frontend
 
 
-def generate_price_analysis(item_name, description, competitor_data):
+def generate_price_analysis(item_name, description, competitor_data, urgency=3):
     """Generate AI analysis for pricing"""
     prompt = build_price_analysis_prompt(
         item_name=item_name,
         description=description,
         competitor_data=competitor_data,
+        urgency=urgency
     )
-    
+
     ai_response = call_gemini_sync(prompt)
     reasoning, suggested_price = split_reasoning_and_price(ai_response)
-    
+
     return ai_response, reasoning, suggested_price
 
 
@@ -421,6 +440,7 @@ def bulk_analyse_items(request):
     try:
         data = json.loads(request.body)
         items = data.get("items", [])
+        urgency = int(data.get("urgency", 3))  # Add this line
         local_scrape_data = data.get("local_scrape_data", [])
 
         if not items:
@@ -483,7 +503,7 @@ def bulk_analyse_items(request):
             competitor_data_for_frontend = get_competitor_data(item_name, include_url=True)
 
             ai_response, reasoning, suggested_price = generate_price_analysis(
-                item_name, description, competitor_data_for_ai
+                item_name, description, competitor_data_for_ai, urgency
             )
 
             analysis_result = save_analysis_to_db(

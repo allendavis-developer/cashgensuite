@@ -7,28 +7,7 @@
 {% block panel_title %}INPUT PANEL{% endblock %}
 
 {% block input_panel_content %}
-{% csrf_token %}
-<div class="input-row">
-  <div class="input-group" style="flex: 2;">
-    <label class="input-label">Item Name</label>
-    <input type="text" id="item-name" class="input-field" placeholder="iPhone 14" required>
-  </div>
-</div>
-
-<div class="input-group">
-  <label class="input-label">Description</label>
-  <textarea id="description" class="input-field description-field" placeholder="Good condition, minor scratches, original box included..." required></textarea>
-</div>
-
-<div class="input-group">
-  <label class="input-label">Serial Number</label>
-  <input type="text" id="serial-number" class="input-field" placeholder="Enter serial number">
-</div>
-
-<button type="button" id="analyze-btn" class="analyze-button" onclick="analyzeItem()">
-  <span id="button-text">ANALYZE PRICING</span>
-  <span id="button-spinner" class="loading-spinner hidden"></span>
-</button>
+{{ block.super }}
 {% endblock %}
 
 {% block analysis_actions %}
@@ -236,6 +215,7 @@ async function analyzeItem() {
     const analyzeBtn = document.getElementById('analyze-btn');
     const buttonText = document.getElementById('button-text');
     const buttonSpinner = document.getElementById('button-spinner');
+    const urgency = parseInt(document.getElementById('urgency').value);
 
     if (!itemName || !description) {
         return;
@@ -280,7 +260,8 @@ async function analyzeItem() {
             body: JSON.stringify({
                 item_name: itemName,
                 description: description,
-                local_scrape_data: localResults // optional
+                local_scrape_data: localResults, // optional,
+                urgency: urgency
             })
         });
 
