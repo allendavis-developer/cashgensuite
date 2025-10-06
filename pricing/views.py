@@ -66,7 +66,6 @@ def build_price_analysis_prompt(
         f"Description: {description}\n\n"
         f"Sale Urgency: {urgency}/5 - {urgency_text}\n\n"  # Add this line
         f"Competitor Listings:\n{competitor_data}\n\n"
-        f"Please mention this cost price in your answer: {cost_price}\n\n"
          "Pricing Rules:\n"
         f"- Default Cash Generator (CG) price = CeX price minus {20}%.\n"
         "- Round CG price UP to the nearest multiple of 2.\n"
@@ -91,8 +90,12 @@ def build_price_analysis_prompt(
         "Do not hallucinate product descriptions that aren't there. As of now, you only have the item name"
         "Mention details that make it hard for you to suggest a price. For example, not knowing the storage capacity of whatever item you're trying to suggest " \
         "a price for, or not knowing what version of the item it is."
+        f"ALWAYS mention this cost price in your answer if it isn't empty: {cost_price}\n\n"
         "ALWAYS end the message with FINAL:£SUGGESTED_PRICE where SUGGESTED_PRICE is the final price."
+        "ALWAYS calculate the margin AS A PERCENTAGE (show your working) with your suggested price and the cost price and mention it."
     )
+
+
     return prompt
 
 
@@ -110,6 +113,7 @@ def get_competitor_data(item_title: str, include_url: bool = True) -> str:
     for l in listings:
         price_str = f"£{l.price:.2f}" if l.price is not None else "N/A"
         store_str = l.store_name if l.store_name else "N/A"
+        print(store_str)
         if include_url:
             url_str = l.url if l.url else "#"
             lines.append(f"{l.competitor} | {l.title} | {price_str} | {store_str} | {url_str}")
@@ -160,13 +164,13 @@ def process_item_analysis(data):
 
     # Check if frontend already sent local scrape data
     local_scrape_data = data.get("local_scrape_data")
+    from pricing.models import MarketItem, CompetitorListing
 
     if local_scrape_data:
         print("Using local scraper data from browser")
 
         # Update DB directly from local_scrape_data
         if isinstance(local_scrape_data, list):
-            from pricing.models import MarketItem, CompetitorListing
 
             # Get or create the MarketItem
             market_item, _ = MarketItem.objects.get_or_create(
@@ -186,7 +190,7 @@ def process_item_analysis(data):
                         competitor=entry.get("competitor", "Unknown"),
                         title=entry.get("title", "Untitled"),
                         price=entry.get("price", 0.0),
-                        store_name=entry.get("store_name") or "N/A",
+                        store_name=entry.get("store") or "N/A",
                         url=entry.get("url", "#")
                     )
                 )
@@ -194,18 +198,24 @@ def process_item_analysis(data):
             # Single database hit for all listings
             CompetitorListing.objects.bulk_create(listings_to_create, ignore_conflicts=True)
 
-            competitor_data_for_ai, competitor_data_for_frontend = get_or_scrape_competitor_data(item_name)
+            competitor_data_for_ai = get_competitor_data(item_name, False)
+            competitor_data_for_frontend = get_competitor_data(item_name, True)
+
 
     # Generate AI analysis
     ai_response, reasoning, suggested_price = generate_price_analysis(
         item_name, description, competitor_data_for_ai, urgency  # Add urgency parameter
     )
 
+    # Remove any existing PriceAnalysis for this InventoryItem
+    inventory_item, _ = InventoryItem.objects.get_or_create(title=item_name)
+    PriceAnalysis.objects.filter(item=inventory_item).delete()
+
     # Save analysis to database
     analysis_result = save_analysis_to_db(
         item_name, description, reasoning, suggested_price, competitor_data_for_frontend
     )
-    
+
     # Prepare response
     return JsonResponse({
         "success": True,
@@ -219,29 +229,15 @@ def process_item_analysis(data):
     })
 
 
-def get_or_scrape_competitor_data(item_name):
-    """Get competitor data, scraping if necessary"""
-    competitor_data_for_ai = get_competitor_data(item_name, include_url=False)
-    competitor_data_for_frontend = get_competitor_data(item_name, include_url=True)
-    
-    # If no competitor data exists, trigger scraping
-    if not competitor_data_for_ai.strip():
-        print(f"No competitor listings found for '{item_name}'")
-        
-        # Re-fetch after scraping
-        competitor_data_for_ai = get_competitor_data(item_name, include_url=False)
-        competitor_data_for_frontend = get_competitor_data(item_name, include_url=True)
-    
-    return competitor_data_for_ai, competitor_data_for_frontend
 
-
-def generate_price_analysis(item_name, description, competitor_data, urgency=3):
+def generate_price_analysis(item_name, description, competitor_data, cost_price="", urgency=3):
     """Generate AI analysis for pricing"""
     prompt = build_price_analysis_prompt(
         item_name=item_name,
         description=description,
         competitor_data=competitor_data,
-        urgency=urgency
+        cost_price=cost_price,
+        urgency=urgency,
     )
 
     ai_response = call_gemini_sync(prompt)
@@ -407,7 +403,6 @@ def scrape_all_competitors(item_name: str):
     """
     try:
         print(f"Scraping all competitors for '{item_name}'...")
-        save_prices(COMPETITORS, item_name)  # pass list, not single
     except Exception as e:
         print(f"⚠️ Scraper failed for {item_name}: {e}")
 
@@ -447,7 +442,6 @@ def bulk_analyse_items(request):
     try:
         data = json.loads(request.body)
         items = data.get("items", [])
-        urgency = int(data.get("urgency", 3))  # Add this line
         local_scrape_data = data.get("local_scrape_data", [])
 
         if not items:
@@ -466,6 +460,7 @@ def bulk_analyse_items(request):
             description = (item_data.get("description") or "").strip()
             market_item_title = (item_data.get("market_item") or "").strip()
             cost_price = item_data.get("cost_price", "").strip()
+            urgency = int(item_data.get("urgency", 3))  # per item
 
             # Skip invalid entries
             if not item_name:
@@ -510,7 +505,7 @@ def bulk_analyse_items(request):
             competitor_data_for_frontend = get_competitor_data(item_name, include_url=True)
 
             ai_response, reasoning, suggested_price = generate_price_analysis(
-                item_name, description, competitor_data_for_ai, urgency
+                item_name, description, competitor_data_for_ai, cost_price, urgency
             )
 
             analysis_result = save_analysis_to_db(

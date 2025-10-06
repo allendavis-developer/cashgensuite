@@ -39,7 +39,7 @@
 
   .marketitem-select {
     appearance: none;
-    background: linear-gradient(145deg, #1a1a1a, #2a2a2a);
+      background: #0a0a0a;
     color: #fff;
     border: 1px solid #444;
     border-radius: 8px;
@@ -50,24 +50,6 @@
     min-width: 180px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     position: relative;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 8px center;
-    background-size: 16px;
-  }
-
-  .marketitem-select:hover {
-    border-color: #666;
-    background: linear-gradient(145deg, #222, #333);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-    transform: translateY(-1px);
-  }
-
-  .marketitem-select:focus {
-    border-color: #888;
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(136, 136, 255, 0.2);
-    background: linear-gradient(145deg, #222, #333);
   }
 
   .marketitem-select option {
@@ -83,6 +65,38 @@
   }
 
   .marketitem-select option:checked {
+    background: #444;
+    color: #8f8;
+  }
+
+.urgency-select {
+    appearance: none;
+    background: #0a0a0a;
+    color: #fff;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 8px 32px 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 180px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    position: relative;
+  }
+
+  .urgency-select option {
+    background: #111;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+
+  .urgency-select option:hover {
+    background: #333;
+  }
+
+  .urgency-select option:checked {
     background: #444;
     color: #8f8;
   }
@@ -149,6 +163,7 @@
           <th>Quantity</th>
           <th>Type</th>
           <th>Market Item</th>
+            <th>Urgency</th>
           <th>Suggested AI Price</th>
           <th>Competitor Count</th>
           <th>Actions</th>
@@ -226,6 +241,15 @@ function addBarcode() {
           <option value="">Run Scraping First...</option>
         </select>
       </td>
+        <td>
+          <select class="urgency-select" style="cursor:pointer;">
+            <option value="1">1 - No Rush (Max Profit)</option>
+            <option value="2">2 - Standard Timeline</option>
+            <option value="3" selected>3 - Moderate Urgency</option>
+            <option value="4">4 - High Urgency</option>
+            <option value="5">5 - Must Sell ASAP</option>
+          </select>
+        </td>
       <td>-</td> <!-- Suggested AI Price -->
       <td>-</td> <!-- Competitor Count -->
       <td>
@@ -475,6 +499,9 @@ async function analyseBarcodes() {
                 const costPrice = row.cells[5].textContent.trim();
                 const marketItemSelect = row.querySelector('.marketitem-select');
                 const marketItem = marketItemSelect ? marketItemSelect.value : '';
+                const urgencySelect = row.querySelector('.urgency-select');
+                const urgency = urgencySelect ? urgencySelect.value : '3'; // default to 3
+
 
                 if (name) { // Only analyse items that have names (were successfully scraped)
                     itemsToAnalyse.push({
@@ -483,7 +510,8 @@ async function analyseBarcodes() {
                         name: name,
                         description: description,
                         market_item: marketItem,  // Send the selected MarketItem
-                        cost_price: costPrice
+                        cost_price: costPrice,
+                        urgency: urgency
                     });
                 }
             }
@@ -502,12 +530,12 @@ async function analyseBarcodes() {
                     const row = document.querySelector(`tr[data-barcode="${result.barcode}"]`);
                     if (row) {
                         // Update Suggested AI Price column (now column 11)
-                        row.cells[11].textContent = result.suggested_price;
-                        row.cells[11].style.color = "#8f8"; // Green color for success
+                        row.cells[12].textContent = result.suggested_price;
+                        row.cells[12].style.color = "#8f8"; // Green color for success
 
                         // Update Competitor Count column (now column 12)
-                        row.cells[12].textContent = result.competitor_count;
-                        row.cells[12].style.color = "#8f8"; // Green color for success
+                        row.cells[13].textContent = result.competitor_count;
+                        row.cells[13].style.color = "#8f8"; // Green color for success
                         row.dataset.analysisId = result.analysis_id;
 
                         //  SHOW View button now
