@@ -703,17 +703,19 @@ async function checkIrrelevantCompetitors(searchQuery) {
     const tbody = document.getElementById('competitor-tbody');
     const rows = [...tbody.querySelectorAll('tr')];
 
-    // Extract competitor titles from the table
+    // Extract competitor titles AND store names from the table
     const competitorList = rows
-        .filter(row => row.cells.length >= 2)  // skip empty rows
-        .map(row => row.cells[1].textContent.trim());
+            .filter(row => row.cells.length >= 4)  // skip empty rows
+            .map(row => ({
+                title: row.cells[1].textContent.trim(),
+                store: row.cells[3].textContent.trim()
+            }));
 
 
     if (!competitorList.length) {
         console.log("No competitor listings found in table.");
         return;
     }
-
 
     // Grab the item description
     const itemDescription = document.getElementById('description')

@@ -790,18 +790,18 @@ def detect_irrelevant_competitors(request):
             "Task: Identify which indices are NOT relevant to the search query and description.\n"
             "- Relevant means: it is the same product of the product searched.\n"
             "- Irrelevant means: wrong model, accessories, games, unrelated items, a variation (such as a Pro vs a Pro Max), or a different product condition (brand new vs used for several years).\n"
-            "- Condition notes with regards to CEX: A means Mint, essentially brand new and immaculate. B means used but in good condition, box is not required. C means product in poor condition but working. No box required."
-            "- Determine which one of those categories the item is a part of, and take all the other categories as irrelevant.\n"
             "- Do not include any reasoning, only the indices.\n"
             "- Be lenient, do NOT determine the relevant listings as irrelevant.\n"
+            "- **IMPORTANT:** ALWAYS mark listings from the following stores as irrelevant, even if they appear fine: Cash Generator Warrington, Cash Generator Netherton, Cash Generator Wythenshawe.\n"
             "- IMPORTANT: Ignore the description for judging relevance unless it contains clear model or variant information. Focus primarily on product title matching."
             "- Respond ONLY with an array of integers, e.g., [0, 2, 5].\n"
-            "- DO NOT include any reasoning, text, or extra characters.\n"
             "- If all listings are relevant, respond with an empty array [].\n"
             "- STRICTLY FOLLOW ARRAY FORMAT, no trailing commas or extra spaces."
         )
 
         prompt = "\n".join(prompt_lines)
+
+        print(prompt)
 
         # Call Gemini
         ai_response = call_gemini_sync(prompt)
