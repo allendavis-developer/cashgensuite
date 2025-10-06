@@ -164,8 +164,9 @@
           <th>Type</th>
           <th>Market Item</th>
             <th>Urgency</th>
-          <th>Suggested AI Price</th>
-          <th>Competitor Count</th>
+            <th>Competitor Count</th>
+            <th>Suggested AI Price</th>
+            <th>Margin (%)</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -191,7 +192,7 @@ function showEmptyRow() {
   const tbody = document.getElementById("barcodeTable");
   tbody.innerHTML = `
     <tr>
-      <td colspan="14" style="text-align:center; color:#666; font-style:italic;">
+      <td colspan="16" style="text-align:center; color:#666; font-style:italic;">
         No barcodes added
       </td>
     </tr>
@@ -250,8 +251,9 @@ function addBarcode() {
             <option value="5">5 - Must Sell ASAP</option>
           </select>
         </td>
+        <td>-</td> <!-- Competitor Count -->
       <td>-</td> <!-- Suggested AI Price -->
-      <td>-</td> <!-- Competitor Count -->
+<td>-</td> <!-- Margin -->
       <td>
         <span class="remove-btn" onclick="removeRow(this, '${barcode}')">Remove</span>
         <span class="view-btn" style="margin-left:8px;" onclick="viewAnalysis('${barcode}')">View</span>
@@ -529,14 +531,23 @@ async function analyseBarcodes() {
                 if (result.success) {
                     const row = document.querySelector(`tr[data-barcode="${result.barcode}"]`);
                     if (row) {
-                        // Update Suggested AI Price column (now column 11)
-                        row.cells[12].textContent = result.suggested_price;
-                        row.cells[12].style.color = "#8f8"; // Green color for success
-
-                        // Update Competitor Count column (now column 12)
-                        row.cells[13].textContent = result.competitor_count;
+                        row.cells[13].textContent = result.suggested_price;
                         row.cells[13].style.color = "#8f8"; // Green color for success
+
+                        row.cells[12].textContent = result.competitor_count;
+                        row.cells[12].style.color = "#8f8"; // Green color for success
                         row.dataset.analysisId = result.analysis_id;
+
+                        const costPriceStr = row.cells[5].textContent.trim().replace(/[^\d.]/g, '');
+                        const costPrice = parseFloat(costPriceStr) || 0;
+
+                        const suggestedPriceStr = result.suggested_price.toString().trim().replace(/[^\d.]/g, '');
+                        const suggestedPrice = parseFloat(suggestedPriceStr) || 0;
+
+                        const margin = costPrice > 0 ? ((suggestedPrice - costPrice) / costPrice * 100).toFixed(2) : '-';
+                        console.log(margin)
+                        row.cells[14].textContent = margin;
+                        row.cells[14].style.color = "#8f8";
 
                         //  SHOW View button now
                         const viewBtn = row.querySelector(".view-btn");
