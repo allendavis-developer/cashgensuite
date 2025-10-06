@@ -457,7 +457,7 @@ def bulk_analyse_items(request):
             )
 
             if local_listings:
-                print(f"✅ Using local scrape data for {item_name}")
+                print(f"Using local scrape data for {item_name}")
 
                 # Save listings to DB
                 market_item, _ = MarketItem.objects.get_or_create(
