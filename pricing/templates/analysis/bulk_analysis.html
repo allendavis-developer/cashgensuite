@@ -146,6 +146,13 @@
     <input type="text" id="barcodeInput" placeholder="Scan or enter barcode">
     <button onclick="addBarcode()">Add</button>
     <button id="scrapeBtn" onclick="startScraping()">Start Scraping</button>
+    <input
+        type="number"
+        id="minMarginInput"
+        placeholder="Min Margin (%)"
+        value="0"
+        style="width:120px; max-width:120px; padding:6px 8px; font-size:13px; background:#1a1a1a; color:#fff; border:1px solid #333; border-radius:4px; text-align:right;"
+      >
   </div>
 
   <div class="table-container">
@@ -503,8 +510,6 @@ async function analyseBarcodes() {
                 const marketItem = marketItemSelect ? marketItemSelect.value : '';
                 const urgencySelect = row.querySelector('.urgency-select');
                 const urgency = urgencySelect ? urgencySelect.value : '3'; // default to 3
-
-
                 if (name) { // Only analyse items that have names (were successfully scraped)
                     itemsToAnalyse.push({
                         barcode: barcode,
@@ -571,6 +576,8 @@ async function analyseBarcodes() {
 
             statusDiv.className = "success";
             statusDiv.innerHTML = `✅ Analysis completed! Processed ${data.results.length} items.`;
+
+            applyMinMarginHighlight();
 
             scrapeBtn.disabled = false;
             scrapeBtn.textContent = "Re-Analyse";
@@ -833,6 +840,20 @@ function getCookie(name) {
     }
   }
   return cookieValue;
+}
+
+function applyMinMarginHighlight() {
+  const minMargin = parseFloat(document.getElementById('minMarginInput').value) || 0;
+  const rows = document.querySelectorAll('#barcodeTable tr');
+
+  rows.forEach(row => {
+    const marginCell = row.cells[14]; // Margin column
+    if (!marginCell) return;
+    const margin = parseFloat(marginCell.textContent);
+    if (!isNaN(margin)) {
+      row.style.backgroundColor = margin < minMargin ? '#330000' : '';
+    }
+  });
 }
 
 
