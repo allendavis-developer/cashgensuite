@@ -150,7 +150,7 @@
         type="number"
         id="minMarginInput"
         placeholder="Min Margin (%)"
-        value="0"
+        value="37.5"
         style="width:120px; max-width:120px; padding:6px 8px; font-size:13px; background:#1a1a1a; color:#fff; border:1px solid #333; border-radius:4px; text-align:right;"
       >
   </div>
@@ -804,8 +804,8 @@ class ConfirmListModal {
     const description = values['modal-description'];
     const price = values['modal-price'];
     const serialNumber = values['modal-serial-number'];
-
-    await launchPlaywrightListing(itemName, description, price, serialNumber);
+    this.hide()
+      await launchPlaywrightListing(itemName, description, price, serialNumber);
   }
 }
 
@@ -821,7 +821,7 @@ function confirmAndList(barcode) {
   confirmModal.show([
     { id: 'modal-item-name', label: 'Item Name', type: 'text', value: row.cells[3].textContent },
     { id: 'modal-description', label: 'Description', type: 'textarea', value: row.cells[4].textContent },
-    { id: 'modal-price', label: 'Price', type: 'text', value: row.cells[11].textContent },
+    { id: 'modal-price', label: 'Price', type: 'text', value: row.cells[13].textContent },
     { id: 'modal-serial-number', label: 'Serial Number', type: 'text', value: row.cells[2].textContent }
   ]);
 }
