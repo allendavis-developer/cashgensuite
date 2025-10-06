@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}Pricing Analysis{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,6 +16,10 @@
     box-sizing: border-box;
   }
 
+  html {
+    font-size: 16px;
+  }
+
   body {
     font-family: 'Inter', sans-serif;
     background-color: #000000;
@@ -22,78 +27,84 @@
     height: 100vh;
     display: flex;
     flex-direction: column;
-    font-size: 14px;
+    font-size: 0.875rem;
+    overflow: hidden;
   }
 
   .header {
-    padding: 20px;
+    padding: 1rem 1.25rem;
     border-bottom: 1px solid #333333;
     background-color: #111111;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
   }
 
   .header h1 {
-    font-size: 18px;
+    font-size: 1.125rem;
     font-weight: 600;
     color: #ffffff;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.03em;
   }
 
   .main-content {
     flex: 1;
     display: flex;
     min-height: 0;
+    overflow: hidden;
   }
 
   .input-panel {
-    width: 400px;
+    width: clamp(320px, 25vw, 400px);
     border-right: 1px solid #333333;
     background-color: #111111;
-    padding: 20px;
+    padding: 1.25rem;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
+    flex-shrink: 0;
   }
 
   .competitor-panel {
     flex: 1;
     background-color: #0a0a0a;
-    padding: 20px;
+    padding: 1.25rem;
     overflow-y: auto;
+    min-width: 0;
   }
 
   .panel-title {
-    font-size: 12px;
+    font-size: 0.75rem;
     font-weight: 600;
     color: #888888;
-    margin-bottom: 16px;
+    margin-bottom: 1rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.03em;
   }
 
   .input-group {
-    margin-bottom: 16px;
+    margin-bottom: 1rem;
   }
 
   .input-label {
     display: block;
-    font-size: 11px;
+    font-size: 0.6875rem;
     color: #888888;
-    margin-bottom: 4px;
+    margin-bottom: 0.25rem;
     font-weight: 600;
     text-transform: uppercase;
   }
 
   .input-field {
     width: 100%;
-    padding: 12px;
+    padding: 0.75rem;
     background-color: #1a1a1a;
     border: 1px solid #333333;
     color: #ffffff;
     font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    border-radius: 4px;
+    font-size: 0.875rem;
+    border-radius: 0.25rem;
   }
 
   .input-field:focus {
@@ -104,27 +115,28 @@
 
   .input-row {
     display: flex;
-    gap: 12px;
+    gap: 0.75rem;
   }
 
   .description-field {
-    min-height: 100px;
+    min-height: 6.25rem;
     resize: vertical;
   }
 
   .analyze-button {
-    padding: 16px 24px;
+    padding: 1rem 1.5rem;
     background-color: #ffffff;
     color: #000000;
     border: none;
     font-family: 'Inter', sans-serif;
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-top: 20px;
-    border-radius: 4px;
+    letter-spacing: 0.03em;
+    margin-top: 1.25rem;
+    border-radius: 0.25rem;
+    width: 100%;
   }
 
   .analyze-button:hover:not(:disabled) {
@@ -138,24 +150,24 @@
   }
 
   .competitor-count {
-    font-size: 12px;
+    font-size: 0.75rem;
     color: #666666;
-    margin-bottom: 16px;
+    margin-bottom: 1rem;
   }
 
   .competitor-table {
     border: 1px solid #333333;
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 20px;
+    margin-bottom: 1.25rem;
+    font-size: 0.8125rem;
   }
 
   .competitor-table th,
   .competitor-table td {
-    padding: 12px;
+    padding: 0.75rem;
     text-align: left;
     border-bottom: 1px solid #333333;
-    font-size: 13px;
   }
 
   .competitor-table th {
@@ -163,28 +175,38 @@
     color: #888888;
     font-weight: 600;
     text-transform: uppercase;
-    font-size: 11px;
+    font-size: 0.6875rem;
+    white-space: nowrap;
+  }
+
+  .competitor-table td {
+    word-wrap: break-word;
+    max-width: 0;
+  }
+
+  .competitor-table td:nth-child(2) {
+    max-width: 300px;
   }
 
   .market-stats {
     background-color: #111111;
-    padding: 16px;
+    padding: 1rem;
     border: 1px solid #333333;
-    margin-bottom: 20px;
-    border-radius: 4px;
+    margin-bottom: 1.25rem;
+    border-radius: 0.25rem;
   }
 
   .stat-row {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 8px;
-    font-size: 13px;
+    margin-bottom: 0.5rem;
+    font-size: 0.8125rem;
   }
 
   .stat-label {
     color: #888888;
     text-transform: uppercase;
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
 
   .stat-value {
@@ -195,91 +217,91 @@
   .warning {
     background-color: #1a1100;
     border: 1px solid #444400;
-    padding: 12px;
-    margin-bottom: 20px;
+    padding: 0.75rem;
+    margin-bottom: 1.25rem;
     color: #ffff88;
-    font-size: 12px;
-    border-radius: 4px;
+    font-size: 0.75rem;
+    border-radius: 0.25rem;
   }
 
   .analysis-section {
     background-color: #111111;
     border-top: 1px solid #333333;
-    padding: 20px;
+    padding: 1.25rem;
     max-height: 30vh;
     overflow-y: auto;
+    flex-shrink: 0;
   }
 
   .analysis-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
   }
 
   .analysis-status {
-    font-size: 12px;
+    font-size: 0.75rem;
     color: #00ff00;
     font-weight: 600;
     text-transform: uppercase;
   }
 
   .analysis-time {
-    font-size: 11px;
+    font-size: 0.6875rem;
     color: #666666;
   }
 
   .recommended-price {
-    font-size: 24px;
+    font-size: 1.5rem;
     font-weight: 600;
     color: #ffffff;
-    margin-bottom: 20px;
+    margin-bottom: 1.25rem;
   }
 
   .reasoning {
-    margin-bottom: 20px;
+    margin-bottom: 1.25rem;
   }
 
   .reasoning-title {
-    font-size: 12px;
+    font-size: 0.75rem;
     color: #888888;
     font-weight: 600;
     text-transform: uppercase;
-    margin-bottom: 8px;
+    margin-bottom: 0.5rem;
   }
 
   .reasoning-text {
-    font-size: 13px;
+    font-size: 0.8125rem;
     line-height: 1.6;
     color: #cccccc;
   }
 
-
   .controls {
     display: flex;
-    gap: 12px;
+    gap: 0.75rem;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: 1rem;
     flex-wrap: wrap;
   }
 
   .controls label {
-    font-size: 11px;
+    font-size: 0.6875rem;
     font-weight: 600;
     color: #888888;
     text-transform: uppercase;
-    margin-right: 4px;
+    margin-right: 0.25rem;
   }
 
   .controls select {
-    padding: 6px 10px;
+    padding: 0.375rem 0.625rem;
     background-color: #1a1a1a;
     border: 1px solid #333333;
-    border-radius: 4px;
+    border-radius: 0.25rem;
     color: #ffffff;
-    font-size: 12px;
+    font-size: 0.75rem;
     cursor: pointer;
-    min-width: 140px;
+    min-width: 8.75rem;
     transition: border-color 0.2s ease, background-color 0.2s ease;
   }
 
@@ -291,8 +313,8 @@
 
   .loading-spinner {
     display: inline-block;
-    width: 16px;
-    height: 16px;
+    width: 1rem;
+    height: 1rem;
     border: 2px solid #333333;
     border-top: 2px solid #ffffff;
     border-radius: 50%;
@@ -307,6 +329,53 @@
   .hidden {
     display: none;
   }
+
+  .header .menu-card {
+    padding: 0.375rem 0.75rem;
+    background: #444;
+    color: #fff;
+    border-radius: 0.25rem;
+    text-decoration: none;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  .header-right {
+    font-size: 0.6875rem;
+    color: #666666;
+    white-space: nowrap;
+  }
+.competitor-table th:nth-child(5),
+.competitor-table td:nth-child(5) {
+  width: 60px;       /* narrow column width */
+  text-align: center; /* visually centered */
+  white-space: nowrap;
+}
+
+
+/* === SCALE FIX === */
+    html {
+      font-size: 14px; /* down from 16px — ~87.5% scaling */
+    }
+
+    body {
+        min-height: 100vh;
+        overflow-y: auto; /* allow normal scrolling */
+    }
+
+    .input-panel, .competitor-panel, .analysis-section {
+      padding: 1.5rem;
+    }
+
+    .input-field,
+    textarea,
+    select {
+      font-size: 0.8125rem;
+    }
+
+    .header h1 {
+      font-size: 1rem;
+    }
 
   {% block extra_style %}{% endblock %}
 </style>
@@ -627,17 +696,17 @@ async function checkIrrelevantCompetitors(searchQuery) {
     const competitorList = rows
         .filter(row => row.cells.length >= 2)  // skip empty rows
         .map(row => row.cells[1].textContent.trim());
-        
+
 
     if (!competitorList.length) {
         console.log("No competitor listings found in table.");
         return;
     }
 
-    
+
     // Grab the item description
-    const itemDescription = document.getElementById('description') 
-        ? document.getElementById('description').value.trim() 
+    const itemDescription = document.getElementById('description')
+        ? document.getElementById('description').value.trim()
         : "";
 
 
