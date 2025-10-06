@@ -502,21 +502,32 @@
 </div>
 
 <div class="analysis-section" id="analysis-section" style="display: none;">
-  <div class="analysis-header">
-    <div class="analysis-status">{% block analysis_status %}⚡ ANALYSIS COMPLETE{% endblock %}</div>
-    <div class="analysis-time" id="analysis-time">{% block analysis_time %}just now{% endblock %}</div>
-  </div>
+    <div class="analysis-header">
+        <div class="analysis-status">{% block analysis_status %}⚡ ANALYSIS COMPLETE{% endblock %}</div>
+        <div class="analysis-time" id="analysis-time">{% block analysis_time %}just now{% endblock %}</div>
+    </div>
 
-  <div class="recommended-price">
-    RECOMMENDED PRICE: <span id="recommended-price">-</span>
-  </div>
+    <!-- Flex container for recommended price + source averages -->
+    <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+        <div class="recommended-price" style="margin-bottom: 0;">
+            RECOMMENDED PRICE: <span id="recommended-price">-</span>
+        </div>
 
-  <div class="reasoning">
+        <div id="source-averages-header"
+             style="color: #ffffff; font-weight: 500; font-size: 1rem; white-space: nowrap;">
+            <!-- Source averages will appear here -->
+        </div>
+    </div>
+
+
+    <div class="reasoning">
     <div class="reasoning-title">REASONING:</div>
     <div class="reasoning-text" id="reasoning-text">
       {% block reasoning_placeholder %}Analysis will appear here...{% endblock %}
     </div>
   </div>
+
+
 
   {% block analysis_actions %}{% endblock %}
 
@@ -769,6 +780,17 @@ function computeSourceAverages() {
             count: prices.length
         };
     });
+
+    // Render below ANALYSIS COMPLETE
+    const headerDiv = document.getElementById('source-averages-header');
+    if (Object.keys(sourceAverages).length === 0) {
+        headerDiv.textContent = '';
+    } else {
+        const parts = Object.entries(sourceAverages).map(
+            ([source, data]) => `${source} (${data.count}) : £${data.average.toFixed(0)}`
+        );
+        headerDiv.textContent = `AVERAGES: ${parts.join(' | ')}`;
+    }
 
     console.log("Source averages (excluding irrelevant listings):", sourceAverages);
 }
