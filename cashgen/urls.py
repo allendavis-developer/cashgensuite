@@ -23,7 +23,6 @@ urlpatterns = [
     path("global-rules/<int:pk>/edit/", v.edit_global_rule, name="edit_global_rule"),
     path("global-rules/<int:pk>/delete/", v.delete_global_rule, name="delete_global_rule"),
 
-
     path("rules/add/<int:category_pk>/", v.add_rule, name="add_rule"),
     path("rules/<int:pk>/edit/", v.edit_rule, name="edit_rule"),
     path("rules/<int:pk>/delete/", v.delete_rule, name="delete_rule"),
@@ -38,5 +37,6 @@ urlpatterns = [
     path("api/price-analysis/<int:analysis_id>/", v.price_analysis_detail, name="price_analysis_detail"),
     path('detect_irrelevant_competitors/', v.detect_irrelevant_competitors, name='detect_irrelevant_competitors'),
     path("api/buying-range-analysis/", v.buying_range_analysis, name="buying_range_analysis"),
+    path("generate-search-term/", v.generate_search_term, name="generate_search_term"),
 
 ]

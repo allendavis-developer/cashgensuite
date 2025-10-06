@@ -36,6 +36,47 @@ def call_gemini_sync(prompt: str) -> str:
         print("Gemini API error:", e)
         return "Sorry, I couldn't get a response from Gemini."
 
+@csrf_exempt
+def generate_search_term(request):
+    """
+    Generate a concise, high-performing search term for an item.
+    """
+    try:
+        data = json.loads(request.body)
+        name = (data.get("name") or "").strip()
+        description = (data.get("description") or "").strip()
+
+        if not name:
+            return JsonResponse({"success": False, "error": "Missing item name."})
+
+        # ✨ Build the Gemini prompt
+        prompt = f"""
+        You are a retail data intelligence assistant.
+
+        Based on the following product details, generate a concise, optimized
+        search query that would return the most relevant marketplace listings
+        for price comparison and analysis.
+
+        - Product Name: {name}
+        - Description: {description}
+
+        Output only the ideal search term (2–8 words). 
+        Do not include commentary or punctuation.
+        """
+
+        # 🔮 Call Gemini synchronously
+        search_term = call_gemini_sync(prompt)
+
+        return JsonResponse({
+            "success": True,
+            "search_term": search_term,
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
 
 def build_price_analysis_prompt(
         item_name: str,
@@ -67,11 +108,6 @@ def build_price_analysis_prompt(
         f"Sale Urgency: {urgency}/5 - {urgency_text}\n\n"  # Add this line
         f"Competitor Listings:\n{competitor_data}\n\n"
          "Pricing Rules:\n"
-        f"- Default Cash Generator (CG) price = CeX price minus {20}%.\n"
-        "- Round CG price UP to the nearest multiple of 2.\n"
-        "- If average completed eBay sold price is higher than the CG price, use the eBay price instead.\n"
-        "- Highly desirable items may deviate from the default discount if justified.\n"
-        "- Consider matching or beating CeX offers in relevant locations (e.g., Warrington, Shawe).\n\n"
         "CG (CashGenerators) is a pawn shop in a similar vein to CashConverters."
         "Based on the competitor prices, item details, and sale urgency, suggest an ideal selling price for listing on the CG Website. "
         "Be concise, professional and matter-of-fact. "
@@ -92,9 +128,8 @@ def build_price_analysis_prompt(
         "a price for, or not knowing what version of the item it is."
         f"ALWAYS mention this cost price in your answer if it isn't empty: {cost_price}\n\n"
         "ALWAYS end the message with FINAL:£SUGGESTED_PRICE where SUGGESTED_PRICE is the final price."
-        "ALWAYS calculate the margin AS A PERCENTAGE (show your working) with your suggested price and the cost price and mention it."
+        "If given a cost price, calculate the margin AS A PERCENTAGE (show your working) with your suggested price and the cost price and mention it."
     )
-
 
     return prompt
 

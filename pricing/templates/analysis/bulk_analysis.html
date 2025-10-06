@@ -432,8 +432,41 @@ async function startScraping() {
   }
 }
 
+async function getPerfectSearchTerm(name, description) {
+  try {
+    const res = await fetch("/generate-search-term/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+      body: JSON.stringify({ name, description }),
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      console.log("🧠 Gemini Search Term:", data.search_term);
+      return data.search_term;
+    } else {
+      console.warn("⚠️ Gemini returned error:", data.error);
+      return name; // fallback
+    }
+  } catch (err) {
+    console.error("💥 Search term request failed:", err);
+    return name; // fallback
+  }
+}
+
+
 async function runBulkAnalysis(items) {
     let scrapedResults = null;
+
+    // Enrich each item with Gemini-generated search term
+    for (const item of items) {
+        const searchTerm = await getPerfectSearchTerm(item.name, item.description);
+        console.log(`Perfect search term for "${item.name}":`, searchTerm);
+        item.search_term = searchTerm; // optional — you can omit if not needed yet
+    }
 
     try {
         console.log("🔍 Trying local bulk scrape...");
