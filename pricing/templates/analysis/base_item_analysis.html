@@ -630,8 +630,8 @@ function updateCompetitorData(competitorData, competitorCount) {
 
      // Trigger AI check automatically after table is ready
     if (competitorCount > 0) {
-          checkIrrelevantCompetitors(itemName.value); // <-- supply the current search query
-          console.log(competitorCount)
+      checkIrrelevantCompetitors(itemName.value); // <-- supply the current search query
+      computeSourceAverages()
     }
 }
 
@@ -740,6 +740,38 @@ async function checkIrrelevantCompetitors(searchQuery) {
     }
 }
 
+function computeSourceAverages() {
+    const tbody = document.getElementById('competitor-tbody');
+    const rows = [...tbody.querySelectorAll('tr')];
+
+    const sourceData = {};
+
+    rows.forEach(row => {
+        if (row.cells.length >= 5) {
+            const isRelevant = row.cells[4].textContent.trim() === "Yes";
+            if (!isRelevant) return; // skip irrelevant
+
+            const source = row.cells[0].textContent.trim();
+            const price = parseFloat(row.cells[2].textContent.replace(/[^0-9.-]+/g, ""));
+            if (!isNaN(price)) {
+                if (!sourceData[source]) sourceData[source] = [];
+                sourceData[source].push(price);
+            }
+        }
+    });
+
+    const sourceAverages = {};
+    Object.keys(sourceData).forEach(source => {
+        const prices = sourceData[source];
+        const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
+        sourceAverages[source] = {
+            average: avg,
+            count: prices.length
+        };
+    });
+
+    console.log("Source averages (excluding irrelevant listings):", sourceAverages);
+}
 
 {% block extra_script %}{% endblock %}
 
