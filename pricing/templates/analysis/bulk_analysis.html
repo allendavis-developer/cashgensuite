@@ -234,7 +234,6 @@ function addBarcode() {
         <span class="confirm-btn" style="margin-left:8px;" onclick="confirmAndList('${barcode}')">Confirm & List</span>
       </td>
       </td>
-
     `;
 
   tbody.appendChild(row);
@@ -400,6 +399,41 @@ async function startScraping() {
   }
 }
 
+async function runBulkAnalysis(items) {
+    let scrapedResults = null;
+
+    try {
+        console.log("🔍 Trying local bulk scrape...");
+        const scrapeResponse = await callLocalAgent("/bulk-scrape-competitors", {items});
+
+        // callLocalAgent() returns parsed JSON directly
+        if (scrapeResponse && scrapeResponse.success) {
+            scrapedResults = scrapeResponse.results;
+            console.log("✅ Local scrape success:", scrapedResults);
+        } else {
+            console.warn("❌ Local scrape error:", scrapeResponse?.error || "Unknown error");
+        }
+    } catch (err) {
+        console.warn("💥 Local agent unreachable:", err);
+    }
+
+    console.log("📤 Sending scraped data to Django for AI analysis...");
+
+    const response = await fetch("/bulk-analyse-items/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"),
+        },
+        body: JSON.stringify({
+            items,
+            local_scrape_data: scrapedResults
+        }),
+    });
+
+    return response.json();
+}
+
 
 async function analyseBarcodes() {
     const tbody = document.getElementById("barcodeTable");
@@ -459,14 +493,7 @@ async function analyseBarcodes() {
             throw new Error("No valid items with names to analyse");
         }
 
-        // Send bulk analysis request
-        const response = await fetch("/bulk-analyse-items/", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ items: itemsToAnalyse })
-        });
-
-        const data = await response.json();
+        const data = await runBulkAnalysis(itemsToAnalyse);
 
         if (data.success) {
             // Update table with analysis results
@@ -768,6 +795,8 @@ function getCookie(name) {
   }
   return cookieValue;
 }
+
+
 </script>
 </body>
 </html>

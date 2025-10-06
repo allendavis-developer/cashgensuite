@@ -416,123 +416,96 @@ def bulk_analysis(request):
 @require_POST
 def bulk_analyse_items(request):
     """
-    Analyse multiple items in bulk, using linked MarketItem for competitor searches
-    """
+        Analyse multiple items in bulk, using local scrape data if available.
+        """
     try:
         data = json.loads(request.body)
-        items = data.get("items", [])  # List of {barcode, barserial, name, etc.}
+        items = data.get("items", [])
+        local_scrape_data = data.get("local_scrape_data", [])
 
         if not items:
             return JsonResponse({"success": False, "error": "No items provided"})
 
+        # Map scraped data by barcode for easier lookup
+        scrape_lookup = {
+            entry.get("barcode"): entry for entry in local_scrape_data or []
+        }
+
         results = []
 
         for item_data in items:
+            barcode = item_data.get("barcode", "")
             item_name = (item_data.get("name") or "").strip()
             description = (item_data.get("description") or "").strip()
-            barcode = item_data.get("barcode", "")
-            barserial = item_data.get("barserial", "")
+            market_item_title = (item_data.get("market_item") or "").strip()
             cost_price = item_data.get("cost_price", "").strip()
-            market_item_title = item_data.get("market_item", "").strip()
 
+            # Skip invalid entries
             if not item_name:
                 results.append({
                     "barcode": barcode,
-                    "barserial": barserial,
                     "success": False,
                     "error": "Missing item name"
                 })
                 continue
 
-            # If item has a linked MarketItem, use its title directly
-            linked_market_item = None
-            try:
-                linked_market_item = MarketItem.objects.get(
-                    title__iexact=market_item_title) if market_item_title else None
-            except MarketItem.DoesNotExist:
-                pass
-
-            search_query = linked_market_item.title if linked_market_item else item_name
-
-            # Get competitor data for the linked MarketItem
-            competitor_data_for_ai = get_competitor_data(search_query, include_url=False)
-            competitor_data_for_frontend = get_competitor_data(search_query, include_url=True)
-            # If no competitor data found, trigger scraping
-            if not competitor_data_for_ai.strip():
-                print(f"No competitor listings found for '{search_query}'. Triggering scrape...")
-
-                # Re-fetch after scraping
-                competitor_data_for_ai = get_competitor_data(search_query, include_url=False)
-                competitor_data_for_frontend = get_competitor_data(search_query, include_url=True)
-
-            prompt = build_price_analysis_prompt(
-                item_name=item_name,
-                description=description,
-                competitor_data=competitor_data_for_ai,
-                cost_price=cost_price,  # optional
-                market_item_title=market_item_title  # optional
+            # Get scraped competitor data from the lookup
+            scraped_entry = scrape_lookup.get(barcode)
+            local_listings = (
+                scraped_entry.get("competitor_data", [])
+                if scraped_entry and scraped_entry.get("success") else []
             )
 
-            ai_response = call_gemini_sync(prompt)
-            reasoning, suggested_price = split_reasoning_and_price(ai_response)
+            if local_listings:
+                print(f"✅ Using local scrape data for {item_name}")
 
-            # Get or create inventory item
-            inventory_defaults = {"description": description}
-            if barserial:  # only include serial_number if it exists
-                inventory_defaults["serial_number"] = barserial
+                # Save listings to DB
+                market_item, _ = MarketItem.objects.get_or_create(
+                    title__iexact=item_name, defaults={"title": item_name}
+                )
+                CompetitorListing.objects.filter(market_item=market_item).delete()
 
-            inventory_item, _ = InventoryItem.objects.update_or_create(
-                title=item_name,
-                defaults=inventory_defaults,
+                CompetitorListing.objects.bulk_create([
+                    CompetitorListing(
+                        market_item=market_item,
+                        competitor=l.get("competitor", "Unknown"),
+                        title=l.get("title", "Untitled"),
+                        price=l.get("price", 0.0),
+                        store_name=l.get("store_name") or "N/A",
+                        url=l.get("url", "#")
+                    ) for l in local_listings
+                ])
+            else:
+                print(f"⚠️ No local data found for {item_name}, skipping scrape save.")
+
+            # Continue AI analysis logic (unchanged)
+            competitor_data_for_ai = get_competitor_data(item_name, include_url=False)
+            competitor_data_for_frontend = get_competitor_data(item_name, include_url=True)
+
+            ai_response, reasoning, suggested_price = generate_price_analysis(
+                item_name, description, competitor_data_for_ai
             )
 
-            competitor_count = len(competitor_data_for_frontend.strip().split("\n")) if (
-                competitor_data_for_frontend.strip()) else 0
-
-            # Extract decimal price for database
-            decimal_price = None
-            price_match = re.search(r"£(\d+\.?\d*)", suggested_price)
-            if price_match:
-                decimal_price = float(price_match.group(1))
-
-            # Save analysis
-            analysis, created = PriceAnalysis.objects.update_or_create(
-                item=inventory_item,
-                defaults={
-                    "reasoning": reasoning,
-                    "suggested_price": decimal_price,
-                    "confidence": min(100, competitor_count * 15),
-                    "created_at": datetime.now()
-                }
+            analysis_result = save_analysis_to_db(
+                item_name, description, reasoning, suggested_price, competitor_data_for_frontend
             )
 
-            print(description)
-            print(barserial)
             results.append({
                 "barcode": barcode,
-                "barserial": barserial,
                 "success": True,
                 "suggested_price": suggested_price,
                 "reasoning": reasoning,
                 "competitor_data": competitor_data_for_frontend,
-                "competitor_count": competitor_count,
-                "item_name": item_name,
-                "search_query_used": search_query,  # For debugging
-                "analysis_id": analysis.id,  # send back to frontend
-                "item_description": inventory_item.description,  # include saved description
-                "serial_number": inventory_item.serial_number,  # include saved serial_number
+                "competitor_count": analysis_result["competitor_count"],
+                "analysis_id": analysis_result["analysis_id"]
             })
 
-        return JsonResponse({
-            "success": True,
-            "results": results
-        })
+        return JsonResponse({"success": True, "results": results})
 
     except Exception as e:
         import traceback
         traceback.print_exc()
         return JsonResponse({"success": False, "error": str(e)}, status=500)
-
 
 
 @require_GET
@@ -762,9 +735,6 @@ def delete_global_rule(request, pk):
     return render(request, "rules/delete_global_rule_confirm.html", {"rule": rule})
 
 
-
-
-
 @csrf_exempt
 @require_POST
 def detect_irrelevant_competitors(request):
@@ -808,7 +778,6 @@ def detect_irrelevant_competitors(request):
         )
 
         prompt = "\n".join(prompt_lines)
-
 
         # Call Gemini
         ai_response = call_gemini_sync(prompt)

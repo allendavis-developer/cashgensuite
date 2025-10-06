@@ -34,12 +34,6 @@
 
 {% block reasoning_placeholder %}Select an item to view analysis...{% endblock %}
 
-{% block analysis_actions %}
-<button id="confirm-list-btn" class="analyze-button" style="margin-bottom:20px;">
-  CONFIRM & LIST
-</button>
-{% endblock %}
-
 {% block extra_style %}
 .readonly-field {
   background-color: #0f0f0f !important;
@@ -67,6 +61,7 @@ async function loadAnalysisById(analysisId) {
             }
 
             document.getElementById('analysis-section').style.display = 'block';
+            console.log(data.competitor_data);
             updateCompetitorData(data.competitor_data || '', data.competitor_count || 0);
         } else {
             alert(`Error: ${data.error}`);

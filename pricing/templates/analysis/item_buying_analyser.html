@@ -35,14 +35,13 @@
 {{ block.super }}
 
 .analysis-scroll-container {
-  max-height: 300px; /* Adjust this height as needed */
-  min-height: 150px;
+    height: 250px;         /* fixed visible height */
   overflow-y: auto;
-  resize: vertical; /* Allow user to resize */
   border: 1px solid #333;
   border-radius: 8px;
   padding: 20px;
   background-color: #0a0a0a;
+  resize: vertical;      /* user can manually resize */
 }
 
 .price-panels-container {
