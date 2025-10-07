@@ -352,6 +352,18 @@
   white-space: nowrap;
 }
 
+  .price-highlight {
+    color: #00e0ff; /* cyan for averages */
+  }
+
+  .price-range {
+    color: #ffaa00; /* amber for ranges */
+  }
+
+  .source-highlight {
+    color: #666666;
+  }
+
 
 /* === SCALE FIX === */
     html {
@@ -442,6 +454,13 @@
   <div class="competitor-panel">
     <div class="panel-title">COMPETITOR DATA</div>
 
+     <div id="source-averages-header"
+         style="color: #ffffff; font-weight: 600; font-size: 0.875rem; margin-bottom: 1rem; min-height: 1.2rem; text-transform: uppercase; letter-spacing: 0.03em;">
+        <!-- Source averages will appear here -->
+    </div>
+
+
+
     <div class="controls">
       <label for="sort-price">Sort by:</label>
       <select id="sort-price">
@@ -513,10 +532,7 @@
             RECOMMENDED PRICE: <span id="recommended-price">-</span>
         </div>
 
-        <div id="source-averages-header"
-             style="color: #ffffff; font-weight: 500; font-size: 1rem; white-space: nowrap;">
-            <!-- Source averages will appear here -->
-        </div>
+
     </div>
 
 
@@ -703,48 +719,66 @@ async function checkIrrelevantCompetitors(searchQuery) {
     const tbody = document.getElementById('competitor-tbody');
     const rows = [...tbody.querySelectorAll('tr')];
 
-    // Extract competitor titles AND store names from the table
     const competitorList = rows
-            .filter(row => row.cells.length >= 4)  // skip empty rows
-            .map(row => ({
-                title: row.cells[1].textContent.trim(),
-                store: row.cells[3].textContent.trim()
-            }));
+        .filter(row => row.cells.length >= 4)
+        .map(row => {
+            const priceText = row.cells[2].textContent.trim();
+            const hasPound = priceText.includes('£');
+            const numericPrice = hasPound
+                ? parseFloat(priceText.replace(/[^0-9.-]+/g, ""))
+                : null;
 
+            return {
+                title: row.cells[1].textContent.trim(),
+                store: row.cells[3].textContent.trim(),
+                price: numericPrice,
+                hasPoundSymbol: hasPound
+            };
+        });
 
     if (!competitorList.length) {
         console.log("No competitor listings found in table.");
         return;
     }
 
-    // Grab the item description
+    // 🟠 Frontend auto-mark invalid prices (missing £ symbol)
+    rows.forEach((row, i) => {
+        if (!competitorList[i].hasPoundSymbol) {
+            row.cells[4].textContent = "No £";
+            row.style.opacity = "0.3";
+        }
+    });
+
     const itemDescription = document.getElementById('description')
         ? document.getElementById('description').value.trim()
         : "";
 
-
-    // Send POST to your new backend view
     try {
+        // Only send competitors that have at least a £-style price
+        const filteredCompetitors = competitorList.filter(c => c.hasPoundSymbol);
+
         const response = await fetch("/detect_irrelevant_competitors/", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 search_query: searchQuery,
                 item_description: itemDescription,
-                competitor_list: competitorList
+                competitor_list: filteredCompetitors
             })
         });
 
         const result = await response.json();
         const irrelevantIndices = result.irrelevant_indices;
-        console.log(irrelevantIndices)
+        console.log("AI-flagged irrelevant:", irrelevantIndices);
 
+        // Match filtered list back to table rows
+        let validIndex = 0;
         rows.forEach((row, i) => {
-            if (row.cells.length >= 5) { // make sure the RELEVANT? column exists
-                const isRelevant = !irrelevantIndices.includes(i);
+            if (competitorList[i].hasPoundSymbol) {
+                const isRelevant = !irrelevantIndices.includes(validIndex);
                 row.cells[4].textContent = isRelevant ? "Yes" : "No";
-
                 row.style.opacity = isRelevant ? "1" : "0.3";
+                validIndex++;
             }
         });
 
@@ -776,21 +810,27 @@ function computeSourceAverages() {
     Object.keys(sourceData).forEach(source => {
         const prices = sourceData[source];
         const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
+        const min = Math.min(...prices);
+        const max = Math.max(...prices);
         sourceAverages[source] = {
             average: avg,
+            min: min,
+            max: max,
             count: prices.length
         };
     });
 
-    // Render below ANALYSIS COMPLETE
+    // Render at top of competitor panel
     const headerDiv = document.getElementById('source-averages-header');
     if (Object.keys(sourceAverages).length === 0) {
         headerDiv.textContent = '';
     } else {
-        const parts = Object.entries(sourceAverages).map(
-            ([source, data]) => `${source} (${data.count}) : £${data.average.toFixed(0)}`
-        );
-        headerDiv.textContent = `AVERAGES: ${parts.join(' | ')}`;
+        const parts = Object.entries(sourceAverages).map(([source, data]) => `
+            <span class="source-highlight">${source}</span>:
+            <span class="price-highlight">£${data.average.toFixed(0)}</span>
+            <span class="price-range">(£${data.min.toFixed(0)}–£${data.max.toFixed(0)})</span>
+        `);
+        headerDiv.innerHTML = parts.join(' &nbsp;|&nbsp; ');
     }
 
     console.log("Source averages (excluding irrelevant listings):", sourceAverages);

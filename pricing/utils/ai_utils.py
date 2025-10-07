@@ -16,10 +16,13 @@ def call_gemini_sync(prompt: str) -> str:
         # I want to reduce the temperature so the recommended prices are less random
         generation_config = GenerationConfig(
             temperature=0.0,  # Lower temperature -> more deterministic
-            max_output_tokens=1024  # Adjust as needed
+            max_output_tokens=8192  # Adjust as needed
         )
 
         response = model.generate_content(prompt, generation_config=generation_config)
+        token_count = model.count_tokens(prompt)
+        print(f"Input tokens: {token_count}")
+
         return response.text.strip() if response and response.text else "No response"
     except Exception as e:
         print("Gemini API error:", e)

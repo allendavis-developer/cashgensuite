@@ -522,19 +522,34 @@ def delete_global_rule(request, pk):
 @require_POST
 def detect_irrelevant_competitors(request):
     """
-    Accepts a search query and a list of competitor listings, 
-    returns indices of irrelevant listings.
+    Accepts a search query, description, and structured list of competitor listings.
+    Returns indices of irrelevant listings.
     """
     try:
         data = json.loads(request.body)
         search_query = (data.get("search_query") or "").strip()
-        competitor_list = data.get("competitor_list") or []  # list of strings
         item_description = (data.get("item_description") or "").strip()
+        competitor_list = data.get("competitor_list") or []  # list of dicts: [{title, store, price}]
 
         if not search_query or not competitor_list:
-            return JsonResponse({"success": False, "error": "Missing search_query or competitor_list"}, status=400)
+            return JsonResponse(
+                {"success": False, "error": "Missing search_query or competitor_list"},
+                status=400,
+            )
 
-        # Build prompt for Gemini
+        # 🟠 Auto-mark any competitors with missing/null price as irrelevant
+        irrelevant_indices = [
+            i for i, comp in enumerate(competitor_list)
+            if comp.get("price") in [None, "", "null"]
+        ]
+
+        # Build readable version for AI (only those with valid prices)
+        filtered_competitors = [
+            (i, comp)
+            for i, comp in enumerate(competitor_list)
+            if i not in irrelevant_indices
+        ]
+
         prompt_lines = [
             "You are filtering competitor listings for relevance.",
             f"The user searched for: \"{search_query}\"",
@@ -544,42 +559,54 @@ def detect_irrelevant_competitors(request):
             prompt_lines.append(f"Item description: \"{item_description}\"")
 
         prompt_lines.append("Here is the list of competitor listings with indices:")
-        for idx, title in enumerate(competitor_list):
-            prompt_lines.append(f"{idx}: {title}")
+        for idx, comp in filtered_competitors:
+            title = comp.get("title", "Unknown Title")
+            store = comp.get("store", "Unknown Store")
+            price = comp.get("price", "N/A")
+            prompt_lines.append(f"{idx}: {title} (Store: {store}, Price: £{price})")
 
         prompt_lines.append(
-            "Task: Identify which indices are NOT relevant to the search query and description.\n"
-            "- Relevant means: it is the same product of the product searched.\n"
-            "- Irrelevant means: wrong model, accessories, games, unrelated items, a variation (such as a Pro vs a Pro Max), or a different product condition (brand new vs used for several years).\n"
-            "- Do not include any reasoning, only the indices.\n"
-            "- Be lenient, do NOT determine the relevant listings as irrelevant.\n"
-            "- **IMPORTANT:** ALWAYS mark listings from the following stores as irrelevant, even if they appear fine: Cash Generator Warrington, Cash Generator Netherton, Cash Generator Wythenshawe.\n"
-            "- IMPORTANT: Ignore the description for judging relevance unless it contains clear model or variant information. Focus primarily on product title matching."
-            "- Respond ONLY with an array of integers, e.g., [0, 2, 5].\n"
-            "- If all listings are relevant, respond with an empty array [].\n"
-            "- STRICTLY FOLLOW ARRAY FORMAT, no trailing commas or extra spaces."
+            "\nTask: Return indices of listings that should be EXCLUDED.\n"
+            "\n✅ KEEP these (they ARE relevant):\n"
+            "- Exact model match with any storage size (e.g., 'Redmi 13C 64GB', 'Redmi 13C 128GB', 'Redmi 13C 256GB')\n"
+            "- Any color variation of the same model\n"
+            "- Any RAM variation (2GB, 4GB, 6GB, 8GB RAM)\n"
+            "- Both 'Redmi 13C' and 'Xiaomi Redmi 13C' (same product, different branding)\n"
+            "- Dual SIM versions\n"
+            "- Unlocked or carrier-locked versions\n"
+            "\n❌ EXCLUDE these (they are NOT relevant):\n"
+            "- Different model numbers (e.g., 'Redmi 12' when searching for 'Redmi 13C')\n"
+            "- Different model variants (e.g., 'Redmi 13C Pro' or 'Redmi 13' are NOT the same as 'Redmi 13C')\n"
+            "- Accessories ONLY (cases, chargers, screen protectors with no phone)\n"
+            "- Completely unrelated products\n"
+            "- Listings from: Cash Generator Warrington, Cash Generator Netherton, Cash Generator Wythenshawe\n"
+            "\n⚠️ IGNORE storage/RAM specifications when judging relevance - 128GB and 256GB versions of 'Redmi 13C' are BOTH relevant!\n"
+            "\nRespond with a JSON array of indices to EXCLUDE: [0, 2, 5] or [] if none should be excluded.\n"
+            "NO explanations. NO extra text. ONLY the JSON array."
         )
 
         prompt = "\n".join(prompt_lines)
 
-        print(prompt)
-
-        # Call Gemini
+        # 🧠 Call Gemini model
         ai_response = call_gemini_sync(prompt)
 
         # Attempt to parse JSON array from AI response
         try:
-            irrelevant_indices = json.loads(ai_response)
-            if not isinstance(irrelevant_indices, list):
-                irrelevant_indices = []
+            ai_irrelevant_indices = json.loads(ai_response)
+            if not isinstance(ai_irrelevant_indices, list):
+                ai_irrelevant_indices = []
         except Exception:
-            irrelevant_indices = []
-            print("Failed to parse irrelevant indices!")
+            ai_irrelevant_indices = []
+            print("⚠ Failed to parse irrelevant indices from AI response!")
+
+        # Combine AI-excluded + null-price indices (deduplicated + sorted)
+        final_irrelevant = sorted(set(irrelevant_indices + ai_irrelevant_indices))
 
         return JsonResponse({
             "success": True,
-            "irrelevant_indices": irrelevant_indices,
-            "raw_ai_response": ai_response
+            "irrelevant_indices": final_irrelevant,
+            "auto_flagged_null_prices": irrelevant_indices,
+            "raw_ai_response": ai_response,
         })
 
     except Exception as e:
@@ -658,7 +685,7 @@ def negotiation_step(request):
     """
     Professional AI-assisted negotiation step.
     Starts near MIN buying price, increments dynamically toward MAX,
-    continues assisting even after reaching max. AI generates context-aware persuasive talking points.
+    continues assisting even after reaching max. AI generates context-aware persuasive text.
     """
     try:
         data = json.loads(request.body)
@@ -688,11 +715,14 @@ def negotiation_step(request):
         # Determine next numeric offer
         at_maximum = False
         if not conversation_history:
+            # First offer → slightly above MIN for a professional feel
             next_offer = min(min_price + (max_price - min_price) * 0.1, customer_price)
         elif last_offer and last_offer >= max_price:
+            # Already at max - hold the line but continue assisting
             next_offer = max_price
             at_maximum = True
         else:
+            # Dynamic increment toward customer target
             last_offer = last_offer if last_offer else min_price
             distance_to_target = min(customer_price, max_price) - last_offer
             
@@ -700,11 +730,12 @@ def negotiation_step(request):
                 next_offer = max_price
                 at_maximum = True
             else:
-                increment = max(distance_to_target * 0.4, 2)
-                max_step = (max_price - min_price) * 0.3
+                increment = max(distance_to_target * 0.4, 2)  # move 40% of remaining distance, at least £2
+                max_step = (max_price - min_price) * 0.3       # cap at 30% of full range
                 increment = min(increment, max_step)
                 next_offer = min(last_offer + increment, max_price, customer_price)
                 
+                # Check if we've reached maximum
                 if next_offer >= max_price:
                     next_offer = max_price
                     at_maximum = True
@@ -724,48 +755,50 @@ def negotiation_step(request):
         else:
             negotiation_stage = f"You are moving from £{last_offer} to £{next_offer}. This is a {((next_offer - last_offer) / (max_price - min_price) * 100):.0f}% move within your range. Show you're negotiating in good faith."
 
-        # Updated prompt for bullet-point, in-person guidance with dynamic variation
         prompt = f"""
-You are a professional pawn shop buyer guiding an in-person negotiation. Generate **dynamic, context-aware bullet points**, not full scripted lines.
+You are a professional pawn shop buyer negotiating to buy a used item. Instead of writing full paragraphs, generate **clear, concise bullet-pointed talking points** for your next response.
 
 ITEM DETAILS:
 - Item: {item_name}
 - Description: {description}
-- Your intended resale price: £{suggested_price}
-- Your buying range: £{min_price} - £{max_price}
-- Customer wants: £{customer_price}
+- Intended resale price: £{suggested_price}
+- Buying range: £{min_price} - £{max_price}
+- Customer requested price: £{customer_price}
 
-CRITICAL CONTEXT - USE THIS IN YOUR RESPONSE:
-Selling Price Reasoning (why you'll sell for £{suggested_price}):
-{selling_reasoning}
-
-Buying Price Reasoning (why you're offering £{min_price}-£{max_price}):
-{buying_reasoning}
+CONTEXT:
+- Selling reasoning: {selling_reasoning}
+- Buying reasoning: {buying_reasoning}
+- Conversation history:
+{dialogue_context}
 
 NEGOTIATION STAGE:
 {negotiation_stage}
-
-CONVERSATION HISTORY:
-{dialogue_context}
-
-YOUR NEXT OFFER: £{next_offer}
+- Last assistant offer: £{last_offer if last_offer else 'N/A'}
+- Next offer: £{next_offer}
+- At maximum offer? {at_maximum}
 
 INSTRUCTIONS:
-1. Generate a list of 3-5 **bullet points** for the pawnbroker to guide the in-person negotiation:
-   - Each point should be persuasive, flexible, and context-aware.
-   - Reference the item details, buying/selling reasoning, and numeric offer.
-   - Reflect the current negotiation stage (opening, increment, or at maximum).
-   - Include multiple approaches: condition issues, market rate, resale potential, empathy, urgency, rapport.
-   - Vary the wording each time so it doesn’t always repeat “we can pay cash now.”
-2. If at maximum:
-   - Include firm but empathetic reasoning why the offer cannot go higher.
-   - Suggest options for closing the deal or politely stepping back.
-3. Suggest 3 realistic customer reactions to these bullet points.
+1. Write your response as **bullet points**, covering:
+   - Acknowledging the customer and their offer
+   - Your numeric offer (next_offer)
+   - Specific reasoning from selling/buying context
+   - Progress toward final agreement
+2. Suggest 3 realistic **customer reply options**, also in bullet points.
+3. Avoid paragraphs, generic phrases, or vague reasoning. Be precise, professional, and persuasive.
+4. Include your numeric offer clearly as a bullet point.
 
-OUTPUT FORMAT (JSON only, no markdown):
+OUTPUT FORMAT (JSON only):
 {{
-  "talking_points": ["Bullet 1", "Bullet 2", "Bullet 3"],
-  "customer_reply_options": ["Likely reply 1", "Likely reply 2", "Likely reply 3"]
+  "your_response": [
+      "Bullet point 1",
+      "Bullet point 2",
+      "Bullet point 3"
+  ],
+  "customer_reply_options": [
+      "Option 1",
+      "Option 2",
+      "Option 3"
+  ]
 }}
 """
 
@@ -789,7 +822,7 @@ OUTPUT FORMAT (JSON only, no markdown):
 
         if not parsed:
             parsed = {
-                "talking_points": [ai_response.strip()],
+                "your_response": ai_response.strip(),
                 "customer_reply_options": []
             }
 

@@ -14,7 +14,6 @@ def get_competitor_data(item_title: str, include_url: bool = True) -> str:
     for l in listings:
         price_str = f"£{l.price:.2f}" if l.price is not None else "N/A"
         store_str = l.store_name if l.store_name else "N/A"
-        print(store_str)
         if include_url:
             url_str = l.url if l.url else "#"
             lines.append(f"{l.competitor} | {l.title} | {price_str} | {store_str} | {url_str}")
