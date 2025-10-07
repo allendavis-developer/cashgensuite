@@ -7,7 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
 from pricing.models import InventoryItem, MarketItem, CompetitorListing, PriceAnalysis, Category, MarginRule, GlobalMarginRule
 
-import json
+import json, traceback, re
 
 from pricing.utils.ai_utils import call_gemini_sync, generate_price_analysis, generate_bulk_price_analysis
 from pricing.utils.competitor_utils import get_competitor_data
@@ -652,4 +652,160 @@ def buying_range_analysis(request):
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
+@csrf_exempt
+@require_POST
+def negotiation_step(request):
+    """
+    Professional AI-assisted negotiation step.
+    Starts near MIN buying price, increments dynamically toward MAX,
+    continues assisting even after reaching max. AI generates context-aware persuasive talking points.
+    """
+    try:
+        data = json.loads(request.body)
 
+        item_name = (data.get("item_name") or "").strip()
+        description = (data.get("description") or "").strip()
+        suggested_price = (data.get("suggested_price") or "").strip()
+        buying_range = data.get("buying_range") or {}  # {"min": 30, "max": 40}
+        selling_reasoning = (data.get("selling_reasoning") or "").strip()
+        buying_reasoning = (data.get("buying_reasoning") or "").strip()
+        customer_input = (data.get("customer_input") or "").strip()
+        conversation_history = data.get("conversation_history") or []
+
+        if not item_name or not suggested_price or not buying_range:
+            return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
+
+        min_price = float(buying_range.get("min", 0))
+        max_price = float(buying_range.get("max", 0))
+        customer_price = float(customer_input) if customer_input else max_price
+
+        # Determine last offer from conversation history
+        last_offer = None
+        if conversation_history:
+            last_offer = conversation_history[-1].get("assistant_offer")
+            last_offer = float(last_offer) if last_offer else None
+
+        # Determine next numeric offer
+        at_maximum = False
+        if not conversation_history:
+            next_offer = min(min_price + (max_price - min_price) * 0.1, customer_price)
+        elif last_offer and last_offer >= max_price:
+            next_offer = max_price
+            at_maximum = True
+        else:
+            last_offer = last_offer if last_offer else min_price
+            distance_to_target = min(customer_price, max_price) - last_offer
+            
+            if distance_to_target <= 0:
+                next_offer = max_price
+                at_maximum = True
+            else:
+                increment = max(distance_to_target * 0.4, 2)
+                max_step = (max_price - min_price) * 0.3
+                increment = min(increment, max_step)
+                next_offer = min(last_offer + increment, max_price, customer_price)
+                
+                if next_offer >= max_price:
+                    next_offer = max_price
+                    at_maximum = True
+
+        # Flatten conversation context for AI prompt
+        dialogue_context = "\n".join([
+            f"Customer: {turn.get('customer','')}\nYou: {turn.get('assistant','')} (offered: {turn.get('assistant_offer','')})"
+            for turn in conversation_history
+        ]) if conversation_history else "This is the opening of the negotiation."
+
+        # Build context-aware prompt
+        negotiation_stage = ""
+        if not conversation_history:
+            negotiation_stage = "This is your OPENING offer. Be friendly, acknowledge the item, and make a reasonable starting offer."
+        elif at_maximum:
+            negotiation_stage = f"You are at your MAXIMUM offer of £{max_price}. You CANNOT go higher. Be firm but empathetic. Explain why this is your best offer using the buying reasoning. Consider offering to finalize the deal or politely declining if the customer won't accept."
+        else:
+            negotiation_stage = f"You are moving from £{last_offer} to £{next_offer}. This is a {((next_offer - last_offer) / (max_price - min_price) * 100):.0f}% move within your range. Show you're negotiating in good faith."
+
+        # Updated prompt for bullet-point, in-person guidance with dynamic variation
+        prompt = f"""
+You are a professional pawn shop buyer guiding an in-person negotiation. Generate **dynamic, context-aware bullet points**, not full scripted lines.
+
+ITEM DETAILS:
+- Item: {item_name}
+- Description: {description}
+- Your intended resale price: £{suggested_price}
+- Your buying range: £{min_price} - £{max_price}
+- Customer wants: £{customer_price}
+
+CRITICAL CONTEXT - USE THIS IN YOUR RESPONSE:
+Selling Price Reasoning (why you'll sell for £{suggested_price}):
+{selling_reasoning}
+
+Buying Price Reasoning (why you're offering £{min_price}-£{max_price}):
+{buying_reasoning}
+
+NEGOTIATION STAGE:
+{negotiation_stage}
+
+CONVERSATION HISTORY:
+{dialogue_context}
+
+YOUR NEXT OFFER: £{next_offer}
+
+INSTRUCTIONS:
+1. Generate a list of 3-5 **bullet points** for the pawnbroker to guide the in-person negotiation:
+   - Each point should be persuasive, flexible, and context-aware.
+   - Reference the item details, buying/selling reasoning, and numeric offer.
+   - Reflect the current negotiation stage (opening, increment, or at maximum).
+   - Include multiple approaches: condition issues, market rate, resale potential, empathy, urgency, rapport.
+   - Vary the wording each time so it doesn’t always repeat “we can pay cash now.”
+2. If at maximum:
+   - Include firm but empathetic reasoning why the offer cannot go higher.
+   - Suggest options for closing the deal or politely stepping back.
+3. Suggest 3 realistic customer reactions to these bullet points.
+
+OUTPUT FORMAT (JSON only, no markdown):
+{{
+  "talking_points": ["Bullet 1", "Bullet 2", "Bullet 3"],
+  "customer_reply_options": ["Likely reply 1", "Likely reply 2", "Likely reply 3"]
+}}
+"""
+
+        try:
+            ai_response = call_gemini_sync(prompt)
+        except Exception as e:
+            traceback.print_exc()
+            return JsonResponse({"success": False, "error": f"AI call failed: {str(e)}"}, status=500)
+
+        # Safely parse AI JSON
+        parsed = None
+        try:
+            parsed = json.loads(ai_response)
+        except Exception:
+            json_match = re.search(r'\{.*\}', ai_response, re.DOTALL)
+            if json_match:
+                try:
+                    parsed = json.loads(json_match.group())
+                except Exception:
+                    parsed = None
+
+        if not parsed:
+            parsed = {
+                "talking_points": [ai_response.strip()],
+                "customer_reply_options": []
+            }
+
+        # Attach numeric offer and status for frontend
+        parsed["suggested_offer"] = f"£{next_offer:.2f}"
+        parsed["at_maximum"] = at_maximum
+        parsed["negotiation_progress"] = round((next_offer - min_price) / (max_price - min_price) * 100, 1) if max_price > min_price else 100
+
+        return JsonResponse({
+            "success": True,
+            "ai_response": parsed,
+            "raw_ai_response": ai_response,
+            "prompt": prompt,
+            "at_maximum": at_maximum
+        })
+
+    except Exception as e:
+        traceback.print_exc()
+        return JsonResponse({"success": False, "error": str(e)}, status=500)

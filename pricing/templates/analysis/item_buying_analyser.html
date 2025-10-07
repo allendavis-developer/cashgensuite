@@ -303,7 +303,6 @@
 .negotiation-line {
   font-size: 1rem;
   color: #f5f5f7;
-  font-style: italic;
   background: rgba(255, 255, 255, 0.05);
   padding: 0.75rem 1rem;
   border-radius: 10px;
@@ -507,8 +506,6 @@
               </div>
           </div>
       </div>
-
-
   </div>
 {% endblock %}
 
@@ -784,13 +781,102 @@ document.addEventListener("DOMContentLoaded", function() {
   const startBtn = document.getElementById("start-negotiation");
   const negotiationEngine = document.getElementById("negotiation-engine");
 
-  function startNegotiation() {
+  async function startNegotiation() {
     const value = targetInput.value.trim();
     if (value && !isNaN(value)) {
       negotiationEngine.classList.add("visible");
       startBtn.disabled = true;
       targetInput.disabled = true;
+      startBtn.textContent = "Generating offer…";
+      await fetchNegotiationStep();
       startBtn.textContent = "Negotiation Active";
+    }
+  }
+
+  async function fetchNegotiationStep(conversationHistory = []) {
+    const itemName = document.getElementById("item-name").value;
+    const description = document.getElementById("description").value;
+    const suggestedPrice = document.getElementById("recommended-price-display").textContent.replace('£','');
+    const buyingMin = parseFloat(document.getElementById("buying-price-min").textContent.replace('£',''));
+    const buyingMax = parseFloat(document.getElementById("buying-price-max").textContent.replace('£',''));
+    const customerInput = document.getElementById("customer-target").value;
+
+    if (!customerInput) return;
+
+    const payload = {
+        item_name: itemName,
+        description: description,
+        suggested_price: suggestedPrice,
+        buying_range: { min: buyingMin, max: buyingMax },
+        selling_reasoning: document.getElementById("reasoning-text-content").textContent,
+        buying_reasoning: document.getElementById("reasoning-buying-text").textContent,
+        customer_input: customerInput,
+        conversation_history: conversationHistory
+    };
+
+    try {
+        const response = await fetch("/api/negotiation-step/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken")
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            console.error(data.error);
+            return;
+        }
+
+        const ai = data.ai_response;
+
+        // Display AI's suggested offer and response
+        document.getElementById("next-offer").textContent = ai.suggested_offer || "£??";
+        document.getElementById("response-line").textContent = ai.your_response || "We can pay you cash right now...";
+
+        // Optional: Populate customer reply buttons
+        const optionsContainer = document.querySelector(".negotiation-options");
+        if (ai.customer_reply_options && optionsContainer) {
+            optionsContainer.innerHTML = ""; // clear old buttons
+            ai.customer_reply_options.forEach(reply => {
+                const btn = document.createElement("button");
+                btn.className = "negotiation-option";
+                btn.textContent = reply;
+                btn.addEventListener("click", () => {
+                    // add current step to conversation history
+                    conversationHistory.push({
+                        customer: reply,
+                        assistant: ai.your_response,
+                        assistant_offer: parseFloat(ai.suggested_offer.replace('£',''))
+                    });
+                    fetchNegotiationStep(conversationHistory);
+                });
+                optionsContainer.appendChild(btn);
+            });
+
+            // Optional: Add a "custom line" button if needed
+            const customBtn = document.createElement("button");
+            customBtn.className = "negotiation-option custom";
+            customBtn.textContent = "➕ Add Custom Line…";
+            customBtn.addEventListener("click", () => {
+                const customReply = prompt("Enter custom customer line:");
+                if (customReply) {
+                    conversationHistory.push({
+                        customer: customReply,
+                        assistant: ai.your_response,
+                        assistant_offer: parseFloat(ai.suggested_offer.replace('£',''))
+                    });
+                    fetchNegotiationStep(conversationHistory);
+                }
+            });
+            optionsContainer.appendChild(customBtn);
+        }
+
+    } catch (error) {
+        console.error("Error in fetchNegotiationStep:", error);
     }
   }
 
@@ -805,5 +891,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // Or click the button
   startBtn.addEventListener("click", startNegotiation);
 });
+
+
 
 {% endblock %}
