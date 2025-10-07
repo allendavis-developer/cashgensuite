@@ -212,6 +212,198 @@
 .reasoning {
   display: none;
 }
+
+/* ==============================
+   NEGOTIATION CONSOLE
+============================== */
+.negotiation-console {
+  margin-top: 2rem;
+  background: rgba(20, 20, 22, 0.95);
+  border: 1px solid #333;
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  color: #f5f5f7;
+  font-family: "Inter", system-ui, sans-serif;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.negotiation-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: #ccc;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.customer-target-section {
+  margin-bottom: 2rem;
+    text-align: center;
+}
+
+.customer-target-label {
+  display: block;
+  font-weight: 800;
+  font-size: 1.6rem; /* BIGGER text */
+  text-transform: uppercase; /* ALL CAPS */
+  color: #ffffff;
+  letter-spacing: 1px;
+  margin-bottom: 1rem;
+}
+
+.customer-target-input {
+  width: 160px; /* narrower input */
+  background: #0f0f0f;
+  border: 1px solid #444;
+  border-radius: 10px;
+  padding: 0.75rem;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.2s ease;
+  text-transform: uppercase; /* optional for visual consistency */
+}
+
+
+.customer-target-input:focus {
+  border-color: #4a9eff;
+  outline: none;
+  background: #111820;
+  box-shadow: 0 0 6px rgba(74, 158, 255, 0.4);
+}
+
+.negotiation-divider {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 1.5rem 0;
+}
+
+.negotiation-subtitle {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #ccc;
+  margin-bottom: 0.75rem;
+}
+
+.negotiation-offer {
+  font-size: 1.1rem;
+  color: #ddd;
+  margin-bottom: 0.5rem;
+}
+
+.offer-amount {
+  color: #4ade80;
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+.negotiation-line {
+  font-size: 1rem;
+  color: #f5f5f7;
+  font-style: italic;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  display: inline-block;
+  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.03);
+}
+
+.negotiation-hint {
+  color: #888;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.negotiation-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.negotiation-option {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  color: #f5f5f7;
+  width: 70%;
+  max-width: 420px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.negotiation-option:hover {
+  background: rgba(74, 158, 255, 0.15);
+  border-color: rgba(74, 158, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.negotiation-option.custom {
+  color: #ccc;
+  font-style: italic;
+}
+
+.negotiation-option.custom:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.customer-input-row {
+  display: flex;
+  flex-direction: column; /* stack input + button vertically */
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+/* BUTTON BELOW INPUT */
+.start-negotiation-btn {
+  background: #4ade80; /* your green tone */
+  color: #fff;
+  font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  padding: 0.9rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: fit-content;
+}
+
+.start-negotiation-btn:hover {
+  background: #3acb70;
+  transform: translateY(-1px);
+}
+
+.start-negotiation-btn:active {
+  background: #34b364;
+  transform: translateY(0);
+}
+
+/* Hide the negotiation engine initially */
+.negotiation-engine {
+  display: none;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.4s ease;
+}
+
+/* Show when activated */
+.negotiation-engine.visible {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+
 {% endblock %}
 
 {% block buying_price_panel %}
@@ -263,8 +455,61 @@
         </div>
       </div>
     </div>
+
+      <!-- 🧩 NEGOTIATION CONSOLE -->
+      <div class="negotiation-console">
+          <h2 class="negotiation-title">Negotiation Console</h2>
+
+          <!-- Customer target input -->
+          <div class="customer-target-section">
+              <label for="customer-target" class="customer-target-label">
+                  What price is the customer looking for today?
+              </label>
+              <div class="customer-input-row">
+                  <input
+                          type="number"
+                          id="customer-target"
+                          class="customer-target-input"
+                          placeholder="Enter amount (e.g. 90)"
+                          min="0"
+                  />
+                  <button id="start-negotiation" class="start-negotiation-btn">Start Negotiation</button>
+              </div>
+          </div>
+
+          <!-- Hidden negotiation engine -->
+          <div id="negotiation-engine" class="negotiation-engine">
+              <hr class="negotiation-divider"/>
+
+              <div class="negotiation-response">
+                  <h3 class="negotiation-subtitle">YOUR RESPONSE</h3>
+                  <p class="negotiation-offer">
+                      Offer <span id="next-offer" class="offer-amount">£70</span> and say —
+                  </p>
+                  <p class="negotiation-line" id="response-line">
+                      “We can pay you cash right now — no waiting, no fees.”
+                  </p>
+              </div>
+
+              <hr class="negotiation-divider"/>
+
+              <div class="negotiation-customer">
+                  <h3 class="negotiation-subtitle">CUSTOMER SAID</h3>
+                  <p class="negotiation-hint">(select what the customer just said)</p>
+
+                  <div class="negotiation-options">
+                      <button class="negotiation-option">“No, that’s too low.”</button>
+                      <button class="negotiation-option">“CEX offered me £100.”</button>
+                      <button class="negotiation-option">“Another shop offered more for this model.”</button>
+                      <button class="negotiation-option">“I was expecting at least £90.”</button>
+                      <button class="negotiation-option custom">➕ Add Custom Line…</button>
+                  </div>
+              </div>
+          </div>
+      </div>
+
+
   </div>
-</div>
 {% endblock %}
 
 {% block modals %}
@@ -533,4 +778,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 500);
     }
 });
+
+document.addEventListener("DOMContentLoaded", function() {
+  const targetInput = document.getElementById("customer-target");
+  const startBtn = document.getElementById("start-negotiation");
+  const negotiationEngine = document.getElementById("negotiation-engine");
+
+  function startNegotiation() {
+    const value = targetInput.value.trim();
+    if (value && !isNaN(value)) {
+      negotiationEngine.classList.add("visible");
+      startBtn.disabled = true;
+      targetInput.disabled = true;
+      startBtn.textContent = "Negotiation Active";
+    }
+  }
+
+  // Press Enter to start
+  targetInput.addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      startNegotiation();
+    }
+  });
+
+  // Or click the button
+  startBtn.addEventListener("click", startNegotiation);
+});
+
 {% endblock %}
