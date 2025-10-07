@@ -38,12 +38,15 @@ def generate_search_term(request):
         - Description: {description}
 
         Output only the ideal search term (2–8 words). 
+        Add spaces between the model name and the version. Example: Fold4 is a bad search term, Fold 4 is a good search term.
+        Do not be specific, be general. Don't include details that filter our searches too much. The name of the item will be good.
         Do not include commentary or punctuation.
         """
 
         # 🔮 Call Gemini synchronously
         search_term = call_gemini_sync(prompt)
-
+        search_term = normalize_search_term(search_term)
+        print(search_term)
         return JsonResponse({
             "success": True,
             "search_term": search_term,
@@ -53,6 +56,12 @@ def generate_search_term(request):
         import traceback
         traceback.print_exc()
         return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+def normalize_search_term(term):
+    # Insert a space between letters and numbers when missing (e.g. Fold4 → Fold 4)
+    term = re.sub(r'(?<=\D)(?=\d)', ' ', term)
+    term = re.sub(r'\s+', ' ', term).strip()
+    return term
 
 
 def get_prefilled_data(request):
@@ -564,26 +573,20 @@ def detect_irrelevant_competitors(request):
             store = comp.get("store", "Unknown Store")
             price = comp.get("price", "N/A")
             prompt_lines.append(f"{idx}: {title} (Store: {store}, Price: £{price})")
-
+        
         prompt_lines.append(
-            "\nTask: Return indices of listings that should be EXCLUDED.\n"
-            "\n✅ KEEP these (they ARE relevant):\n"
-            "- Exact model match with any storage size (e.g., 'Redmi 13C 64GB', 'Redmi 13C 128GB', 'Redmi 13C 256GB')\n"
-            "- Any color variation of the same model\n"
-            "- Any RAM variation (2GB, 4GB, 6GB, 8GB RAM)\n"
-            "- Both 'Redmi 13C' and 'Xiaomi Redmi 13C' (same product, different branding)\n"
-            "- Dual SIM versions\n"
-            "- Unlocked or carrier-locked versions\n"
-            "\n❌ EXCLUDE these (they are NOT relevant):\n"
-            "- Different model numbers (e.g., 'Redmi 12' when searching for 'Redmi 13C')\n"
-            "- Different model variants (e.g., 'Redmi 13C Pro' or 'Redmi 13' are NOT the same as 'Redmi 13C')\n"
-            "- Accessories ONLY (cases, chargers, screen protectors with no phone)\n"
-            "- Completely unrelated products\n"
-            "- Listings from: Cash Generator Warrington, Cash Generator Netherton, Cash Generator Wythenshawe\n"
-            "\n⚠️ IGNORE storage/RAM specifications when judging relevance - 128GB and 256GB versions of 'Redmi 13C' are BOTH relevant!\n"
-            "\nRespond with a JSON array of indices to EXCLUDE: [0, 2, 5] or [] if none should be excluded.\n"
-            "NO explanations. NO extra text. ONLY the JSON array."
+            "Task: Identify which indices are NOT relevant to the search query and description.\n"
+            "- Relevant means: it is the same product of the product searched.\n"
+            "- Irrelevant means: wrong model, accessories, games, unrelated items, a variation (such as a Pro vs a Pro Max), or a different product condition (brand new vs used for several years).\n"
+            "- Do not include any reasoning, only the indices.\n"
+            "- Be lenient, do NOT determine the relevant listings as irrelevant.\n"
+            "- **IMPORTANT:** ALWAYS mark listings from the following stores as irrelevant, even if they appear fine: Cash Generator Warrington, Cash Generator Netherton, Cash Generator Wythenshawe.\n"
+            "- IMPORTANT: Ignore the description for judging relevance unless it contains clear model or variant information. Focus primarily on product title matching."
+            "- Respond ONLY with an array of integers, e.g., [0, 2, 5].\n"
+            "- If all listings are relevant, respond with an empty array [].\n"
+            "- STRICTLY FOLLOW ARRAY FORMAT, no trailing commas or extra spaces."
         )
+
 
         prompt = "\n".join(prompt_lines)
 

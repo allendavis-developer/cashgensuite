@@ -20,9 +20,6 @@ def call_gemini_sync(prompt: str) -> str:
         )
 
         response = model.generate_content(prompt, generation_config=generation_config)
-        token_count = model.count_tokens(prompt)
-        print(f"Input tokens: {token_count}")
-
         return response.text.strip() if response and response.text else "No response"
     except Exception as e:
         print("Gemini API error:", e)
@@ -35,11 +32,15 @@ def build_bulk_price_analysis_prompt(
     competitor_data: str,
     cost_price: str = "",
     urgency: int = 3,
-    cex_discount_percent: int = 20  # configurable (20% default)
+    cex_discount_percent: int = 20,
+    min_margin_percent: float = 37.5
 ) -> str:
     """
-    Constructs a specialized prompt for Gemini AI for bulk website listings.
+    Constructs a specialized prompt for Gemini AI for bulk website listings on CashGenerator.
     Pricing logic:
+      - Use Cash Converters listings as a reference to identify price clusters
+      - Aim to be at the **top of the CashGenerator website listings** (i.e., lowest visible price)
+      - Never price below a minimum margin (37.5% default)
       - CG price ≈ CeX price minus X% (default 20%)
       - Round final price up to nearest multiple of 2
       - If eBay sold price > (CeX minus X%), use eBay price instead
@@ -57,7 +58,7 @@ def build_bulk_price_analysis_prompt(
     urgency_text = urgency_context.get(urgency, urgency_context[3])
 
     prompt = f"""
-You are a retail pricing assistant for **CashGenerators' website listings**.
+You are a retail pricing assistant for **CashGenerator website listings**.
 
 Your job is to recommend a **final selling price** based on the given data.
 
@@ -69,48 +70,35 @@ Your job is to recommend a **final selling price** based on the given data.
 - Sale Urgency: {urgency}/5 ({urgency_text})
 
 ---
-COMPETITOR DATA:
+COMPETITOR DATA (CeX, eBay, Cash Converters, etc.):
 {competitor_data}
 
 ---
 
-PRICING RULES (CG WEBSITE):
+PRICING RULES (CASHGENERATOR WEBSITE):
 
-1. **CeX Benchmark Rule:**  
-   - Start from the CeX selling price (if available).  
-   - CG website price should be **{cex_discount_percent}% below CeX’s selling price**.  
-   - Example: if CeX = £630 and rule = 20%, CG target = £504.
-   - If it is not clear what condition the item is in, assume it is B.
-   
-2. **Rounding Rule:**  
-   - Round the final price **up** to the nearest multiple of 2.  
-   - Example: £503 → £504, £537 → £538.
+1. **Top-of-Website Positioning:**  
+   - Your goal is to price the item so it appears at the **top of the CashGenerator website listings**, meaning **the lowest visible price**.
+   - Ensure your price is lower than the lowest price in CashGenerator.  
+   - Use **Cash Converters listings only as a reference** to identify price clusters. **We are not listing items on Cash Converters.**  
+   - Aim to place the CashGenerator price **slightly below the main cluster average** using **meaningful psychological steps** (e.g., if cluster ≈ £89.99, consider £79.99–£84.99) to stand out.  
+   - **Do NOT price below a minimum margin of {min_margin_percent}%**, even if cluster positioning suggests a lower price.
 
-3. **eBay Comparison Rule:**  
-   - If the average of **completed eBay sold listings** is higher than (CeX minus {cex_discount_percent}%),  
-     then **use the eBay average** instead.
+2. **Desirability Override:**  
+   - Highly desirable or high-turnover items (e.g., Nintendo Switch 2, PS5, iPhone 17, flagship Samsung or Pixel phones)  
+     may be priced **closer to CeX or eBay** rather than applying the full discount.
 
-4. **Desirability Override:**  
-   - Highly desirable or high-turnover items (e.g., Nintendo Switch 2, PS5, iPhone 17, new Samsung or Pixel phones)  
-     should **not** be reduced by the full {cex_discount_percent}% — price them closer to CeX or eBay.
-
-5. **Profit Awareness:**  
-   - If a cost price is provided, calculate the gross margin percentage  
-     = (selling price − cost price) / selling price × 100,  
-     and mention it in reasoning.
-
-6. **Urgency Effect:**  
-   - Higher urgency → lean toward lower, faster-selling prices.  
-   - Lower urgency → prioritize margin and profitability.
+3. **Urgency Effect:**  
+   - Higher urgency → lower, faster-selling price.  
+   - Lower urgency → prioritize margin while still aiming for top-of-website placement.
 
 ---
 
 YOUR TASK:
-- Use the above logic and competitor data to pick the best final selling price for CG Website.  
-- Keep reasoning short (≤100 words), matter-of-fact, and professional.  
-- Quote key competitor prices to justify your reasoning.  
+- Recommend the **final CashGenerator website price** to achieve **top-of-website visibility** while satisfying minimum margin.  
+- Keep reasoning concise (≤100 words), professional, and cite competitor prices where relevant.  
 - Do **not** invent unknown model specs.  
-- If data is missing (e.g., no CeX or no eBay sold listings), mention it briefly.
+- If data is missing (e.g., no CeX, no eBay, limited Cash Converters listings), mention it briefly.
 
 ---
 OUTPUT FORMAT:
@@ -122,6 +110,7 @@ Example: FINAL:£502
     """.strip()
 
     return prompt
+
 
 def build_price_analysis_prompt(
     item_name: str,
@@ -158,7 +147,6 @@ Your task is to suggest an ideal selling price for listing this item on the **CG
 - Market Item: {market_item_title or "N/A"}
 - Description: {description or "N/A"}
 - Sale Urgency: {urgency}/5 → {urgency_text}
-- Cost Price: {cost_price or "Not provided"}
 
 ---
 
