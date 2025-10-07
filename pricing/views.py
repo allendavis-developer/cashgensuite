@@ -9,7 +9,7 @@ from pricing.models import InventoryItem, MarketItem, CompetitorListing, PriceAn
 
 import json
 
-from pricing.utils.ai_utils import call_gemini_sync, generate_price_analysis
+from pricing.utils.ai_utils import call_gemini_sync, generate_price_analysis, generate_bulk_price_analysis
 from pricing.utils.competitor_utils import get_competitor_data
 from pricing.utils.analysis_utils import process_item_analysis, save_analysis_to_db
 
@@ -265,7 +265,7 @@ def bulk_analyse_items(request):
             competitor_data_for_ai = get_competitor_data(item_name, include_url=False)
             competitor_data_for_frontend = get_competitor_data(item_name, include_url=True)
 
-            ai_response, reasoning, suggested_price = generate_price_analysis(
+            ai_response, reasoning, suggested_price = generate_bulk_price_analysis(
                 item_name, description, competitor_data_for_ai, cost_price, urgency
             )
 
