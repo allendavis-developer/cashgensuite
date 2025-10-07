@@ -2,39 +2,16 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.db.models import Q, Prefetch
-from django.utils import timezone
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
 from pricing.models import InventoryItem, MarketItem, CompetitorListing, PriceAnalysis, Category, MarginRule, GlobalMarginRule
-from datetime import datetime
 
-import google.generativeai as genai
-from google.generativeai import GenerationConfig
-import os, requests, json, re, subprocess
+import json
 
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-GEMINI_MODEL = "gemini-2.5-flash-lite"
-
-def call_gemini_sync(prompt: str) -> str:
-    """
-    Call Google Gemini 2.5 Flash Lite (synchronous) with a simple prompt string.
-    Returns plain text response, or error message if failed.
-    """
-    try:
-        model = genai.GenerativeModel(GEMINI_MODEL)
-
-        # I want to reduce the temperature so the recommended prices are less random
-        generation_config = GenerationConfig(
-            temperature=0.0,  # Lower temperature -> more deterministic
-            max_output_tokens=1024  # Adjust as needed
-        )
-
-        response = model.generate_content(prompt, generation_config=generation_config)
-        return response.text.strip() if response and response.text else "No response"
-    except Exception as e:
-        print("Gemini API error:", e)
-        return "Sorry, I couldn't get a response from Gemini."
+from pricing.utils.ai_utils import call_gemini_sync, generate_price_analysis
+from pricing.utils.competitor_utils import get_competitor_data
+from pricing.utils.analysis_utils import process_item_analysis, save_analysis_to_db
 
 @csrf_exempt
 def generate_search_term(request):
@@ -78,99 +55,6 @@ def generate_search_term(request):
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
-def build_price_analysis_prompt(
-        item_name: str,
-        description: str,
-        competitor_data: str,
-        cost_price: str = "",
-        market_item_title: str = "",
-        urgency: int = 3  # Add this parameter with default value
-) -> str:
-    """
-    Constructs the prompt for Gemini AI to suggest an ideal selling price.
-    urgency: 1 (no rush) to 5 (urgent/quick sale needed)
-    """
-
-    urgency_context = {
-        1: "No rush to sell - prioritize maximum profit",
-        2: "Standard timeline - balance profit and sellability",
-        3: "Moderate urgency - prefer faster turnover",
-        4: "High urgency - prioritize quick sale",
-        5: "Very urgent - must sell quickly, price aggressively"
-    }
-
-    urgency_text = urgency_context.get(urgency, urgency_context[3])
-
-    prompt = (
-        f"Item Title: {item_name}\n"
-        f"Market Item: {market_item_title}\n"
-        f"Description: {description}\n\n"
-        f"Sale Urgency: {urgency}/5 - {urgency_text}\n\n"  # Add this line
-        f"Competitor Listings:\n{competitor_data}\n\n"
-         "Pricing Rules:\n"
-        "CG (CashGenerators) is a pawn shop in a similar vein to CashConverters."
-        "Based on the competitor prices, item details, and sale urgency, suggest an ideal selling price for listing on the CG Website. "
-        "Be concise, professional and matter-of-fact. "
-        "Do not split your reasoning into sections. Have it as one paragraph."
-        "ALWAYS quote competitor data (with the competitor name, store location) to justify reasoning. "
-        "Prioritise CashGenerator listings over other listings. "
-        "Please ignore data from stores which have no listings that match the exact model and do not mention them in your reasonings."
-        "Consider the desirability of the item (how much people want it) and the "
-        "sellability of the item (how easy it is to sell to a general population). "
-        # Add urgency guidance
-        "IMPORTANT: Factor in the sale urgency level when suggesting price. "
-        "Higher urgency (4-5) should result in more competitive/lower prices for faster turnover. "
-        "Lower urgency (1-2) allows for higher profit margins. "
-        "For example, the newest Mac laptop is very desirable, but due to its price, not very "
-        "sellable, although there will be a niche that will buy it. "
-        "Do not hallucinate product descriptions that aren't there. As of now, you only have the item name"
-        "Mention details that make it hard for you to suggest a price. For example, not knowing the storage capacity of whatever item you're trying to suggest " \
-        "a price for, or not knowing what version of the item it is."
-        f"ALWAYS mention this cost price in your answer if it isn't empty: {cost_price}\n\n"
-        "ALWAYS end the message with FINAL:£SUGGESTED_PRICE where SUGGESTED_PRICE is the final price."
-        "If given a cost price, calculate the margin AS A PERCENTAGE (show your working) with your suggested price and the cost price and mention it."
-    )
-
-    return prompt
-
-
-def get_competitor_data(item_title: str, include_url: bool = True) -> str:
-    """
-    Return a newline-separated string of competitor lines:
-    "Competitor | Listing Title | £price | Store Name"
-    If include_url=True, append the URL at the end.
-    """
-    if not item_title:
-        return ""
-
-    listings = CompetitorListing.objects.filter(market_item__title__icontains=item_title)
-    lines = []
-    for l in listings:
-        price_str = f"£{l.price:.2f}" if l.price is not None else "N/A"
-        store_str = l.store_name if l.store_name else "N/A"
-        print(store_str)
-        if include_url:
-            url_str = l.url if l.url else "#"
-            lines.append(f"{l.competitor} | {l.title} | {price_str} | {store_str} | {url_str}")
-        else:
-            lines.append(f"{l.competitor} | {l.title} | {price_str} | {store_str}")
-    return "\n".join(lines)
-
-
-def split_reasoning_and_price(ai_response: str):
-    """
-    Splits AI response into reasoning and FINAL:£<price>.
-    If not found, returns (ai_response, "N/A")
-    """
-    decimal_price=None
-    match = re.search(r"(.*)FINAL:\s*£\s*(\d+(?:\.\d+)?)", ai_response, re.DOTALL)
-    if match:
-        reasoning = match.group(1).strip()
-        price = f"£{match.group(2)}"
-        return reasoning, price
-    return ai_response.strip(), "N/A"
-
-
 def get_prefilled_data(request):
     """Extract prefilled data from request parameters"""
     return {
@@ -188,153 +72,6 @@ def handle_item_analysis_request(request):
         return process_item_analysis(data)
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)}, status=500)
-
-
-def process_item_analysis(data):
-    """Main processing logic for item analysis that can be reused across screens"""
-    # Extract and clean data
-    item_name = (data.get("item_name") or "").strip()
-    description = (data.get("description") or "").strip()
-    urgency = int(data.get("urgency", 3))  # Add this line, default to 3
-
-    # Check if frontend already sent local scrape data
-    local_scrape_data = data.get("local_scrape_data")
-    from pricing.models import MarketItem, CompetitorListing
-
-    if local_scrape_data:
-        print("Using local scraper data from browser")
-
-        # Update DB directly from local_scrape_data
-        if isinstance(local_scrape_data, list):
-
-            # Get or create the MarketItem
-            market_item, _ = MarketItem.objects.get_or_create(
-                title__iexact=item_name, defaults={"title": item_name}
-            )
-
-             # OPTIMIZED: Bulk operations instead of loop
-            # First, delete existing listings for this market_item to avoid duplicates
-            CompetitorListing.objects.filter(market_item=market_item).delete()
-
-            # Prepare all listings for bulk creation
-            listings_to_create = []
-            for entry in local_scrape_data:
-                listings_to_create.append(
-                    CompetitorListing(
-                        market_item=market_item,
-                        competitor=entry.get("competitor", "Unknown"),
-                        title=entry.get("title", "Untitled"),
-                        price=entry.get("price", 0.0),
-                        store_name=entry.get("store") or "N/A",
-                        url=entry.get("url", "#")
-                    )
-                )
-
-            # Single database hit for all listings
-            CompetitorListing.objects.bulk_create(listings_to_create, ignore_conflicts=True)
-
-            competitor_data_for_ai = get_competitor_data(item_name, False)
-            competitor_data_for_frontend = get_competitor_data(item_name, True)
-
-
-    # Generate AI analysis
-    ai_response, reasoning, suggested_price = generate_price_analysis(
-        item_name, description, competitor_data_for_ai, urgency  # Add urgency parameter
-    )
-
-    # Remove any existing PriceAnalysis for this InventoryItem
-    inventory_item, _ = InventoryItem.objects.get_or_create(title=item_name)
-    PriceAnalysis.objects.filter(item=inventory_item).delete()
-
-    # Save analysis to database
-    analysis_result = save_analysis_to_db(
-        item_name, description, reasoning, suggested_price, competitor_data_for_frontend
-    )
-
-    # Prepare response
-    return JsonResponse({
-        "success": True,
-        "suggested_price": suggested_price,
-        "reasoning": reasoning,
-        "full_response": ai_response,
-        "submitted_data": {"item_name": item_name, "description": description},
-        "competitor_data": competitor_data_for_frontend,
-        "competitor_count": analysis_result["competitor_count"],
-        "analysis_id": analysis_result["analysis_id"]  # Useful for other screens
-    })
-
-
-
-def generate_price_analysis(item_name, description, competitor_data, cost_price="", urgency=3):
-    """Generate AI analysis for pricing"""
-    prompt = build_price_analysis_prompt(
-        item_name=item_name,
-        description=description,
-        competitor_data=competitor_data,
-        cost_price=cost_price,
-        urgency=urgency,
-    )
-
-    ai_response = call_gemini_sync(prompt)
-    reasoning, suggested_price = split_reasoning_and_price(ai_response)
-
-    return ai_response, reasoning, suggested_price
-
-
-def save_analysis_to_db(item_name, description, reasoning, suggested_price, competitor_data):
-    """Save analysis results to database"""
-    # Parse price from AI response
-    decimal_price = parse_price_from_response(suggested_price)
-    
-    # Get or create inventory item
-    inventory_item, _ = InventoryItem.objects.get_or_create(
-        title=item_name,
-        defaults={"description": description}
-    )
-    
-    # Calculate competitor count
-    competitor_count = calculate_competitor_count(competitor_data)
-    
-    # Save analysis
-    analysis, created = PriceAnalysis.objects.update_or_create(
-        item=inventory_item,
-        defaults={
-            "reasoning": reasoning,
-            "suggested_price": decimal_price,
-            "confidence": calculate_confidence(competitor_count),
-            "created_at": timezone.now()
-        }
-    )
-    
-    return {
-        "competitor_count": competitor_count,
-        "analysis_id": analysis.id
-    }
-
-
-def parse_price_from_response(price_response):
-    """Extract decimal price from AI response"""
-    match = re.search(r"(.*)FINAL:\s*£\s*(\d+(?:\.\d+)?)", price_response, re.DOTALL)
-    if match:
-        price_str = match.group(2)
-        return float(price_str)
-    # Fallback: try to extract any number if the pattern doesn't match
-    match_fallback = re.search(r"£?\s*(\d+(?:\.\d+)?)", price_response)
-    if match_fallback:
-        return float(match_fallback.group(1))
-    return 0.0  # Default fallback
-
-
-def calculate_competitor_count(competitor_data):
-    """Calculate number of competitors from competitor data"""
-    if not competitor_data.strip():
-        return 0
-    return len(competitor_data.strip().split("\n"))
-
-
-def calculate_confidence(competitor_count):
-    """Calculate confidence score based on competitor count"""
-    return min(100, competitor_count * 15)
 
 
 @require_GET
@@ -429,17 +166,6 @@ def unlink_inventory_from_marketitem(request):
     except Exception as e:
         import traceback; traceback.print_exc()
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-
-
-def scrape_all_competitors(item_name: str):
-    """
-    Run the scraper for all configured competitors and save results to DB.
-    """
-    try:
-        print(f"Scraping all competitors for '{item_name}'...")
-    except Exception as e:
-        print(f"⚠️ Scraper failed for {item_name}: {e}")
 
 
 @csrf_exempt
@@ -633,8 +359,7 @@ def inventory_free_stock_view(request):
     return render(request, "deprecated/inventory_free_stock.html", {"inventory_items": inventory_items})
 
 
-# --------------------- END HOME PAGE VIEWS -------------------------------------
-
+# -------------------  RULES PAGE VIEWS ---------------------------------------
 def category_list(request):
     categories = Category.objects.all()
     global_rules = GlobalMarginRule.objects.all()
@@ -790,6 +515,7 @@ def delete_global_rule(request, pk):
         return redirect("category_list")
 
     return render(request, "rules/delete_global_rule_confirm.html", {"rule": rule})
+
 
 
 @csrf_exempt
