@@ -389,6 +389,62 @@
       font-size: 1rem;
     }
 
+    /* === Scrollable Analysis Container === */
+  .resize-handle {
+    height: 16px;
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    cursor: ns-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+  }
+
+  .resize-handle:hover {
+    background-color: #222;
+  }
+
+  .resize-handle:active {
+    background-color: #2a2a2a;
+  }
+
+  .resize-grip {
+    width: 40px;
+    height: 4px;
+    background-color: #444;
+    border-radius: 2px;
+    position: relative;
+  }
+
+  .resize-grip::before,
+  .resize-grip::after {
+    content: '';
+    position: absolute;
+    width: 40px;
+    height: 4px;
+    background-color: #444;
+    border-radius: 2px;
+  }
+
+  .resize-grip::before { top: -6px; }
+  .resize-grip::after { top: 6px; }
+
+  .analysis-scroll-container {
+    height: 30vh;
+    min-height: 200px;
+    max-height: 80vh;
+    overflow-y: auto;
+    border: 1px solid #333;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 20px;
+    background-color: #0a0a0a;
+  }
+    
+
   {% block extra_style %}{% endblock %}
 </style>
 </head>
@@ -520,7 +576,13 @@
   </div>
 </div>
 
-<div class="analysis-section" id="analysis-section" style="display: none;">
+<!-- === Resize Handle === -->
+<div class="resize-handle">
+  <div class="resize-grip"></div>
+</div>
+
+
+<div class="analysis-section analysis-scroll-container" id="analysis-section" style="display: none;">
     <div class="analysis-header">
         <div class="analysis-status">{% block analysis_status %}⚡ ANALYSIS COMPLETE{% endblock %}</div>
         <div class="analysis-time" id="analysis-time">{% block analysis_time %}just now{% endblock %}</div>
@@ -835,6 +897,48 @@ function computeSourceAverages() {
 
     console.log("Source averages (excluding irrelevant listings):", sourceAverages);
 }
+
+// === Scroll Container Resizing Logic ===
+document.addEventListener('DOMContentLoaded', function() {
+  const resizeHandle = document.querySelector('.resize-handle');
+  const container = document.querySelector('.analysis-scroll-container');
+
+  if (!resizeHandle || !container) return;
+
+  let isResizing = false;
+  let startY = 0;
+  let startHeight = 0;
+
+  resizeHandle.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startY = e.clientY;
+    startHeight = container.offsetHeight;
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const deltaY = e.clientY - startY;
+    const newHeight = startHeight - deltaY; // Drag up increases height
+    const minHeight = 200;
+    const maxHeight = window.innerHeight * 0.8;
+
+    if (newHeight >= minHeight && newHeight <= maxHeight) {
+      container.style.height = newHeight + 'px';
+    }
+  });
+
+  document.addEventListener('mouseup', function() {
+    if (isResizing) {
+      isResizing = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+  });
+});
+
 
 {% block extra_script %}{% endblock %}
 

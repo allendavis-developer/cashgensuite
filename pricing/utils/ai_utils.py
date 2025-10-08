@@ -81,9 +81,15 @@ PRICING RULES (CASHGENERATOR WEBSITE):
    - Your goal is to price the item so it appears at the **top of the CashGenerator website listings**, meaning **the lowest visible price**.
    - Ensure your price is lower than the lowest price in CashGenerator.  
    - Use **Cash Converters listings only as a reference** to identify price clusters. **We are not listing items on Cash Converters.**  
-   - Aim to place the CashGenerator price **slightly below the main cluster average** using **meaningful psychological steps** (e.g., if cluster ≈ £89.99, consider £79.99–£84.99) to stand out.  
+   - Aim to place the CashGenerator price **slightly below the main cluster average** using **meaningful psychological steps** (e.g., if cluster ≈ £89.99, consider £87.99–£88.49) to stand out.  
    - **Do NOT price below a minimum margin of {min_margin_percent}%**, even if cluster positioning suggests a lower price.
 
+1.5. **Market Sanity Check**:
+    - After identifying the lowest possible CashGenerator price that still meets the minimum {min_margin_percent}% margin, perform a sanity check against Cash Converters.
+    - If the CashGenerator price you come up with is more than ~20% above the lowest priced cluster of Cash Converters listings, re-evaluate and consider lowering within margin tolerance to remain competitive.
+    - Never undercut below cost or the {min_margin_percent}% margin, even if competitors are lower.
+    - Mention in reasoning if the CashGenerator market is overpriced compared to Cash Converters. Mention the 
+   
 2. **Desirability Override:**  
    - Highly desirable or high-turnover items (e.g., Nintendo Switch 2, PS5, iPhone 17, flagship Samsung or Pixel phones)  
      may be priced **closer to CeX or eBay** rather than applying the full discount.
