@@ -443,6 +443,39 @@
     padding: 20px;
     background-color: #0a0a0a;
   }
+
+  .relevance-select {
+    background-color: transparent;
+    border: 1px solid #333333;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8125rem;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    border-radius: 0.25rem;
+    width: 100%;
+  }
+
+  .relevance-select:focus {
+    outline: none;
+    border-color: #555555;
+    background-color: #1a1a1a;
+  }
+
+  .relevance-select option {
+    background-color: #1a1a1a;
+    color: #ffffff;
+  }
+
+  /* Visual feedback for relevance state */
+  tr[data-relevant="No"] {
+    opacity: 0.3;
+  }
+
+  tr[data-relevant="Yes"] {
+    opacity: 1;
+  }
+
     
 
   {% block extra_style %}{% endblock %}
@@ -684,7 +717,7 @@ function updateCompetitorData(competitorData, competitorCount) {
     allCompetitorRows = [];
 
     if (competitorCount === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #666666; font-style: italic;">No competitor data available</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #666666; font-style: italic;">No competitor data available</td></tr>';
         marketStats.style.display = 'none';
         dataWarning.style.display = 'none';
         return;
@@ -707,12 +740,22 @@ function updateCompetitorData(competitorData, competitorCount) {
             if (!isNaN(numericPrice)) prices.push(numericPrice);
 
             const row = document.createElement('tr');
+            row.setAttribute('data-relevant', 'Yes');
+
+            // Create select dropdown for relevance
+            const selectHTML = `
+                <select class="relevance-select" onchange="handleRelevanceChange(this)">
+                    <option value="Yes" selected>Yes</option>
+                    <option value="No">No</option>
+                </select>
+            `;
+
             row.innerHTML = `
                 <td>${competitor}</td>
                 <td><a href="${url}" target="_blank" rel="noopener noreferrer">${listingTitle}</a></td>
                 <td>${price}</td>
                 <td>${storeName}</td>
-                <td>Yes</td>
+                <td data-text-value="Yes">${selectHTML}</td>
             `;
             allCompetitorRows.push(row);
         }
@@ -738,11 +781,54 @@ function updateCompetitorData(competitorData, competitorCount) {
     const itemName = document.getElementById('item-name');
     applySortAndFilter();
 
-     // Trigger AI check automatically after table is ready
     if (competitorCount > 0) {
-        checkIrrelevantCompetitors(itemName)
+        checkIrrelevantCompetitors(itemName);
     }
 }
+
+// Handle dropdown changes
+function handleRelevanceChange(selectElement) {
+    const row = selectElement.closest('tr');
+    const cell = selectElement.closest('td');
+    const newValue = selectElement.value;
+
+    // Update data attribute for backward compatibility
+    cell.setAttribute('data-text-value', newValue);
+    row.setAttribute('data-relevant', newValue);
+
+    // Update opacity
+    row.style.opacity = newValue === "Yes" ? "1" : "0.3";
+
+    // Recompute averages
+    computeSourceAverages();
+}
+// Override textContent getter for backward compatibility
+Object.defineProperty(HTMLTableCellElement.prototype, 'textContent', {
+    get: function() {
+        // Check if this cell has the data-text-value attribute
+        if (this.hasAttribute('data-text-value')) {
+            return this.getAttribute('data-text-value');
+        }
+        // Otherwise use default behavior
+        return this.innerText || this.textContent;
+    },
+    set: function(value) {
+        // If setting "Yes" or "No" on a cell with a select
+        const select = this.querySelector('.relevance-select');
+        if (select && (value === "Yes" || value === "No")) {
+            select.value = value;
+            this.setAttribute('data-text-value', value);
+            const row = this.closest('tr');
+            row.setAttribute('data-relevant', value);
+            row.style.opacity = value === "Yes" ? "1" : "0.3";
+        } else {
+            // Default behavior for other cells
+            this.innerHTML = value;
+        }
+    }
+});
+
+
 
 function displayAnalysis(reasoning, suggestedPrice) {
     const analysisSection = document.getElementById('analysis-section');
@@ -814,6 +900,7 @@ function applySortAndFilter() {
 document.getElementById('sort-price').addEventListener('change', applySortAndFilter);
 document.getElementById('filter-source').addEventListener('change', applySortAndFilter);
 
+// Update checkIrrelevantCompetitors to work with the new system
 async function checkIrrelevantCompetitors(searchQuery) {
     const tbody = document.getElementById('competitor-tbody');
     const rows = [...tbody.querySelectorAll('tr')];
@@ -835,9 +922,6 @@ async function checkIrrelevantCompetitors(searchQuery) {
             };
         });
 
-    // ===== MATHEMATICAL PRICE-BASED FILTERING =====
-
-    // 1. Calculate statistical measures
     const validPrices = competitorList
         .filter(c => c.price !== null && c.price > 0)
         .map(c => c.price);
@@ -846,27 +930,13 @@ async function checkIrrelevantCompetitors(searchQuery) {
 
     const mean = validPrices.reduce((a, b) => a + b, 0) / validPrices.length;
     const median = [...validPrices].sort((a, b) => a - b)[Math.floor(validPrices.length / 2)];
-
-    // Calculate standard deviation
     const variance = validPrices.reduce((sum, price) => sum + Math.pow(price - mean, 2), 0) / validPrices.length;
     const stdDev = Math.sqrt(variance);
-
-    // Calculate IQR for outlier detection
     const sorted = [...validPrices].sort((a, b) => a - b);
     const q1 = sorted[Math.floor(sorted.length * 0.25)];
     const q3 = sorted[Math.floor(sorted.length * 0.75)];
     const iqr = q3 - q1;
 
-    console.log("Price Statistics:", {
-        mean: mean.toFixed(2),
-        median: median.toFixed(2),
-        stdDev: stdDev.toFixed(2),
-        q1: q1.toFixed(2),
-        q3: q3.toFixed(2),
-        iqr: iqr.toFixed(2)
-    });
-
-    // 2. Apply mathematical filtering rules
     let validIndex = 0;
     rows.forEach((row, i) => {
         if (!competitorList[i].hasPoundSymbol) return;
@@ -876,63 +946,53 @@ async function checkIrrelevantCompetitors(searchQuery) {
         const store = competitorList[i].store.toUpperCase();
         const title = competitorList[i].title.toUpperCase();
 
-        // 🟥 SPECIAL CASE: CEX grade filter (keep your existing logic)
         if (store === "CEX") {
             if (/\bA\b/.test(title)) {
                 isRelevant = false;
-                console.log("Marked CEX A as irrelevant!");
             } else if (/\bC\b/.test(title)) {
                 isRelevant = false;
-                console.log("Marked CEX C as irrelevant!");
-            } else if (/\bB\b/.test(title)) {
-                isRelevant = true;
-                console.log("Marked CEX B as relevant!");
             }
         }
 
-        // 🔢 MATHEMATICAL FILTERS (only apply if not already filtered by CEX grade)
         if (isRelevant && price !== null) {
-
-            // Method 1: IQR-based outlier detection (most robust)
             const lowerBound = q1 - (1.5 * iqr);
             const upperBound = q3 + (1.5 * iqr);
 
             if (price < lowerBound || price > upperBound) {
                 isRelevant = false;
-                console.log(`Outlier detected (IQR): ${title} @ £${price} (bounds: £${lowerBound.toFixed(0)}-£${upperBound.toFixed(0)})`);
             }
 
-            // Method 2: Z-score based filtering (for extreme outliers)
             const zScore = Math.abs((price - mean) / stdDev);
-            if (zScore > 2.5) { // More than 2.5 standard deviations away
+            if (zScore > 2.5) {
                 isRelevant = false;
-                console.log(`Extreme outlier (Z-score ${zScore.toFixed(2)}): ${title} @ £${price}`);
             }
 
-            // Method 3: Percentage deviation from median (alternative)
             const percentDiff = Math.abs((price - median) / median) * 100;
-            if (percentDiff > 80) { // More than 80% different from median
+            if (percentDiff > 80) {
                 isRelevant = false;
-                console.log(`Price deviation too high (${percentDiff.toFixed(0)}%): ${title} @ £${price}`);
             }
 
-            // Method 4: Detect suspiciously low prices (likely different product)
-            if (price < median * 0.3) { // Less than 30% of median
+            if (price < median * 0.3) {
                 isRelevant = false;
-                console.log(`Suspiciously low price: ${title} @ £${price} (median: £${median.toFixed(0)})`);
             }
         }
 
-        // Apply to table
-        row.cells[4].textContent = isRelevant ? "Yes" : "No";
+        // Update the dropdown and cell
+        const relevanceCell = row.cells[4];
+        const select = relevanceCell.querySelector('.relevance-select');
+        if (select) {
+            select.value = isRelevant ? "Yes" : "No";
+            relevanceCell.setAttribute('data-text-value', isRelevant ? "Yes" : "No");
+        }
+        row.setAttribute('data-relevant', isRelevant ? "Yes" : "No");
         row.style.opacity = isRelevant ? "1" : "0.3";
 
         validIndex++;
     });
 
-    // Compute averages after filtering
     computeSourceAverages();
 }
+
 function computeSourceAverages() {
     const rows = allCompetitorRows; // Use all rows, not filtered DOM
 

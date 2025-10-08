@@ -105,9 +105,8 @@ async function reanalyzeItem() {
     try {
         // ✅ Step 1️⃣ — Extract only relevant competitor listings
         const localResults = [];
-        const rows = document.querySelectorAll("#competitor-table tbody tr");
 
-        rows.forEach(row => {
+        allCompetitorRows.forEach(row => {
             const relevantText = row.cells[4]?.textContent?.trim().toLowerCase();
             const isRelevant = ["yes", "✓", "true"].includes(relevantText); // ✅ Only include relevant ones
 
