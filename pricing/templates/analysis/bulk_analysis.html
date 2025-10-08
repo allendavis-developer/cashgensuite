@@ -810,6 +810,7 @@ class ConfirmListModal {
       input.style.border = '1px solid #333';
       input.style.color = '#fff';
       input.style.borderRadius = '4px';
+        if (f.readonly) input.readOnly = true; // ✅ make read-only
 
       wrapper.appendChild(label);
       wrapper.appendChild(input);
@@ -857,7 +858,7 @@ function confirmAndList(barcode) {
     { id: 'modal-item-name', label: 'Item Name', type: 'text', value: row.cells[3].textContent },
     { id: 'modal-description', label: 'Description', type: 'textarea', value: row.cells[4].textContent },
     { id: 'modal-price', label: 'Price', type: 'text', value: row.cells[13].textContent },
-    { id: 'modal-serial-number', label: 'Serial Number', type: 'text', value: row.cells[2].textContent }
+    { id: 'modal-serial-number', label: 'Serial Number', type: 'text', value: row.cells[2].textContent, readonly: true }
   ]);
 }
 
