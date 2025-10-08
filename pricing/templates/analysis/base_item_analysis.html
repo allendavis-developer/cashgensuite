@@ -612,8 +612,8 @@
       <thead>
         <tr>
           <th>CEX Price Avg</th>
-          <th>CEX - 20%</th>
-          <th>Suggested RRP</th>
+          <th>CEX - Discount % (20% for now)</th>
+          <th>Cost Price + 37.5% Margin</th>
           <th>Cash Converters Lowest</th>
           <th>Cash Generator Lowest</th>
         </tr>
@@ -671,6 +671,7 @@ async function callLocalAgent(endpoint, payload = {}) {
 
 
 let allCompetitorRows = [];
+let currentCostPrice = null; // ✅ Store cost price globally
 
 function updateCompetitorData(competitorData, competitorCount) {
     const tbody = document.getElementById('competitor-tbody');
@@ -739,7 +740,7 @@ function updateCompetitorData(competitorData, competitorCount) {
 
      // Trigger AI check automatically after table is ready
     if (competitorCount > 0) {
-      checkIrrelevantCompetitors(itemName.value); // <-- supply the current search query
+        checkIrrelevantCompetitors(itemName)
     }
 }
 
@@ -792,7 +793,6 @@ function applySortAndFilter() {
     document.getElementById('competitor-number').textContent = rows.length;
 }
 
-
 document.getElementById('sort-price').addEventListener('change', applySortAndFilter);
 document.getElementById('filter-source').addEventListener('change', applySortAndFilter);
 
@@ -817,75 +817,104 @@ async function checkIrrelevantCompetitors(searchQuery) {
             };
         });
 
-    if (!competitorList.length) {
-        console.log("No competitor listings found in table.");
-        return;
-    }
+    // ===== MATHEMATICAL PRICE-BASED FILTERING =====
 
-    // 🟠 Frontend auto-mark invalid prices (missing £ symbol)
-    rows.forEach((row, i) => {
-        if (!competitorList[i].hasPoundSymbol) {
-            row.cells[4].textContent = "No £";
-            row.style.opacity = "0.3";
-        }
+    // 1. Calculate statistical measures
+    const validPrices = competitorList
+        .filter(c => c.price !== null && c.price > 0)
+        .map(c => c.price);
+
+    if (validPrices.length === 0) return;
+
+    const mean = validPrices.reduce((a, b) => a + b, 0) / validPrices.length;
+    const median = [...validPrices].sort((a, b) => a - b)[Math.floor(validPrices.length / 2)];
+
+    // Calculate standard deviation
+    const variance = validPrices.reduce((sum, price) => sum + Math.pow(price - mean, 2), 0) / validPrices.length;
+    const stdDev = Math.sqrt(variance);
+
+    // Calculate IQR for outlier detection
+    const sorted = [...validPrices].sort((a, b) => a - b);
+    const q1 = sorted[Math.floor(sorted.length * 0.25)];
+    const q3 = sorted[Math.floor(sorted.length * 0.75)];
+    const iqr = q3 - q1;
+
+    console.log("Price Statistics:", {
+        mean: mean.toFixed(2),
+        median: median.toFixed(2),
+        stdDev: stdDev.toFixed(2),
+        q1: q1.toFixed(2),
+        q3: q3.toFixed(2),
+        iqr: iqr.toFixed(2)
     });
 
-    const itemDescription = document.getElementById('description')
-        ? document.getElementById('description').value.trim()
-        : "";
+    // 2. Apply mathematical filtering rules
+    let validIndex = 0;
+    rows.forEach((row, i) => {
+        if (!competitorList[i].hasPoundSymbol) return;
 
-    try {
-        // Only send competitors that have at least a £-style price
-        const filteredCompetitors = competitorList.filter(c => c.hasPoundSymbol);
+        let isRelevant = true;
+        const price = competitorList[i].price;
+        const store = competitorList[i].store.toUpperCase();
+        const title = competitorList[i].title.toUpperCase();
 
-        const response = await fetch("/detect_irrelevant_competitors/", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                search_query: searchQuery,
-                item_description: itemDescription,
-                competitor_list: filteredCompetitors
-            })
-        });
+        // 🟥 SPECIAL CASE: CEX grade filter (keep your existing logic)
+        if (store === "CEX") {
+            if (/\bA\b/.test(title)) {
+                isRelevant = false;
+                console.log("Marked CEX A as irrelevant!");
+            } else if (/\bC\b/.test(title)) {
+                isRelevant = false;
+                console.log("Marked CEX C as irrelevant!");
+            } else if (/\bB\b/.test(title)) {
+                isRelevant = true;
+                console.log("Marked CEX B as relevant!");
+            }
+        }
 
-        const result = await response.json();
-        const irrelevantIndices = result.irrelevant_indices;
-        console.log("AI-flagged irrelevant:", irrelevantIndices);
+        // 🔢 MATHEMATICAL FILTERS (only apply if not already filtered by CEX grade)
+        if (isRelevant && price !== null) {
 
-        // Match filtered list back to table rows
-        let validIndex = 0;
-        rows.forEach((row, i) => {
-            if (!competitorList[i].hasPoundSymbol) return;
+            // Method 1: IQR-based outlier detection (most robust)
+            const lowerBound = q1 - (1.5 * iqr);
+            const upperBound = q3 + (1.5 * iqr);
 
-            let isRelevant = true;
-
-            // 🟥 SPECIAL CASE: CEX grade filter
-            const store = competitorList[i].store.toUpperCase();
-            const title = competitorList[i].title.toUpperCase();
-
-            if (store === "CEX" && (title.includes(" A") || title.includes(" C"))) {
-                isRelevant = false; // auto-irrelevant for A or C grades
-                console.log("Marked a CEX as irrelevant!")
-            } else {
-                // Apply AI relevance
-                isRelevant = !irrelevantIndices.includes(validIndex);
+            if (price < lowerBound || price > upperBound) {
+                isRelevant = false;
+                console.log(`Outlier detected (IQR): ${title} @ £${price} (bounds: £${lowerBound.toFixed(0)}-£${upperBound.toFixed(0)})`);
             }
 
-            // Apply to table
-            row.cells[4].textContent = isRelevant ? "Yes" : "No";
-            row.style.opacity = isRelevant ? "1" : "0.3";
+            // Method 2: Z-score based filtering (for extreme outliers)
+            const zScore = Math.abs((price - mean) / stdDev);
+            if (zScore > 2.5) { // More than 2.5 standard deviations away
+                isRelevant = false;
+                console.log(`Extreme outlier (Z-score ${zScore.toFixed(2)}): ${title} @ £${price}`);
+            }
 
-            validIndex++;
-        });
+            // Method 3: Percentage deviation from median (alternative)
+            const percentDiff = Math.abs((price - median) / median) * 100;
+            if (percentDiff > 80) { // More than 80% different from median
+                isRelevant = false;
+                console.log(`Price deviation too high (${percentDiff.toFixed(0)}%): ${title} @ £${price}`);
+            }
 
-        // Only compute averages after filtering out irrelevant listings
-        computeSourceAverages()
+            // Method 4: Detect suspiciously low prices (likely different product)
+            if (price < median * 0.3) { // Less than 30% of median
+                isRelevant = false;
+                console.log(`Suspiciously low price: ${title} @ £${price} (median: £${median.toFixed(0)})`);
+            }
+        }
 
-    } catch (err) {
-        console.error("Error calling AI endpoint:", err);
-    }
+        // Apply to table
+        row.cells[4].textContent = isRelevant ? "Yes" : "No";
+        row.style.opacity = isRelevant ? "1" : "0.3";
+
+        validIndex++;
+    });
+
+    // Compute averages after filtering
+    computeSourceAverages();
 }
-
 function computeSourceAverages() {
     const rows = allCompetitorRows; // Use all rows, not filtered DOM
 
@@ -900,7 +929,7 @@ function computeSourceAverages() {
             const price = parseFloat(row.cells[2].textContent.replace(/[^0-9.-]+/g, ""));
             if (!isNaN(price)) {
                 if (!sourceData[source]) sourceData[source] = [];
-                sourceData[source].push(price);
+                sourceData[source].push(price)
             }
         }
     });
@@ -960,13 +989,42 @@ function computeSourceAverages() {
         <tr>
             <td>${cex.average ? `£${cex.average.toFixed(0)}` : '-'}</td>
             <td>${cexMinus20}</td>
-            <td>${suggestedRRP}</td>
+            <td id="rrp-cell">${suggestedRRP}</td>
             <td>${cc.min ? `£${cc.min.toFixed(0)}` : '-'}</td>
             <td>${cg.min ? `£${cg.min.toFixed(0)}` : '-'}</td>
         </tr>
     `;
 
+    updateRRPCell();
+
+}// ✅ Store cost price
+function setRRPAfterTable(costPrice) {
+    currentCostPrice = parseFloat(costPrice);
+    if (isNaN(currentCostPrice)) {
+        console.warn("No valid cost price provided — skipping RRP update.");
+        currentCostPrice = null;
+        return;
+    }
+    console.log('✅ Cost price stored:', currentCostPrice);
 }
+
+function updateRRPCell() {
+    if (!currentCostPrice) {
+        console.warn("No cost price available to update RRP cell");
+        return;
+    }
+
+    const rrpCell = document.getElementById('rrp-cell');
+    if (!rrpCell) {
+        console.warn("RRP cell not found in table");
+        return;
+    }
+
+    const marginPrice = (currentCostPrice / 0.625).toFixed(2);
+    rrpCell.textContent = `£${marginPrice}`;
+    console.log(`✅ Cost price + 37.5% margin set: £${marginPrice}`);
+}
+
 
 // === Scroll Container Resizing Logic ===
 document.addEventListener('DOMContentLoaded', function() {

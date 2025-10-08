@@ -44,7 +44,9 @@ def generate_search_term(request):
 
         Output only the ideal search term (2–8 words). 
         For Phones: MODEL NAME STORAGE_CAPACITY is the output format. 
-        Do not be specific, be general. Don't include details that filter our searches too much. DO NOT INCLUDE COLOUR INFORMATION. 
+        Ignore any quantities mentioned in the product details; only generate the search term for a single unit.
+        Do not include numbers that indicate multiple items (e.g., 'x2', '2 units').
+        Do not be specific, be general. Don't include details that filter our searches too much. DO NOT INCLUDE COLOUR INFORMATION.  
         Do not include commentary or punctuation.
         """
 
