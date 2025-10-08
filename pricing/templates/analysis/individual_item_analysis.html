@@ -61,8 +61,10 @@ async function loadAnalysisById(analysisId) {
             }
 
             document.getElementById('analysis-section').style.display = 'block';
-            console.log(data.competitor_data);
+            console.log('Cost Price:', data.cost_price);
             updateCompetitorData(data.competitor_data || '', data.competitor_count || 0);
+            setRRPAfterTable(data.cost_price / 0.625);
+            return data;
         } else {
             alert(`Error: ${data.error}`);
         }
@@ -79,4 +81,23 @@ document.addEventListener('DOMContentLoaded', function() {
         loadAnalysisById(analysisId);
     }
 });
+
+
+function setRRPAfterTable(costPrice) {
+    const tbody = document.getElementById('analysis-tbody');
+    if (!tbody) return;
+
+    const observer = new MutationObserver(() => {
+        const firstRow = tbody.rows[0];
+        if (!firstRow) return;
+        const rrpCell = firstRow.cells[2]; // Suggested RRP
+        if (!rrpCell) return;
+
+        rrpCell.textContent = `£${costPrice}`;
+        observer.disconnect(); // stop observing once done
+    });
+
+    observer.observe(tbody, { childList: true, subtree: true });
+}
+
 {% endblock %}

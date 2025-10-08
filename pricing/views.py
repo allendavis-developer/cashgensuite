@@ -22,9 +22,14 @@ def generate_search_term(request):
         data = json.loads(request.body)
         name = (data.get("name") or "").strip()
         description = (data.get("description") or "").strip()
+        specifications = data.get("specifications") or {}  # <-- new
+
 
         if not name:
             return JsonResponse({"success": False, "error": "Missing item name."})
+
+        print("Received specifications:", specifications)
+
 
         # ✨ Build the Gemini prompt
         prompt = f"""
@@ -36,17 +41,16 @@ def generate_search_term(request):
 
         - Product Name: {name}
         - Description: {description}
+        - Specifications: {json.dumps(specifications)}
 
         Output only the ideal search term (2–8 words). 
-        Add spaces between the model name and the version. Example: Fold4 is a bad search term, Fold 4 is a good search term.
-        Do not be specific, be general. Don't include details that filter our searches too much. The name of the item will be good.
+        For Phones: MODEL NAME STORAGE_CAPACITY is the output format. 
+        Do not be specific, be general. Don't include details that filter our searches too much.
         Do not include commentary or punctuation.
         """
 
         # 🔮 Call Gemini synchronously
         search_term = call_gemini_sync(prompt)
-        search_term = normalize_search_term(search_term)
-        print(search_term)
         return JsonResponse({
             "success": True,
             "search_term": search_term,
@@ -56,12 +60,6 @@ def generate_search_term(request):
         import traceback
         traceback.print_exc()
         return JsonResponse({"success": False, "error": str(e)}, status=500)
-
-def normalize_search_term(term):
-    # Insert a space between letters and numbers when missing (e.g. Fold4 → Fold 4)
-    term = re.sub(r'(?<=\D)(?=\d)', ' ', term)
-    term = re.sub(r'\s+', ' ', term).strip()
-    return term
 
 
 def get_prefilled_data(request):
@@ -279,7 +277,7 @@ def bulk_analyse_items(request):
             )
 
             analysis_result = save_analysis_to_db(
-                item_name, description, reasoning, suggested_price, competitor_data_for_frontend
+                item_name, description, reasoning, suggested_price, competitor_data_for_frontend, cost_price
             )
 
             results.append({
@@ -319,6 +317,7 @@ def price_analysis_detail(request, analysis_id):
         "competitor_count": len(competitor_lines),
         "item_description": analysis.item.description,   # <-- add this
         "serial_number": analysis.item.serial_number,     # <-- add this
+        "cost_price": analysis.cost_price,
     })
 
 
@@ -577,9 +576,9 @@ def detect_irrelevant_competitors(request):
         prompt_lines.append(
             "Task: Identify which indices are NOT relevant to the search query and description.\n"
             "- Relevant means: it is the same product of the product searched.\n"
-            "- Irrelevant means: wrong model, accessories, games, unrelated items, a variation (such as a Pro vs a Pro Max), or a different product condition (brand new vs used for several years).\n"
+            "- Irrelevant means: wrong model, accessories, games, unrelated items, a variation (such as a Pro vs a Pro Max).\n"
             "- Do not include any reasoning, only the indices.\n"
-            "- Be lenient, do NOT determine the relevant listings as irrelevant.\n"
+            "- Be AS LENIENT as possible, do NOT determine the relevant listings as irrelevant.\n"
             "- **IMPORTANT:** ALWAYS mark listings from the following stores as irrelevant, even if they appear fine: Cash Generator Warrington, Cash Generator Netherton, Cash Generator Wythenshawe.\n"
             "- IMPORTANT: Ignore the description for judging relevance unless it contains clear model or variant information. Focus primarily on product title matching."
             "- Respond ONLY with an array of integers, e.g., [0, 2, 5].\n"
@@ -587,11 +586,10 @@ def detect_irrelevant_competitors(request):
             "- STRICTLY FOLLOW ARRAY FORMAT, no trailing commas or extra spaces."
         )
 
-
         prompt = "\n".join(prompt_lines)
-
         # 🧠 Call Gemini model
         ai_response = call_gemini_sync(prompt)
+
 
         # Attempt to parse JSON array from AI response
         try:

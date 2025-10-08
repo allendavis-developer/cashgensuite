@@ -382,15 +382,14 @@ async function startScraping() {
           row.cells[8].textContent = product.quantity || '';
           row.cells[9].textContent = product.type || '';
 
-          // Update productData if it exists
-          const productIndex = productData.findIndex(p => p.barcode === product.barcode);
-          if (productIndex !== -1) {
-            productData[productIndex] = {
-              ...productData[productIndex],
-              barserial: product.barserial || '',
-              status: 'scraped'
-            };
-          }
+
+          //  Add or update productData
+        const productIndex = productData.findIndex(p => p.barcode === product.barcode);
+        if (productIndex !== -1) {
+          productData[productIndex] = { ...productData[productIndex], ...product, status: 'scraped' };
+        } else {
+          productData.push({ ...product, status: 'scraped' });
+        }
 
           // Populate dropdown as before
           populateMarketItemDropdown(row, product.market_item || '');
@@ -432,7 +431,7 @@ async function startScraping() {
   }
 }
 
-async function getPerfectSearchTerm(name, description) {
+async function getPerfectSearchTerm(name, description, specifications) {
   try {
     const res = await fetch("/generate-search-term/", {
       method: "POST",
@@ -440,7 +439,7 @@ async function getPerfectSearchTerm(name, description) {
         "Content-Type": "application/json",
         "X-CSRFToken": getCookie("csrftoken"),
       },
-      body: JSON.stringify({ name, description }),
+      body: JSON.stringify({ name, description, specifications }),
     });
 
     const data = await res.json();
@@ -463,7 +462,7 @@ async function runBulkAnalysis(items) {
 
     // Enrich each item with Gemini-generated search term
     for (const item of items) {
-        const searchTerm = await getPerfectSearchTerm(item.name, item.description);
+        const searchTerm = await getPerfectSearchTerm(item.name, item.description, item.specifications);
         console.log(`Perfect search term for "${item.name}":`, searchTerm);
         item.search_term = searchTerm; // optional — you can omit if not needed yet
     }
@@ -535,6 +534,9 @@ async function analyseBarcodes() {
         tableRows.forEach(row => {
             if (row.cells.length >= 13) { // Updated to 13 columns
                 const barcode = row.cells[1].textContent.trim();
+                const product = productData.find(p => p.barcode === barcode) || {};
+                console.log(product)
+                console.log(productData)
                 const barserial = row.cells[2].textContent.trim();
                 const name = row.cells[3].textContent.trim();
                 const description = row.cells[4].textContent.trim();
@@ -551,7 +553,8 @@ async function analyseBarcodes() {
                         description: description,
                         market_item: marketItem,  // Send the selected MarketItem
                         cost_price: costPrice,
-                        urgency: urgency
+                        urgency: urgency,
+                        specifications: product.specifications || {} // 🆕 send full specs
                     });
                 }
             }

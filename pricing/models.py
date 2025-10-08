@@ -104,7 +104,8 @@ class InventoryItem(models.Model):
 class PriceAnalysis(models.Model):
     item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE, related_name="price_analyses")
     reasoning = models.TextField()
-    suggested_price = models.DecimalField(max_digits=10, decimal_places=2)
+    suggested_price = models.DecimalField(max_digits=10, decimal_places=2)#
+    cost_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # <-- new field
     confidence = models.PositiveIntegerField(default=0)  # 0-100%
     created_at = models.DateTimeField(auto_now_add=True)
 

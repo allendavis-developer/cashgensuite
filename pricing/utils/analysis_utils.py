@@ -79,7 +79,7 @@ def process_item_analysis(data):
     })
 
 
-def save_analysis_to_db(item_name, description, reasoning, suggested_price, competitor_data):
+def save_analysis_to_db(item_name, description, reasoning, suggested_price, competitor_data, cost_price=None):
     """Save analysis results to database"""
     # Parse price from AI response
     decimal_price = parse_price_from_response(suggested_price)
@@ -93,15 +93,23 @@ def save_analysis_to_db(item_name, description, reasoning, suggested_price, comp
     # Calculate competitor count
     competitor_count = calculate_competitor_count(competitor_data)
 
+    # Build defaults dict
+    defaults = {
+        "reasoning": reasoning,
+        "suggested_price": decimal_price,
+        "confidence": calculate_confidence(competitor_count),
+        "created_at": timezone.now()
+    }
+
+    # Include cost_price if provided
+    if cost_price is not None:
+        defaults["cost_price"] = cost_price
+
+
     # Save analysis
     analysis, created = PriceAnalysis.objects.update_or_create(
         item=inventory_item,
-        defaults={
-            "reasoning": reasoning,
-            "suggested_price": decimal_price,
-            "confidence": calculate_confidence(competitor_count),
-            "created_at": timezone.now()
-        }
+        defaults=defaults
     )
 
     return {

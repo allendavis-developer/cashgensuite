@@ -606,6 +606,26 @@
   </div>
 
 
+    <div class="panel-title" style="margin-top: 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #888;">MARKET SUMMARY</div>
+
+    <table class="competitor-table" id="analysis-table">
+      <thead>
+        <tr>
+          <th>CEX Price Avg</th>
+          <th>CEX - 20%</th>
+          <th>Suggested RRP</th>
+          <th>Cash Converters Lowest</th>
+          <th>Cash Generator Lowest</th>
+        </tr>
+      </thead>
+      <tbody id="analysis-tbody">
+        <tr>
+          <td colspan="5" style="text-align: center; color: #666; font-style: italic;">
+            No market summary data available
+          </td>
+        </tr>
+      </tbody>
+    </table>
 
   {% block analysis_actions %}{% endblock %}
 
@@ -720,7 +740,6 @@ function updateCompetitorData(competitorData, competitorCount) {
      // Trigger AI check automatically after table is ready
     if (competitorCount > 0) {
       checkIrrelevantCompetitors(itemName.value); // <-- supply the current search query
-      computeSourceAverages()
     }
 }
 
@@ -792,7 +811,7 @@ async function checkIrrelevantCompetitors(searchQuery) {
 
             return {
                 title: row.cells[1].textContent.trim(),
-                store: row.cells[3].textContent.trim(),
+                store: row.cells[0].textContent.trim(),
                 price: numericPrice,
                 hasPoundSymbol: hasPound
             };
@@ -836,13 +855,31 @@ async function checkIrrelevantCompetitors(searchQuery) {
         // Match filtered list back to table rows
         let validIndex = 0;
         rows.forEach((row, i) => {
-            if (competitorList[i].hasPoundSymbol) {
-                const isRelevant = !irrelevantIndices.includes(validIndex);
-                row.cells[4].textContent = isRelevant ? "Yes" : "No";
-                row.style.opacity = isRelevant ? "1" : "0.3";
-                validIndex++;
+            if (!competitorList[i].hasPoundSymbol) return;
+
+            let isRelevant = true;
+
+            // 🟥 SPECIAL CASE: CEX grade filter
+            const store = competitorList[i].store.toUpperCase();
+            const title = competitorList[i].title.toUpperCase();
+
+            if (store === "CEX" && (title.includes(" A") || title.includes(" C"))) {
+                isRelevant = false; // auto-irrelevant for A or C grades
+                console.log("Marked a CEX as irrelevant!")
+            } else {
+                // Apply AI relevance
+                isRelevant = !irrelevantIndices.includes(validIndex);
             }
+
+            // Apply to table
+            row.cells[4].textContent = isRelevant ? "Yes" : "No";
+            row.style.opacity = isRelevant ? "1" : "0.3";
+
+            validIndex++;
         });
+
+        // Only compute averages after filtering out irrelevant listings
+        computeSourceAverages()
 
     } catch (err) {
         console.error("Error calling AI endpoint:", err);
@@ -896,6 +933,39 @@ function computeSourceAverages() {
     }
 
     console.log("Source averages (excluding irrelevant listings):", sourceAverages);
+
+    // ===== Populate analysis table =====
+    const tbody = document.getElementById('analysis-tbody');
+    if (!tbody) return;
+
+    // Normalize keys to uppercase for consistency
+    const normalizedAverages = {};
+    Object.keys(sourceAverages).forEach(key => {
+        normalizedAverages[key.toUpperCase()] = sourceAverages[key];
+    });
+
+    // Grab the sources
+    const cex = normalizedAverages['CEX'] || {};
+    const cc = normalizedAverages['CASHCONVERTERS'] || {};
+    const cg = normalizedAverages['CASHGENERATOR'] || {};
+
+    // Suggested RRP left empty
+    const suggestedRRP = '';
+
+    // Compute CEX - 20%
+    const cexMinus20 = cex.average ? `£${(cex.average * 0.8).toFixed(0)}` : '-';
+
+    // Populate table
+    tbody.innerHTML = `
+        <tr>
+            <td>${cex.average ? `£${cex.average.toFixed(0)}` : '-'}</td>
+            <td>${cexMinus20}</td>
+            <td>${suggestedRRP}</td>
+            <td>${cc.min ? `£${cc.min.toFixed(0)}` : '-'}</td>
+            <td>${cg.min ? `£${cg.min.toFixed(0)}` : '-'}</td>
+        </tr>
+    `;
+
 }
 
 // === Scroll Container Resizing Logic ===
