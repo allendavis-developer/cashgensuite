@@ -192,22 +192,6 @@ modalSubmitBtn.addEventListener('click', async function() {
     }
 });
 
-function displayAnalysis(reasoning, suggestedPrice) {
-    const analysisSection = document.getElementById('analysis-section');
-    const recommendedPrice = document.getElementById('recommended-price');
-    const reasoningText = document.getElementById('reasoning-text');
-    const analysisTime = document.getElementById('analysis-time');
-
-    recommendedPrice.textContent = suggestedPrice;
-    reasoningText.innerHTML = reasoning;
-
-    const competitorCount = parseInt(document.getElementById('competitor-number').textContent);
-
-    analysisTime.textContent = 'just now';
-
-    analysisSection.style.display = 'block';
-    analysisSection.scrollIntoView({ behavior: 'smooth' });
-}
 
 async function analyzeItem() {
     const itemName = document.getElementById('item-name').value.trim();

@@ -24,7 +24,6 @@ def generate_search_term(request):
         description = (data.get("description") or "").strip()
         specifications = data.get("specifications") or {}  # <-- new
 
-
         if not name:
             return JsonResponse({"success": False, "error": "Missing item name."})
 
@@ -262,12 +261,14 @@ def bulk_analyse_items(request):
                         competitor=l.get("competitor", "Unknown"),
                         title=l.get("title", "Untitled"),
                         price=l.get("price", 0.0),
-                        store_name=l.get("store_name") or "N/A",
+                        store_name=l.get("store") or "N/A",
                         url=l.get("url", "#")
                     ) for l in local_listings
                 ])
             else:
                 print(f"⚠️ No local data found for {item_name}, skipping scrape save.")
+
+
 
             # Continue AI analysis logic (unchanged)
             competitor_data_for_ai = get_competitor_data(item_name, include_url=False)

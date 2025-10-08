@@ -59,7 +59,6 @@ def process_item_analysis(data):
 
     # Remove any existing PriceAnalysis for this InventoryItem
     inventory_item, _ = InventoryItem.objects.get_or_create(title=item_name)
-    PriceAnalysis.objects.filter(item=inventory_item).delete()
 
     # Save analysis to database
     analysis_result = save_analysis_to_db(

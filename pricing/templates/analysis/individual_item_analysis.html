@@ -24,6 +24,14 @@
   <label class="input-label">Serial Number</label>
   <input type="text" id="serial-number" class="input-field readonly-field" readonly>
 </div>
+
+<!-- ✅ Add Analyze button here -->
+<button type="button" id="analyze-btn" class="analyze-button" onclick="reanalyzeItem()">
+  <span id="button-text">RE-ANALYZE PRICING FROM RELEVANT LISTINGS ONLY</span>
+  <span id="button-spinner" class="loading-spinner hidden"></span>
+</button>
+
+
 {% endblock %}
 
 {% block competitor_empty_state %}Select an item to view competitor data{% endblock %}
@@ -74,6 +82,93 @@ async function loadAnalysisById(analysisId) {
     } catch (err) {
         console.error('Error fetching analysis:', err);
         alert('Could not fetch analysis data.');
+    }
+}
+
+async function reanalyzeItem() {
+    const itemName = document.getElementById("item-name").value.trim();
+    const description = document.getElementById("description").value.trim();
+    const serialNumber = document.getElementById("serial-number").value.trim();
+    const analyzeBtn = document.getElementById("analyze-btn");
+    const buttonText = document.getElementById("button-text");
+    const buttonSpinner = document.getElementById("button-spinner");
+
+    if (!itemName || !description) {
+        alert("Missing item details — cannot reanalyze.");
+        return;
+    }
+
+    analyzeBtn.disabled = true;
+    buttonText.textContent = "Analyzing...";
+    buttonSpinner.classList.remove("hidden");
+
+    try {
+        // ✅ Step 1️⃣ — Extract only relevant competitor listings
+        const localResults = [];
+        const rows = document.querySelectorAll("#competitor-table tbody tr");
+
+        rows.forEach(row => {
+            const relevantText = row.cells[4]?.textContent?.trim().toLowerCase();
+            const isRelevant = ["yes", "✓", "true"].includes(relevantText); // ✅ Only include relevant ones
+
+            if (!isRelevant) return; // skip irrelevant rows
+
+            const competitor = row.cells[0]?.textContent?.trim() || "Unknown";
+            const title = row.cells[1]?.textContent?.trim() || "Untitled";
+            const priceText = row.cells[2]?.textContent?.replace(/[£$,]/g, "").trim();
+            const price = parseFloat(priceText) || 0.0;
+            const store = row.cells[3]?.textContent?.trim() || "N/A";
+
+            // Try to grab link if exists inside the item/title cell
+            let url = "#";
+            const linkEl = row.cells[1]?.querySelector("a");
+            if (linkEl && linkEl.href) {
+                url = linkEl.href;
+            }
+
+            localResults.push({ competitor, title, price, store, url });
+        });
+
+        if (localResults.length === 0) {
+            alert("No relevant listings found — cannot reanalyze.");
+            return;
+        }
+
+        console.log("📦 Sending ONLY relevant listings as local_scrape_data:", localResults);
+
+        // ✅ Step 2️⃣ — Send to backend (same endpoint)
+        const response = await fetch("/individual-item-analyser/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken"),
+            },
+            body: JSON.stringify({
+                item_name: itemName,
+                description: description,
+                serial_number: serialNumber,
+                local_scrape_data: localResults,
+                urgency: 3,
+            }),
+        });
+
+        const data = await response.json();
+
+        // ✅ Step 3️⃣ — Handle response
+        if (data.success) {
+            updateCompetitorData(data.competitor_data || "", data.competitor_count || 0);
+            displayAnalysis(data.reasoning, data.suggested_price);
+            console.log("✅ Reanalysis complete:", data);
+        } else {
+            alert(`Error: ${data.error}`);
+        }
+    } catch (error) {
+        console.error("Error during reanalysis:", error);
+        alert("Reanalysis failed. Please try again.");
+    } finally {
+        analyzeBtn.disabled = false;
+        buttonText.textContent = "RE-ANALYZE PRICING FROM RELEVANT LISTINGS ONLY";
+        buttonSpinner.classList.add("hidden");
     }
 }
 
