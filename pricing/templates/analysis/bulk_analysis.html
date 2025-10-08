@@ -460,13 +460,6 @@ async function getPerfectSearchTerm(name, description, specifications) {
 async function runBulkAnalysis(items) {
     let scrapedResults = null;
 
-    // Enrich each item with Gemini-generated search term
-    for (const item of items) {
-        const searchTerm = await getPerfectSearchTerm(item.name, item.description, item.specifications);
-        console.log(`Perfect search term for "${item.name}":`, searchTerm);
-        item.search_term = searchTerm; // optional — you can omit if not needed yet
-    }
-
     try {
         console.log("🔍 Trying local bulk scrape...");
         const scrapeResponse = await callLocalAgent("/bulk-scrape-competitors", {items});
@@ -531,14 +524,14 @@ async function analyseBarcodes() {
     try {
         // Prepare items for analysis - extract data from table rows
         const itemsToAnalyse = [];
-        tableRows.forEach(row => {
+        for (const row of tableRows) {
             if (row.cells.length >= 13) { // Updated to 13 columns
                 const barcode = row.cells[1].textContent.trim();
                 const product = productData.find(p => p.barcode === barcode) || {};
                 console.log(product)
                 console.log(productData)
                 const barserial = row.cells[2].textContent.trim();
-                const name = row.cells[3].textContent.trim();
+                let name = row.cells[3].textContent.trim();
                 const description = row.cells[4].textContent.trim();
                 const costPrice = row.cells[5].textContent.trim();
                 const marketItemSelect = row.querySelector('.marketitem-select');
@@ -546,6 +539,12 @@ async function analyseBarcodes() {
                 const urgencySelect = row.querySelector('.urgency-select');
                 const urgency = urgencySelect ? urgencySelect.value : '3'; // default to 3
                 if (name) { // Only analyse items that have names (were successfully scraped)
+
+                    // Call getPerfectSearchTerm ONCE
+                    const searchTerm = await getPerfectSearchTerm(name, description, product.specifications || {});
+                    row.cells[3].textContent = searchTerm; // Update table
+                    name = searchTerm; // Use in payload
+
                     itemsToAnalyse.push({
                         barcode: barcode,
                         barserial: barserial,
@@ -558,7 +557,7 @@ async function analyseBarcodes() {
                     });
                 }
             }
-        });
+        }
 
         if (itemsToAnalyse.length === 0) {
             throw new Error("No valid items with names to analyse");

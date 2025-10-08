@@ -30,7 +30,6 @@ def generate_search_term(request):
 
         print("Received specifications:", specifications)
 
-
         # ✨ Build the Gemini prompt
         prompt = f"""
         You are a retail data intelligence assistant.
@@ -45,7 +44,7 @@ def generate_search_term(request):
 
         Output only the ideal search term (2–8 words). 
         For Phones: MODEL NAME STORAGE_CAPACITY is the output format. 
-        Do not be specific, be general. Don't include details that filter our searches too much.
+        Do not be specific, be general. Don't include details that filter our searches too much. DO NOT INCLUDE COLOUR INFORMATION. 
         Do not include commentary or punctuation.
         """
 
