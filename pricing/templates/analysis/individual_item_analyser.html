@@ -167,6 +167,24 @@
       ">
     </div>
 
+    <div style="margin-bottom: 12px;">
+      <label style="font-size: 11px; color: #888; text-transform: uppercase;">Select Price Source</label>
+      <select id="price-source-select" style="
+          width: 100%;
+          padding: 10px;
+          background-color: #1a1a1a;
+          border: 1px solid #333;
+          color: #fff;
+          border-radius: 4px;
+          margin-top: 4px;
+          cursor: pointer;
+      ">
+        <option value="" selected disabled>-- Choose Source --</option>
+        <option value="CashConverters">CashConverters Recommended Price</option>
+        <option value="CashGenerator">CashGenerator Recommended Price</option>
+      </select>
+    </div>
+
     <div style="margin-bottom: 16px;">
       <label style="font-size: 11px; color: #888; text-transform: uppercase;">Price</label>
       <input id="modal-price" type="text" style="
@@ -293,6 +311,7 @@ const modalDescription = document.getElementById('modal-description');
 const modalPrice = document.getElementById('modal-price');
 const confirmListBtn = document.getElementById('confirm-list-btn');
 const modalSubmitBtn = document.getElementById('modal-submit');
+const priceSourceSelect = document.getElementById('price-source-select');
 
 modal.classList.add('hidden');
 modal.style.display = 'none';
@@ -319,43 +338,35 @@ window.addEventListener('click', (e) => {
     }
 });
 
+priceSourceSelect.addEventListener('change', () => {
+    const source = priceSourceSelect.value;
+    let priceValue = "";
+
+    if (source === "CashConverters") {
+        priceValue = document.getElementById('recommended-price-cashconverters')?.textContent.trim() || "";
+    } else if (source === "CashGenerator") {
+        priceValue = document.getElementById('recommended-price-cashgenerator')?.textContent.trim() || "";
+    }
+
+    if (!priceValue || priceValue === "-") {
+        alert("Please analyze prices before selecting a recommended price.");
+        priceSourceSelect.value = "";
+        modalPrice.value = "";
+        return;
+    }
+
+    // Clean up the price string (remove £ if present)
+    priceValue = priceValue.replace(/[^0-9.]/g, "");
+    modalPrice.value = priceValue;
+});
+
+
 modalSubmitBtn.addEventListener('click', async function() {
     modalSubmitBtn.disabled = true;
     modalSubmitBtn.textContent = 'Launching Automation...';
 
-    try {
-        const response = await fetch('/launch-playwright-listing/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                item_name: modalItemName.value,
-                description: modalDescription.value,
-                price: modalPrice.value,
-                serial_number: document.getElementById('modal-serial-number').value
-            })
-        });
+      await launchPlaywrightListing(modalItemName.value, modalDescription.value, modalPrice.value, document.getElementById('modal-serial-number').value);
 
-        const result = await response.json();
-
-        if (result.success) {
-            setTimeout(() => {
-                modalSubmitBtn.textContent = '✅ Automation Complete!';
-                modalSubmitBtn.disabled = false;
-            }, 2000);
-        } else {
-            alert(`Automation failed: ${result.error}`);
-            modalSubmitBtn.disabled = false;
-            modalSubmitBtn.textContent = 'List Item';
-        }
-    } catch (error) {
-        console.error('Error launching automation:', error);
-        alert('Failed to launch automation. Please try again.');
-        modalSubmitBtn.disabled = false;
-        modalSubmitBtn.textContent = 'List Item';
-    }
 });
 
 
@@ -514,6 +525,23 @@ async function analyzeTable() {
         analyzeBtn.disabled = false;
         analyzeBtn.textContent = 'Analyze Pricing';
     }
+}
+
+async function launchPlaywrightListing(itemName, description, price, serialNumber) {
+  const data = await callLocalAgent("/launch-playwright-listing", {
+      item_name: itemName,
+      description,
+      price,
+      serial_number: serialNumber,
+  });
+
+  if (!data) return alert("Automation agent not running.");
+
+  if (data.success) {
+      alert("✅ Listing automation completed successfully!");
+  } else {
+      alert(`❌ Automation failed: ${data.error}`);
+  }
 }
 
 
