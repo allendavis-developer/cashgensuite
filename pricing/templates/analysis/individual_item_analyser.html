@@ -69,7 +69,7 @@
       <span id="button-spinner" class="loading-spinner hidden"></span>
     </button>
     <button type="button" id="analyze-btn" class="analyze-button" onclick="analyzeTable()">
-      <span id="button-text">ANALYZE PRICING</span>
+      <span id="button-text">ANALYZE RELEVANT DATA</span>
       <span id="button-spinner" class="loading-spinner hidden"></span>
     </button>
   {% endblock analyze_button %}
@@ -311,6 +311,8 @@ async function scrapePrices() {
 // 🧩 ANALYSIS PHASE
 // -------------------------------
 async function analyzeTable() {
+    // Immediately remove all irrelevant competitors
+    removeIrrelevantCompetitors();
     const itemName = document.getElementById('item-name').value.trim();
     const description = document.getElementById('description').value.trim();
     const urgency = parseInt(document.getElementById('urgency').value);
@@ -377,6 +379,16 @@ function extractCompetitorTableData() {
                 link: cells[3]?.querySelector('a')?.href || ''
             };
         }).filter(item => item.competitor);
+}
+
+// Remove irrelevant competitor rows
+function removeIrrelevantCompetitors() {
+    const rows = document.querySelectorAll('#competitor-table tbody tr');
+    rows.forEach(row => {
+        if (row.getAttribute('data-relevant') === 'No') {
+            row.remove();
+        }
+    });
 }
 
 
