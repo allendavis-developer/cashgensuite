@@ -366,26 +366,33 @@ async function analyzeTable() {
 // 🧾 Extract table data for analysis
 function extractCompetitorTableData() {
     const rows = document.querySelectorAll('#competitor-table tbody tr');
-    return Array.from(rows).map(row => {
-        const cells = row.querySelectorAll('td');
-        return {
-            competitor: cells[0]?.textContent.trim() || '',
-            price: parseFloat(cells[1]?.textContent.replace(/[^0-9.]/g, '')) || 0,
-            condition: cells[2]?.textContent.trim() || '',
-            link: cells[3]?.querySelector('a')?.href || ''
-        };
-    }).filter(item => item.competitor);
+    return Array.from(rows)
+        .filter(row => row.getAttribute('data-relevant') === 'Yes') // only relevant
+        .map(row => {
+            const cells = row.querySelectorAll('td');
+            return {
+                competitor: cells[0]?.textContent.trim() || '',
+                price: parseFloat(cells[2]?.textContent.replace(/[^0-9.]/g, '')) || 0,
+                condition: cells[1]?.textContent.trim() || '',
+                link: cells[3]?.querySelector('a')?.href || ''
+            };
+        }).filter(item => item.competitor);
 }
 
 
-// 🔄 Optional auto-analysis trigger if prefilled
 document.addEventListener('DOMContentLoaded', function() {
+    // Existing prefilled item/description logic
     const prefilledItem = "{{ prefilled_item|escapejs }}";
     const prefilledDescription = "{{ prefilled_description|escapejs }}";
 
     if (prefilledItem && prefilledDescription) {
         document.getElementById('item-name').value = prefilledItem;
         document.getElementById('description').value = prefilledDescription;
+    }
+
+    const costInput = document.getElementById('cost-price');
+    if (costInput && costInput.value) {
+        setRRPAfterTable(costInput.value);
     }
 });
 
