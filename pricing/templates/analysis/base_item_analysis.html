@@ -573,6 +573,9 @@
       <span id="button-text">ANALYZE PRICING</span>
       <span id="button-spinner" class="loading-spinner hidden"></span>
     </button>
+
+{% block analysis_actions %}{% endblock %}
+
   {% endblock analyze_button %}
 {% endblock input_panel_content %}
 
@@ -668,6 +671,7 @@
 </div>
 
 
+{% block analysis_section %}
 <div class="analysis-section analysis-scroll-container" id="analysis-section" style="display: none;">
     <div class="analysis-header">
         <div class="analysis-status">{% block analysis_status %}⚡ ANALYSIS COMPLETE{% endblock %}</div>
@@ -692,9 +696,9 @@
   </div>
 
 
+{% endblock %}
 
 
-  {% block analysis_actions %}{% endblock %}
 
 </div>
   {% block buying_price_panel %}{% endblock %}
@@ -863,20 +867,25 @@ Object.defineProperty(HTMLTableCellElement.prototype, 'textContent', {
 });
 
 
-
-function displayAnalysis(reasoning, suggestedPrice) {
+function displayAnalysis(reasoning, suggestedPrice, append = false) {
     const analysisSection = document.getElementById('analysis-section');
     const recommendedPrice = document.getElementById('recommended-price');
     const reasoningText = document.getElementById('reasoning-text');
     const analysisTime = document.getElementById('analysis-time');
 
+    if (append) {
+        // Append reasoning text instead of replacing
+        reasoningText.innerHTML += `<br><br>${reasoning}`;
+    } else {
+        reasoningText.innerHTML = reasoning;
+    }
+
+    // If appending, keep the previous recommended price but optionally update to latest
     recommendedPrice.textContent = suggestedPrice;
-    reasoningText.innerHTML = reasoning;
 
     const competitorCount = parseInt(document.getElementById('competitor-number').textContent);
 
     analysisTime.textContent = 'just now';
-
     analysisSection.style.display = 'block';
     analysisSection.scrollIntoView({ behavior: 'smooth' });
 }

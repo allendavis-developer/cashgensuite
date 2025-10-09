@@ -84,15 +84,13 @@
       <span id="button-text">ANALYZE RELEVANT DATA</span>
       <span id="button-spinner" class="loading-spinner hidden"></span>
     </button>
-  {% endblock analyze_button %}
 
-
-
-{% block analysis_actions %}
+    {% block analysis_actions %}
   <button id="confirm-list-btn" class="analyze-button" style="margin-bottom:20px;">
     CONFIRM & LIST
   </button>
 {% endblock %}
+  {% endblock analyze_button %}
 
 {% block modals %}
 <div id="list-modal" class="hidden" style="
@@ -197,6 +195,34 @@
 </div>
 {% endblock %}
 
+{% block analysis_section %}
+<div class="analysis-section analysis-scroll-container" id="analysis-section" style="display: none;">
+    <div class="analysis-header">
+        <div class="analysis-status">{% block analysis_status %}⚡ ANALYSIS COMPLETE{% endblock %}</div>
+        <div class="analysis-time" id="analysis-time">{% block analysis_time %}just now{% endblock %}</div>
+    </div>
+
+    <!-- Flex container for recommended prices -->
+    <div style="display: flex; flex-direction: column; gap: 0.2rem; margin-bottom: 0.5rem;">
+        <div class="recommended-price">
+            CC RECOMMENDED PRICE: <span id="recommended-price-cashconverters">-</span>
+        </div>
+        <div class="recommended-price">
+            CG RECOMMENDED PRICE: <span id="recommended-price-cashgenerator">-</span>
+        </div>
+    </div>
+
+    <div class="reasoning">
+        <div class="reasoning-title">REASONING:</div>
+        <div class="reasoning-text" id="reasoning-text">
+            {% block reasoning_placeholder %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
 {% block extra_style %}
   /* Checkbox container styling */
   #competitor-checkboxes {
@@ -277,8 +303,8 @@ confirmListBtn.addEventListener('click', () => {
 
     modalItemName.value = document.getElementById('item-name').value;
     modalDescription.value = document.getElementById('description').value;
-    modalPrice.value = document.getElementById('recommended-price').textContent.replace(/[^0-9.]+/g, '');
-    document.getElementById('modal-serial-number').value = document.getElementById('serial-number').value;
+{#    modalPrice.value = document.getElementById('recommended-price').textContent.replace(/[^0-9.]+/g, '');#}
+    document.getElementById('modal-serial-number').value = document.getElementById('barserial').value;
 });
 
 modalClose.addEventListener('click', () => {
@@ -393,58 +419,94 @@ async function scrapePrices() {
 
 
 // -------------------------------
-// 🧩 ANALYSIS PHASE
+// 🧩 ANALYSIS PHASE (Two-step: CashConverters → CashGenerator)
 // -------------------------------
 async function analyzeTable() {
-    // Immediately remove all irrelevant competitors
-{#    removeIrrelevantCompetitors();#}
     const itemName = document.getElementById('item-name').value.trim();
     const description = document.getElementById('description').value.trim();
     const urgency = parseInt(document.getElementById('urgency').value);
-
 
     if (!itemName || !description) {
         alert("Please fill in the item name and description.");
         return;
     }
 
-    // Collect competitor table data
     let competitorData = extractCompetitorTableData();
-    // Exclude CEX data before sending to AI
-    competitorData = competitorData.filter(item => item.competitor.toLowerCase() !== 'cex');
-
     if (!competitorData || competitorData.length === 0) {
-        alert("No competitor data found, please either scrape prices or mark some prices as relevant. Please note the AI does not consider CEX as relevant right now.");
+        alert("No competitor data found. Please scrape and mark relevant rows first.");
         return;
     }
+    // Filter sets
+    const cashConvertersData = competitorData.filter(
+        item => item.competitor.toLowerCase() === 'cashconverters'
+    );
+    const cashGeneratorData = competitorData.filter(
+        item => item.competitor.toLowerCase() === 'cashgenerator'
+    );
+
+    console.log(cashConvertersData);
+    console.log(cashGeneratorData);
 
     const analyzeBtn = document.getElementById('analyze-btn');
     analyzeBtn.disabled = true;
-    analyzeBtn.textContent = 'Analyzing...';
+    analyzeBtn.textContent = 'Analyzing CashConverters...';
 
+    // Run first analysis (CashConverters only)
     try {
-        const response = await fetch(window.location.href, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                item_name: itemName,
-                description: description,
-                competitor_data: competitorData,
-                cost_price: document.getElementById('cost-price').value,
-                urgency: urgency
-            })
-        });
+        if (cashConvertersData.length > 0) {
+            const response1 = await fetch(window.location.href, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    item_name: itemName,
+                    description: description,
+                    competitor_data: cashConvertersData,
+                    cost_price: document.getElementById('cost-price').value,
+                    urgency: urgency
+                })
+            });
+            const data1 = await response1.json();
 
-        const data = await response.json();
-
-        if (data.success) {
-            displayAnalysis(data.reasoning, data.suggested_price);
+            if (data1.success) {
+                displayDualAnalysis(data1.reasoning, data1.suggested_price, 'CashConverters');
+            } else {
+                alert(`CashConverters analysis failed: ${data1.error}`);
+            }
         } else {
-            alert(`Error: ${data.error}`);
+            console.warn("No CashConverters data found.");
         }
+
+        // Run second analysis (CashGenerator only)
+        analyzeBtn.textContent = 'Analyzing CashGenerator...';
+        if (cashGeneratorData.length > 0) {
+            const response2 = await fetch(window.location.href, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    item_name: itemName,
+                    description: description,
+                    competitor_data: cashGeneratorData,
+                    cost_price: document.getElementById('cost-price').value,
+                    urgency: urgency
+                })
+            });
+            const data2 = await response2.json();
+
+            if (data2.success) {
+                displayDualAnalysis(data2.reasoning, data2.suggested_price, 'CashGenerator');
+            } else {
+                alert(`CashGenerator analysis failed: ${data2.error}`);
+            }
+        } else {
+            console.warn("No CashGenerator data found.");
+        }
+
     } catch (error) {
         console.error('Analysis error:', error);
         alert('Network error. Please try again.');
@@ -454,9 +516,10 @@ async function analyzeTable() {
     }
 }
 
+
 // 🧾 Extract table data for analysis
 function extractCompetitorTableData() {
-    const rows = document.querySelectorAll('#competitor-table tbody tr');
+    const rows = allCompetitorRows;
     return Array.from(rows)
         .filter(row => row.getAttribute('data-relevant') === 'Yes') // only relevant
         .map(row => {
@@ -478,6 +541,29 @@ function removeIrrelevantCompetitors() {
             row.remove();
         }
     });
+}
+
+function displayDualAnalysis(reasoning, suggestedPrice, source) {
+    const analysisSection = document.getElementById('analysis-section');
+    const reasoningText = document.getElementById('reasoning-text');
+    const analysisTime = document.getElementById('analysis-time');
+
+    // Update the recommended price for the correct source
+    if (source === 'CashConverters') {
+        document.getElementById('recommended-price-cashconverters').textContent = suggestedPrice;
+    } else if (source === 'CashGenerator') {
+        document.getElementById('recommended-price-cashgenerator').textContent = suggestedPrice;
+    }
+
+    // Append reasoning instead of replacing
+    reasoningText.innerHTML += `<div style="margin-top: 1rem;"><strong>[${source}]</strong><br>${reasoning}</div>`;
+
+    // Show analysis section
+    analysisSection.style.display = 'block';
+    analysisSection.scrollIntoView({ behavior: 'smooth' });
+
+    // Update analysis timestamp
+    analysisTime.textContent = 'just now';
 }
 
 

@@ -17,7 +17,6 @@ def process_item_analysis(data):
 
     # Check if frontend already sent local scrape data
     competitor_data = data.get("competitor_data")
-
     if competitor_data:
         print("Using local scraper data from browser")
 
