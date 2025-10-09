@@ -356,17 +356,48 @@ priceSourceSelect.addEventListener('change', () => {
     }
 
     // Clean up the price string (remove £ if present)
-    priceValue = priceValue.replace(/[^0-9.]/g, "");
+    priceValue = parseFloat(priceValue.replace(/[^0-9.]/g, '')).toFixed(2);
     modalPrice.value = priceValue;
 });
 
 
 modalSubmitBtn.addEventListener('click', async function() {
+    let price = modalPrice.value.trim();
+
+    // Close and reset modal immediately
+    modal.style.display = 'none';
+    modal.classList.add('hidden');
+    modalSubmitBtn.disabled = false;
+    modalSubmitBtn.textContent = 'List Item';
+
+
+    if (!price) {
+        alert("Please specify a price either by selecting a recommended price or entering one manually.");
+        // Reset the modal state and close
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+        modalSubmitBtn.disabled = false;
+        modalSubmitBtn.textContent = 'List Item';
+        return;
+    }
+
+    price = parseFloat(price.replace(/[^0-9.]/g, '')).toFixed(2);
+
     modalSubmitBtn.disabled = true;
     modalSubmitBtn.textContent = 'Launching Automation...';
 
-      await launchPlaywrightListing(modalItemName.value, modalDescription.value, modalPrice.value, document.getElementById('modal-serial-number').value);
-
+    try {
+        await launchPlaywrightListing(modalItemName.value, modalDescription.value, price, document.getElementById('modal-serial-number').value);
+    } catch (err) {
+        console.error("Launch error:", err);
+        alert("Automation failed due to an unexpected error.");
+    } finally {
+        modalSubmitBtn.disabled = false;
+        modalSubmitBtn.textContent = 'List Item';
+        // Close modal after attempt
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+    }
 });
 
 
