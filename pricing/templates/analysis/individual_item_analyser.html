@@ -619,7 +619,7 @@ function displayDualAnalysis(reasoning, suggestedPrice, source) {
     // Calculate margin percentage
     let marginText = "";
     if (priceValue && costPrice > 0) {
-        const margin = ((priceValue - costPrice) / costPrice) * 100;
+        const margin = ((priceValue - costPrice) / priceValue) * 100;
         const color = margin < minMargin ? '#f00' : '#0f0'; // red if below min margin
         marginText = ` (<span style="color:${color};">${margin.toFixed(1)}%</span> margin)`;
     } else {
