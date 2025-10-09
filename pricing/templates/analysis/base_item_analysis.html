@@ -587,7 +587,7 @@
         <tr>
           <th>CEX Price Avg</th>
           <th>CEX - Discount % (20% for now)</th>
-          <th>Cost Price + 37.5% Margin</th>
+          <th>Cost Price + Your Minimum Margin</th>
           <th>Cash Converters Lowest</th>
           <th>Cash Generator Lowest</th>
         </tr>
@@ -1133,11 +1133,29 @@ function updateRRPCell() {
         return;
     }
 
-    const marginPrice = (currentCostPrice / 0.625).toFixed(2);
+    // 🔹 Get user-entered margin %
+    const marginInput = document.getElementById('minimum-margin');
+    const marginPercent = parseFloat(marginInput?.value || 37.5); // fallback to 37.5%
+
+    console.log(marginPercent)
+    // 🔹 Convert margin to multiplier
+    const multiplier = 1 + (marginPercent / 100);
+
+    // 🔹 Compute new RRP dynamically
+    const marginPrice = (currentCostPrice * multiplier).toFixed(2);
     rrpCell.textContent = `£${marginPrice}`;
-    console.log(`✅ Cost price + 37.5% margin set: £${marginPrice}`);
+    console.log(`✅ Cost price + ${marginPercent}% margin set: £${marginPrice}`);
 }
 
+// Auto-update when margin field changes
+document.addEventListener('DOMContentLoaded', () => {
+    const marginInput = document.getElementById('minimum-margin');
+    if (marginInput) {
+        marginInput.addEventListener('input', () => {
+            updateRRPCell();
+        });
+    }
+});
 
 // === Scroll Container Resizing Logic ===
 document.addEventListener('DOMContentLoaded', function() {

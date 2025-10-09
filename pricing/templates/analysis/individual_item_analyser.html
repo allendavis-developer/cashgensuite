@@ -409,9 +409,12 @@ async function analyzeTable() {
     }
 
     // Collect competitor table data
-    const competitorData = extractCompetitorTableData();
+    let competitorData = extractCompetitorTableData();
+    // Exclude CEX data before sending to AI
+    competitorData = competitorData.filter(item => item.competitor.toLowerCase() !== 'cex');
+
     if (!competitorData || competitorData.length === 0) {
-        alert("No competitor data found, please either scrape prices or mark some prices as relevant.");
+        alert("No competitor data found, please either scrape prices or mark some prices as relevant. Please note the AI does not consider CEX as relevant right now.");
         return;
     }
 
@@ -450,7 +453,6 @@ async function analyzeTable() {
         analyzeBtn.textContent = 'Analyze Pricing';
     }
 }
-
 
 // 🧾 Extract table data for analysis
 function extractCompetitorTableData() {
