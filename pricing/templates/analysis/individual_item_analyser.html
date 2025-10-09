@@ -383,9 +383,6 @@ modalSubmitBtn.addEventListener('click', async function() {
 
     price = parseFloat(price.replace(/[^0-9.]/g, '')).toFixed(2);
 
-    modalSubmitBtn.disabled = true;
-    modalSubmitBtn.textContent = 'Launching Automation...';
-
     try {
         await launchPlaywrightListing(modalItemName.value, modalDescription.value, price, document.getElementById('modal-serial-number').value);
     } catch (err) {
