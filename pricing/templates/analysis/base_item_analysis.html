@@ -1153,15 +1153,9 @@ function updateRRPCell() {
     // 🔹 Get user-entered margin %
     const marginInput = document.getElementById('minimum-margin');
     const marginPercent = parseFloat(marginInput?.value || 37.5); // fallback to 37.5%
+    const rrp = (currentCostPrice / (1 - marginPercent / 100)).toFixed(2);
 
-    console.log(marginPercent)
-    // 🔹 Convert margin to multiplier
-    const multiplier = 1 + (marginPercent / 100);
-
-    // 🔹 Compute new RRP dynamically
-    const marginPrice = (currentCostPrice * multiplier).toFixed(2);
-    rrpCell.textContent = `£${marginPrice}`;
-    console.log(`✅ Cost price + ${marginPercent}% margin set: £${marginPrice}`);
+    rrpCell.textContent = `£${rrp}`;
 }
 
 // Auto-update when margin field changes
