@@ -504,8 +504,6 @@
     }
 
 
-    
-
   {% block extra_style %}{% endblock %}
 </style>
 </head>
@@ -581,12 +579,27 @@
   </div>
 
   <div class="competitor-panel">
-    <div class="panel-title">COMPETITOR DATA</div>
 
-     <div id="source-averages-header"
-         style="color: #ffffff; font-weight: 600; font-size: 0.875rem; margin-bottom: 1rem; min-height: 1.2rem; text-transform: uppercase; letter-spacing: 0.03em;">
-        <!-- Source averages will appear here -->
-    </div>
+        <div class="panel-title" style="margin-top: 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #888;">MARKET SUMMARY</div>
+
+    <table class="competitor-table" id="analysis-table">
+      <thead>
+        <tr>
+          <th>CEX Price Avg</th>
+          <th>CEX - Discount % (20% for now)</th>
+          <th>Cost Price + 37.5% Margin</th>
+          <th>Cash Converters Lowest</th>
+          <th>Cash Generator Lowest</th>
+        </tr>
+      </thead>
+      <tbody id="analysis-tbody">
+        <tr>
+          <td colspan="5" style="text-align: center; color: #666; font-style: italic;">
+            No market summary data available
+          </td>
+        </tr>
+      </tbody>
+    </table>
 
 
 
@@ -679,26 +692,7 @@
   </div>
 
 
-    <div class="panel-title" style="margin-top: 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #888;">MARKET SUMMARY</div>
 
-    <table class="competitor-table" id="analysis-table">
-      <thead>
-        <tr>
-          <th>CEX Price Avg</th>
-          <th>CEX - Discount % (20% for now)</th>
-          <th>Cost Price + 37.5% Margin</th>
-          <th>Cash Converters Lowest</th>
-          <th>Cash Generator Lowest</th>
-        </tr>
-      </thead>
-      <tbody id="analysis-tbody">
-        <tr>
-          <td colspan="5" style="text-align: center; color: #666; font-style: italic;">
-            No market summary data available
-          </td>
-        </tr>
-      </tbody>
-    </table>
 
   {% block analysis_actions %}{% endblock %}
 
@@ -1066,20 +1060,6 @@ function computeSourceAverages() {
         };
     });
 
-    // Render at top of competitor panel
-    const headerDiv = document.getElementById('source-averages-header');
-    if (Object.keys(sourceAverages).length === 0) {
-        headerDiv.textContent = '';
-    } else {
-        const parts = Object.entries(sourceAverages).map(([source, data]) => `
-            <span class="source-highlight">${source}</span>:
-            <span class="price-highlight">£${data.average.toFixed(0)}</span>
-            <span class="price-range">(£${data.min.toFixed(0)}–£${data.max.toFixed(0)})</span>
-        `);
-        headerDiv.innerHTML = parts.join(' &nbsp;|&nbsp; ');
-    }
-
-    console.log("Source averages (excluding irrelevant listings):", sourceAverages);
 
     // ===== Populate analysis table =====
     const tbody = document.getElementById('analysis-tbody');
