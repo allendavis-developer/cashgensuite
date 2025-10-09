@@ -443,10 +443,7 @@ async function analyzeTable() {
     }
 
     let competitorData = extractCompetitorTableData();
-    if (!competitorData || competitorData.length === 0) {
-        alert("No competitor data found. Please scrape and mark relevant rows first.");
-        return;
-    }
+
     // Filter sets
     const cashConvertersData = competitorData.filter(
         item => item.competitor.toLowerCase() === 'cashconverters'
@@ -455,8 +452,11 @@ async function analyzeTable() {
         item => item.competitor.toLowerCase() === 'cashgenerator'
     );
 
-    console.log(cashConvertersData);
-    console.log(cashGeneratorData);
+   // Check if BOTH are empty
+    if (cashConvertersData.length === 0 && cashGeneratorData.length === 0) {
+        alert("Please scrape and mark relevant rows for Cash Converters or Cash Generators first.");
+        return;
+    }
 
     const analyzeBtn = document.getElementById('analyze-btn');
     analyzeBtn.disabled = true;
@@ -576,11 +576,33 @@ function displayDualAnalysis(reasoning, suggestedPrice, source) {
     const reasoningText = document.getElementById('reasoning-text');
     const analysisTime = document.getElementById('analysis-time');
 
+     // Clear old analysis only for the first source
+    if (source === 'CashConverters') {
+        reasoningText.innerHTML = ''; // empty old reasoning
+        document.getElementById('recommended-price-cashconverters').innerHTML = '-';
+        document.getElementById('recommended-price-cashgenerator').innerHTML = '-';
+    }
+
+    // Ensure suggested price is a number
+    const priceValue = parseFloat(suggestedPrice.toString().replace(/[^0-9.]/g, ''));
+    const costPrice = parseFloat(document.getElementById('cost-price').value) || 0;
+    const minMargin = parseFloat(document.getElementById('minimum-margin')?.value) || 0;
+
+    // Calculate margin percentage
+    let marginText = "";
+    if (priceValue && costPrice > 0) {
+        const margin = ((priceValue - costPrice) / costPrice) * 100;
+        const color = margin < minMargin ? '#f00' : '#0f0'; // red if below min margin
+        marginText = ` (<span style="color:${color};">${margin.toFixed(1)}%</span> margin)`;
+    } else {
+        marginText = ` (<span style="color:#888;">n/a</span>)`;
+    }
+
     // Update the recommended price for the correct source
     if (source === 'CashConverters') {
-        document.getElementById('recommended-price-cashconverters').textContent = suggestedPrice;
+        document.getElementById('recommended-price-cashconverters').innerHTML = `£${priceValue.toFixed(2)}${marginText}`;
     } else if (source === 'CashGenerator') {
-        document.getElementById('recommended-price-cashgenerator').textContent = suggestedPrice;
+        document.getElementById('recommended-price-cashgenerator').innerHTML = `£${priceValue.toFixed(2)}${marginText}`;
     }
 
     // Append reasoning instead of replacing

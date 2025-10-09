@@ -1035,21 +1035,24 @@ async function checkIrrelevantCompetitors(searchQuery) {
         validIndex++;
     });
 
-    // ===== INITIALIZE ALL COMPETITORS AS IRRELEVANT FOR NOW =====
+    // ===== INITIALIZE ALL COMPETITORS AS IRRELEVANT FOR NOW, EXCEPT CEX =====
     allCompetitorRows.forEach(row => {
+        const store = row.cells[0].textContent.trim().toUpperCase();
         const relevanceCell = row.cells[4];
         const select = relevanceCell.querySelector('.relevance-select');
+
+        let isRelevant = store === "CEX"; // auto-relevant if store is CEX
+
         if (select) {
-            select.value = "No";
-            relevanceCell.setAttribute('data-text-value', "No");
+            select.value = isRelevant ? "Yes" : "No";
+            relevanceCell.setAttribute('data-text-value', isRelevant ? "Yes" : "No");
         }
-        row.setAttribute('data-relevant', "No");
-        row.style.opacity = "0.3";
+
+        row.setAttribute('data-relevant', isRelevant ? "Yes" : "No");
+        row.style.opacity = isRelevant ? "1" : "0.3";
     });
 
     // ------- WE WILL REMOVE THIS BLOCK OF CODE -------------
-
-
     computeSourceAverages();
 }
 
