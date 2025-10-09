@@ -304,6 +304,7 @@
 {% endblock %}
 
 {% block extra_script %}
+{% csrf_token %}  {# ← Add this at the top of your script block #}
 const modal = document.getElementById('list-modal');
 const modalClose = document.getElementById('modal-close');
 const modalItemName = document.getElementById('modal-item-name');
