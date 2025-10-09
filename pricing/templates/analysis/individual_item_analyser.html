@@ -312,7 +312,7 @@ async function scrapePrices() {
 // -------------------------------
 async function analyzeTable() {
     // Immediately remove all irrelevant competitors
-    removeIrrelevantCompetitors();
+{#    removeIrrelevantCompetitors();#}
     const itemName = document.getElementById('item-name').value.trim();
     const description = document.getElementById('description').value.trim();
     const urgency = parseInt(document.getElementById('urgency').value);
@@ -332,6 +332,8 @@ async function analyzeTable() {
     const analyzeBtn = document.getElementById('analyze-btn');
     analyzeBtn.disabled = true;
     analyzeBtn.textContent = 'Analyzing...';
+
+    console.log(competitorData)
 
     try {
         const response = await fetch(window.location.href, {

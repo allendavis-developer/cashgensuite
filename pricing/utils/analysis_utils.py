@@ -46,10 +46,18 @@ def process_item_analysis(data):
                     )
                 )
 
+            # ✅ Use the provided competitor_data directly for AI input
+            competitor_data_for_ai = "\n".join([
+                f"{entry.get('competitor', 'Unknown')} | "
+                f"{entry.get('title', 'Untitled')} | "
+                f"£{float(entry.get('price', 0.0)):.2f} | "
+                f"{entry.get('store', 'N/A')}"
+                for entry in competitor_data
+            ])
+
             # Single database hit for all listings
             CompetitorListing.objects.bulk_create(listings_to_create, ignore_conflicts=True)
 
-            competitor_data_for_ai = get_competitor_data(item_name, False)
             competitor_data_for_frontend = get_competitor_data(item_name, True)
 
     # Generate AI analysis
@@ -72,7 +80,6 @@ def process_item_analysis(data):
         "reasoning": reasoning,
         "full_response": ai_response,
         "submitted_data": {"item_name": item_name, "description": description},
-        "competitor_data": competitor_data_for_frontend,
         "competitor_count": analysis_result["competitor_count"],
         "analysis_id": analysis_result["analysis_id"]  # Useful for other screens
     })

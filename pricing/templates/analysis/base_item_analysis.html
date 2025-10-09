@@ -272,7 +272,7 @@
   }
 
   .reasoning-text {
-    font-size: 0.8125rem;
+    font-size: 1rem;
     line-height: 1.6;
     color: #cccccc;
   }
@@ -1023,6 +1023,21 @@ async function checkIrrelevantCompetitors(searchQuery) {
 
         validIndex++;
     });
+
+    // ===== INITIALIZE ALL COMPETITORS AS IRRELEVANT FOR NOW =====
+    allCompetitorRows.forEach(row => {
+        const relevanceCell = row.cells[4];
+        const select = relevanceCell.querySelector('.relevance-select');
+        if (select) {
+            select.value = "No";
+            relevanceCell.setAttribute('data-text-value', "No");
+        }
+        row.setAttribute('data-relevant', "No");
+        row.style.opacity = "0.3";
+    });
+
+    // ------- WE WILL REMOVE THIS BLOCK OF CODE -------------
+
 
     computeSourceAverages();
 }
