@@ -61,7 +61,19 @@
       >
     </div>
   </div>
+
+    <div class="input-group" style="margin-top: 16px;">
+      <label class="input-label">Select Websites to Scrape</label>
+      <div id="competitor-checkboxes" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px;">
+        <label><input type="checkbox" name="competitors" value="CashConverters" checked> CashConverters</label>
+        <label><input type="checkbox" name="competitors" value="CashGenerator" checked> CashGenerator</label>
+        <label><input type="checkbox" name="competitors" value="CEX" checked> CEX</label>
+        <label><input type="checkbox" name="competitors" value="eBay"> eBay</label>
+      </div>
+    </div>
+
 {% endblock after_description %}
+
 
 {% block analyze_button %}
     <button type="button" id="scrape-btn" class="analyze-button" onclick="scrapePrices()">
@@ -185,6 +197,68 @@
 </div>
 {% endblock %}
 
+{% block extra_style %}
+  /* Checkbox container styling */
+  #competitor-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 6px;
+  }
+
+  /* Label wrapper */
+  #competitor-checkboxes label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #111;
+    color: #fff;
+    padding: 10px 14px;
+    border: 1px solid #333;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    font-size: 13px;
+    user-select: none;
+  }
+
+  /* Hover effect */
+  #competitor-checkboxes label:hover {
+    background-color: #1a1a1a;
+    border-color: #555;
+  }
+
+  /* Checkbox input */
+  #competitor-checkboxes input[type="checkbox"] {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #888;
+    border-radius: 4px;
+    background-color: #000;
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    cursor: pointer;
+  }
+
+  /* Checked state */
+  #competitor-checkboxes input[type="checkbox"]:checked {
+    background-color: #fff;
+    border-color: #fff;
+  }
+
+  /* Custom checkmark */
+  #competitor-checkboxes input[type="checkbox"]:checked::after {
+    content: "✔";
+    color: #000;
+    position: absolute;
+    font-size: 11px;
+    top: 0;
+    left: 2px;
+  }
+
+{% endblock %}
+
 {% block extra_script %}
 const modal = document.getElementById('list-modal');
 const modalClose = document.getElementById('modal-close');
@@ -273,10 +347,21 @@ async function scrapePrices() {
     scrapeBtn.disabled = true;
     scrapeBtn.textContent = 'Scraping...';
 
+    const selectedCompetitors = Array.from(document.querySelectorAll('input[name="competitors"]:checked'))
+    .map(cb => cb.value);
+
+    if (selectedCompetitors.length === 0) {
+        alert('Please select at least one website to scrape.');
+        scrapeBtn.disabled = false;
+        scrapeBtn.textContent = 'Scrape Prices';
+        return;
+    }
+
+
     try {
         const response = await callLocalAgent("/scrape-prices", {
             query: itemName,
-            competitors: ["CashConverters", "CashGenerator", "CEX", "eBay"],
+            competitors: selectedCompetitors,
         });
 
         if (response.ok) {
@@ -317,6 +402,7 @@ async function analyzeTable() {
     const description = document.getElementById('description').value.trim();
     const urgency = parseInt(document.getElementById('urgency').value);
 
+
     if (!itemName || !description) {
         alert("Please fill in the item name and description.");
         return;
@@ -325,15 +411,13 @@ async function analyzeTable() {
     // Collect competitor table data
     const competitorData = extractCompetitorTableData();
     if (!competitorData || competitorData.length === 0) {
-        alert("Please scrape prices first — no competitor data found.");
+        alert("No competitor data found, please either scrape prices or mark some prices as relevant.");
         return;
     }
 
     const analyzeBtn = document.getElementById('analyze-btn');
     analyzeBtn.disabled = true;
     analyzeBtn.textContent = 'Analyzing...';
-
-    console.log(competitorData)
 
     try {
         const response = await fetch(window.location.href, {
@@ -346,6 +430,7 @@ async function analyzeTable() {
                 item_name: itemName,
                 description: description,
                 competitor_data: competitorData,
+                cost_price: document.getElementById('cost-price').value,
                 urgency: urgency
             })
         });

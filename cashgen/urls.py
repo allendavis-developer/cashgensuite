@@ -6,7 +6,6 @@ urlpatterns = [
     # ----------------------------- PAGES -----------------------------
     path('', v.home_view, name='home'),
     path('admin/', admin.site.urls),
-    path('individual-item-analysis/', v.individual_item_analysis_view, name='individual_item_analysis'),
     path('individual-item-analyser/', v.individual_item_analyser_view, name='individual_item_analyser'),
     path('item-buying-analyser/', v.item_buying_analyser_view, name='item_buying_analyser'),
     path("inventory/free/", v.inventory_free_stock_view, name="inventory_free_stock"),

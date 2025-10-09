@@ -12,6 +12,7 @@ def process_item_analysis(data):
     # Extract and clean data
     item_name = (data.get("item_name") or "").strip()
     description = (data.get("description") or "").strip()
+    cost_price = (data.get("cost_price") or "").strip()
     urgency = int(data.get("urgency", 3))  # Add this line, default to 3
 
     # Check if frontend already sent local scrape data
@@ -62,7 +63,7 @@ def process_item_analysis(data):
 
     # Generate AI analysis
     ai_response, reasoning, suggested_price = generate_price_analysis(
-        item_name, description, competitor_data_for_ai, urgency  # Add urgency parameter
+        item_name, description, competitor_data_for_ai, cost_price, urgency  # Add urgency parameter
     )
 
     # Remove any existing PriceAnalysis for this InventoryItem

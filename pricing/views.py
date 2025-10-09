@@ -324,10 +324,6 @@ def price_analysis_detail(request, analysis_id):
 
 
 # ----------------------- HOME PAGE VIEWS -------------------------------------
-def individual_item_analysis_view(request):
-    return render(request, "analysis/individual_item_analysis.html")
-
-
 def home_view(request):
     return render(request, "home.html")
 

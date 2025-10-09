@@ -153,6 +153,7 @@ Your task is to suggest an ideal selling price for listing this item on the **CG
 - Market Item: {market_item_title or "N/A"}
 - Description: {description or "N/A"}
 - Sale Urgency: {urgency}/5 → {urgency_text}
+- Cost Price: {cost_price or "N/A"}
 
 ---
 
@@ -187,9 +188,8 @@ Follow these rules carefully:
    - Use real competitor pricing context to judge this balance.
 
 5. **Cost Price Awareness**
-   - If a cost price is provided, calculate and **show the margin percentage**:  
-     (selling price − cost price) ÷ selling price × 100  
-   - Mention this margin and explain if it’s healthy or thin.
+   - If a cost price is provided, mention that you have received a cost price and mention what it is.  
+   - If a cost price is not provided, say I have not received a cost price for this item.
 
 ---
 
