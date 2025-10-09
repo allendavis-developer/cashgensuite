@@ -780,7 +780,7 @@ function updateCompetitorData(competitorData, competitorCount) {
             if (!isNaN(numericPrice)) prices.push(numericPrice);
 
             const row = document.createElement('tr');
-            row.setAttribute('data-relevant', 'Yes');
+            row.setAttribute('data-relevant', 'No');
 
             // Create select dropdown for relevance
             const selectHTML = `
@@ -1053,7 +1053,6 @@ async function checkIrrelevantCompetitors(searchQuery) {
     });
 
     // ------- WE WILL REMOVE THIS BLOCK OF CODE -------------
-    applySortAndFilter()
     computeSourceAverages();
 }
 
