@@ -84,6 +84,8 @@
       <span id="button-text">ANALYZE RELEVANT CC AND CG LISTINGS</span>
       <span id="button-spinner" class="loading-spinner hidden"></span>
     </button>
+    <!-- Put this anywhere inside your <body> -->
+    <input type="hidden" id="csrf-token" value="{% csrf_token %}">
 
     {% block analysis_actions %}
   <button id="confirm-list-btn" class="analyze-button" style="margin-bottom:20px;">
@@ -304,7 +306,6 @@
 {% endblock %}
 
 {% block extra_script %}
-{% csrf_token %}  {# ← Add this at the top of your script block #}
 const modal = document.getElementById('list-modal');
 const modalClose = document.getElementById('modal-close');
 const modalItemName = document.getElementById('modal-item-name');
@@ -471,6 +472,8 @@ async function analyzeTable() {
         return;
     }
 
+    const csrfToken = document.getElementById('csrf-token').value;
+
     let competitorData = extractCompetitorTableData();
 
     // Filter sets
@@ -498,7 +501,7 @@ async function analyzeTable() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
+                    'X-CSRFToken':getCookie('csrftoken')
                 },
                 body: JSON.stringify({
                     item_name: itemName,

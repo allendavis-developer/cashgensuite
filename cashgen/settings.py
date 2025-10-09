@@ -137,4 +137,9 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'  # ✅ directory where collectstatic will
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Ensure CSRF works properly in deployed HTTPS environment
+CSRF_COOKIE_SECURE = True          # Only send cookie over HTTPS
+CSRF_COOKIE_SAMESITE = 'Lax'       # 'Lax' is safest, 'None' if cross-site
+CSRF_TRUSTED_ORIGINS = ['https://cashgensuite.onrender.com']
+SESSION_COOKIE_SECURE = True       # Also secure sessions
 
