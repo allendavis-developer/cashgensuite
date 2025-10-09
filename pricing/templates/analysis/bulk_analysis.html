@@ -37,78 +37,6 @@
       text-decoration: underline;
   }
 
-  .marketitem-select {
-    appearance: none;
-      background: #0a0a0a;
-    color: #fff;
-    border: 1px solid #444;
-    border-radius: 8px;
-    padding: 8px 32px 8px 12px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    min-width: 180px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    position: relative;
-  }
-
-  .marketitem-select option {
-    background: #111;
-    color: #fff;
-    padding: 8px 12px;
-    border-radius: 4px;
-    font-size: 13px;
-  }
-
-  .marketitem-select option:hover {
-    background: #333;
-  }
-
-  .marketitem-select option:checked {
-    background: #444;
-    color: #8f8;
-  }
-
-.urgency-select {
-    appearance: none;
-    background: #0a0a0a;
-    color: #fff;
-    border: 1px solid #444;
-    border-radius: 8px;
-    padding: 8px 32px 8px 12px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    min-width: 180px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    position: relative;
-  }
-
-  .urgency-select option {
-    background: #111;
-    color: #fff;
-    padding: 8px 12px;
-    border-radius: 4px;
-    font-size: 13px;
-  }
-
-  .urgency-select option:hover {
-    background: #333;
-  }
-
-  .urgency-select option:checked {
-    background: #444;
-    color: #8f8;
-  }
-
-  .confirm-btn {
-      color: #88ff88;
-      cursor: pointer;
-      font-size: 12px;
-  }
-  .confirm-btn:hover {
-      text-decoration: underline;
-  }
 </style>
 </head>
 <body>
@@ -146,13 +74,6 @@
     <input type="text" id="barcodeInput" placeholder="Scan or enter barcode">
     <button onclick="addBarcode()">Add</button>
     <button id="scrapeBtn" onclick="startScraping()">Start Scraping</button>
-    <input
-        type="number"
-        id="minMarginInput"
-        placeholder="Min Margin (%)"
-        value="37.5"
-        style="width:120px; max-width:120px; padding:6px 8px; font-size:13px; background:#1a1a1a; color:#fff; border:1px solid #333; border-radius:4px; text-align:right;"
-      >
   </div>
 
   <div class="table-container">
@@ -168,13 +89,7 @@
           <th>Retail Price</th>
           <th>Created At</th>
           <th>Quantity</th>
-          <th>Type</th>
-          <th>Market Item</th>
-            <th>Urgency</th>
-            <th>Competitor Count</th>
-            <th>Suggested AI Price</th>
-            <th>Margin (%)</th>
-          <th>Actions</th>
+          <th>Type</th><th>Actions</th>
         </tr>
       </thead>
      <tbody id="barcodeTable">  </tbody>
@@ -187,7 +102,6 @@
 
 
 <script>
-const individualItemAnalysisUrl = "{% url 'individual_item_analysis' %}";
 
 let counter = 1;
 let barcodeQueue = [];  // used for scraping new items only
@@ -199,7 +113,7 @@ function showEmptyRow() {
   const tbody = document.getElementById("barcodeTable");
   tbody.innerHTML = `
     <tr>
-      <td colspan="16" style="text-align:center; color:#666; font-style:italic;">
+      <td colspan="12" style="text-align:center; color:#666; font-style:italic;">
         No barcodes added
       </td>
     </tr>
@@ -243,28 +157,10 @@ function addBarcode() {
       <td>-</td> <!-- Retail Price -->
       <td>-</td> <!-- Created At -->
       <td>-</td> <!-- Quantity -->
-      <td>-</td> <!-- Type -->
-      <td>
-        <select class="marketitem-select">
-          <option value="">Run Scraping First...</option>
-        </select>
-      </td>
-        <td>
-          <select class="urgency-select" style="cursor:pointer;">
-            <option value="1">1 - No Rush (Max Profit)</option>
-            <option value="2">2 - Standard Timeline</option>
-            <option value="3" selected>3 - Moderate Urgency</option>
-            <option value="4">4 - High Urgency</option>
-            <option value="5">5 - Must Sell ASAP</option>
-          </select>
-        </td>
-        <td>-</td> <!-- Competitor Count -->
-      <td>-</td> <!-- Suggested AI Price -->
-<td>-</td> <!-- Margin -->
+      <td>-</td> <!-- Bought in by -->
       <td>
         <span class="remove-btn" onclick="removeRow(this, '${barcode}')">Remove</span>
-        <span class="view-btn" style="margin-left:8px;" onclick="viewAnalysis('${barcode}')">View</span>
-        <span class="confirm-btn" style="margin-left:8px;" onclick="confirmAndList('${barcode}')">Confirm & List</span>
+        <span class="view-btn" style="margin-left:8px;" onclick="viewAnalysis('${barcode}')">Analyse</span>
       </td>
       </td>
     `;
@@ -391,8 +287,6 @@ async function startScraping() {
           productData.push({ ...product, status: 'scraped' });
         }
 
-          // Populate dropdown as before
-          populateMarketItemDropdown(row, product.market_item || '');
         }
       });
 
@@ -408,13 +302,8 @@ async function startScraping() {
         return false;
       });
 
-      if (hasPendingItems) {
-        scrapeBtn.textContent = "Scrape Pending Items";
-        scrapeBtn.onclick = startScraping;
-      } else {
-        scrapeBtn.textContent = "Analyse";
-        scrapeBtn.onclick = analyseBarcodes;
-      }
+    scrapeBtn.textContent = "Scrape New Items";
+    scrapeBtn.onclick = startScraping;
 
       isFirstScrape = false;
       window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
@@ -429,437 +318,6 @@ async function startScraping() {
     statusDiv.className = "error";
     statusDiv.textContent = `❌ Request failed: ${err.message}`;
   }
-}
-
-async function getPerfectSearchTerm(name, description, specifications) {
-  try {
-    const res = await fetch("/generate-search-term/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken"),
-      },
-      body: JSON.stringify({ name, description, specifications }),
-    });
-
-    const data = await res.json();
-    if (data.success) {
-      console.log("🧠 Gemini Search Term:", data.search_term);
-      return data.search_term;
-    } else {
-      console.warn("⚠️ Gemini returned error:", data.error);
-      return name; // fallback
-    }
-  } catch (err) {
-    console.error("💥 Search term request failed:", err);
-    return name; // fallback
-  }
-}
-
-
-async function runBulkAnalysis(items) {
-    let scrapedResults = null;
-
-    try {
-        console.log("🔍 Trying local bulk scrape...");
-        const scrapeResponse = await callLocalAgent("/bulk-scrape-competitors", {items});
-
-        // callLocalAgent() returns parsed JSON directly
-        if (scrapeResponse && scrapeResponse.success) {
-            scrapedResults = scrapeResponse.results;
-            console.log("✅ Local scrape success:", scrapedResults);
-        } else {
-            console.warn("❌ Local scrape error:", scrapeResponse?.error || "Unknown error");
-        }
-    } catch (err) {
-        console.warn("💥 Local agent unreachable:", err);
-    }
-
-    console.log("📤 Sending scraped data to Django for AI analysis...");
-
-    const response = await fetch("/bulk-analyse-items/", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie("csrftoken"),
-        },
-        body: JSON.stringify({
-            items,
-            local_scrape_data: scrapedResults
-        }),
-    });
-
-    return response.json();
-}
-
-
-async function analyseBarcodes() {
-    const tbody = document.getElementById("barcodeTable");
-    const tableRows = tbody.querySelectorAll("tr");
-
-    // Check if we have any scraped items (items with names)
-    let hasScrapedItems = false;
-    tableRows.forEach(row => {
-        if (row.cells.length >= 13) { // Updated to 13 columns
-            const name = row.cells[3].textContent.trim();
-            if (name) {
-                hasScrapedItems = true;
-            }
-        }
-    });
-
-    if (!hasScrapedItems) {
-        alert("No products to analyse! Please scrape some items first.");
-        return;
-    }
-
-    const statusDiv = document.getElementById("scrape-status");
-    statusDiv.className = "";
-    statusDiv.innerHTML = "Analysing items... <span class='spinner'></span>";
-
-    const scrapeBtn = document.getElementById("scrapeBtn");
-    scrapeBtn.disabled = true;
-    scrapeBtn.textContent = "Analysing...";
-
-    try {
-        // Prepare items for analysis - extract data from table rows
-        const itemsToAnalyse = [];
-        for (const row of tableRows) {
-            if (row.cells.length >= 13) { // Updated to 13 columns
-                const barcode = row.cells[1].textContent.trim();
-                const product = productData.find(p => p.barcode === barcode) || {};
-                console.log(product)
-                console.log(productData)
-                const barserial = row.cells[2].textContent.trim();
-                let name = row.cells[3].textContent.trim();
-                const description = row.cells[4].textContent.trim();
-                const costPrice = row.cells[5].textContent.trim();
-                const marketItemSelect = row.querySelector('.marketitem-select');
-                const marketItem = marketItemSelect ? marketItemSelect.value : '';
-                const urgencySelect = row.querySelector('.urgency-select');
-                const urgency = urgencySelect ? urgencySelect.value : '3'; // default to 3
-                if (name) { // Only analyse items that have names (were successfully scraped)
-
-                    // Call getPerfectSearchTerm ONCE
-                    const searchTerm = await getPerfectSearchTerm(name, description, product.specifications || {});
-                    row.cells[3].textContent = searchTerm; // Update table
-                    name = searchTerm; // Use in payload
-
-                    itemsToAnalyse.push({
-                        barcode: barcode,
-                        barserial: barserial,
-                        name: name,
-                        description: description,
-                        market_item: marketItem,  // Send the selected MarketItem
-                        cost_price: costPrice,
-                        urgency: urgency,
-                        specifications: product.specifications || {} // 🆕 send full specs
-                    });
-                }
-            }
-        }
-
-        if (itemsToAnalyse.length === 0) {
-            throw new Error("No valid items with names to analyse");
-        }
-
-        const data = await runBulkAnalysis(itemsToAnalyse);
-
-        if (data.success) {
-            // Update table with analysis results
-            data.results.forEach(result => {
-                if (result.success) {
-                    const row = document.querySelector(`tr[data-barcode="${result.barcode}"]`);
-                    if (row) {
-                        row.cells[13].textContent = result.suggested_price;
-                        row.cells[13].style.color = "#8f8"; // Green color for success
-
-                        row.cells[12].textContent = result.competitor_count;
-                        row.cells[12].style.color = "#8f8"; // Green color for success
-                        row.dataset.analysisId = result.analysis_id;
-
-                        const costPriceStr = row.cells[5].textContent.trim().replace(/[^\d.]/g, '');
-                        const costPrice = parseFloat(costPriceStr) || 0;
-
-                        const suggestedPriceStr = result.suggested_price.toString().trim().replace(/[^\d.]/g, '');
-                        const suggestedPrice = parseFloat(suggestedPriceStr) || 0;
-
-                        const margin = costPrice > 0 ? ((suggestedPrice - costPrice) / costPrice * 100).toFixed(2) : '-';
-                        console.log(margin)
-                        row.cells[14].textContent = margin;
-                        row.cells[14].style.color = "#8f8";
-
-                        //  SHOW View button now
-                        const viewBtn = row.querySelector(".view-btn");
-                        if (viewBtn) viewBtn.style.display = "inline-block";
-
-                        // SHOW Confirm & List button now
-                        const confirmBtn = row.querySelector(".confirm-btn");
-                        if (confirmBtn) confirmBtn.style.display = "inline-block";
-
-                    }
-                } else {
-                    // Mark failed analyses
-                    const row = document.querySelector(`tr[data-barcode="${result.barcode}"]`);
-                    if (row) {
-                        row.cells[11].textContent = "Error: " + result.error;
-                        row.cells[11].style.color = "#f88"; // Red color for error
-                        row.cells[12].textContent = "N/A";
-                    }
-                }
-            });
-
-            statusDiv.className = "success";
-            statusDiv.innerHTML = `✅ Analysis completed! Processed ${data.results.length} items.`;
-
-            applyMinMarginHighlight();
-
-            scrapeBtn.disabled = false;
-            scrapeBtn.textContent = "Re-Analyse";
-
-        } else {
-            throw new Error(data.error || "Analysis failed");
-        }
-
-    } catch (err) {
-        statusDiv.className = "error";
-        statusDiv.innerHTML = `❌ Analysis failed: ${err.message}`;
-
-        scrapeBtn.disabled = false;
-        scrapeBtn.textContent = "Analyse";
-    }
-}
-
-function populateMarketItemDropdown(row, prefillMarketItem='') {
-    const select = row.querySelector('.marketitem-select');
-    const name = row.cells[3].textContent.trim(); // product name as fallback query
-    const query = prefillMarketItem || name;
-
-    fetch(`/marketitem_suggestions?q=${encodeURIComponent(query)}`)
-        .then(res => res.json())
-        .then(data => {
-            select.innerHTML = '';
-            const suggestions = data.suggestions || [];
-
-            if (suggestions.length === 0) {
-                const noOption = document.createElement('option');
-                noOption.value = '';
-                noOption.textContent = 'No matches found';
-                select.appendChild(noOption);
-            } else {
-                suggestions.forEach(title => {
-                    const option = document.createElement('option');
-                    option.value = title;
-                    option.textContent = title;
-                    if (title === prefillMarketItem) option.selected = true;
-                    select.appendChild(option);
-                });
-            }
-
-            // // Always add "create new" option
-            // const createOption = document.createElement('option');
-            // createOption.value = `${query}`;
-            // createOption.textContent = `    Create new: "${query}"`;
-            // select.appendChild(createOption);
-
-            // Handle linking on change
-            select.onchange = () => {
-                const val = select.value;
-                const inventoryTitle = row.cells[3].textContent.trim();
-
-                if (!inventoryTitle) {
-                    alert("Inventory item has no name yet, cannot link.");
-                    return;
-                }
-
-                if (val.startsWith("__create__")) {
-                    const newTitle = val.replace("__create__:", "");
-                    linkMarketItem(inventoryTitle, newTitle, true);
-                } else if (val) {
-                    linkMarketItem(inventoryTitle, val, false);
-                }
-            };
-        })
-        .catch(err => {
-            select.innerHTML = '<option value="">Error loading</option>';
-            console.error('MarketItem fetch error:', err);
-        });
-}
-
-async function linkMarketItem(inventoryTitle, marketItemTitle, isNew=false) {
-    try {
-        // If it's a new item, clean up the title (remove the __create__: prefix if present)
-        const cleanMarketItemTitle = marketItemTitle.startsWith("__create__:")
-            ? marketItemTitle.replace("__create__:", "")
-            : marketItemTitle;
-
-        const res = await fetch("/link_inventory_to_marketitem/", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                inventory_title: inventoryTitle,
-                marketitem_title: cleanMarketItemTitle
-            })
-        });
-        const data = await res.json();
-
-        if (data.success) {
-            alert(
-                isNew
-                ? `Created and linked new MarketItem: ${cleanMarketItemTitle}`
-                : `Linked to MarketItem: ${cleanMarketItemTitle}`
-            );
-
-            // Update the dropdown to show the newly created item as selected
-            const rows = document.querySelectorAll('#barcodeTable tr');
-            rows.forEach(row => {
-                if (row.cells.length >= 4) {
-                    const nameCell = row.cells[3]; // Name column
-                    if (nameCell.textContent.trim() === inventoryTitle) {
-                        const select = row.querySelector('.marketitem-select');
-                        if (select) {
-                            select.value = cleanMarketItemTitle;
-                        }
-                    }
-                }
-            });
-        } else {
-            alert("❌ Linking failed: " + data.error);
-        }
-    } catch (err) {
-        console.error(err);
-        alert("❌ Request failed: " + err.message);
-    }
-}
-
-function viewAnalysis(barcode) {
-    const row = document.querySelector(`tr[data-barcode="${barcode}"]`);
-    if (!row || !row.dataset.analysisId) {
-    alert("No analysis available for this item.");
-    return;
-    }
-    const analysisId = row.dataset.analysisId;
-    const base = window.location.origin; // e.g. "http://127.0.0.1:8000"
-    const url = `${base}${individualItemAnalysisUrl}?analysis_id=${analysisId}`;
-
-    if (window.pywebview) { window.pywebview.api.open_analysis(url) }
-    else { window.open(url, "_blank"); }
-}
-
-async function launchPlaywrightListing(itemName, description, price, serialNumber) {
-  const data = await callLocalAgent("/launch-playwright-listing", {
-      item_name: itemName,
-      description,
-      price,
-      serial_number: serialNumber,
-  });
-
-  if (!data) return alert("Automation agent not running.");
-
-  if (data.success) {
-      alert("✅ Listing automation completed successfully!");
-  } else {
-      alert(`❌ Automation failed: ${data.error}`);
-  }
-}
-
-
-// Confirm and List Modal Class
-class ConfirmListModal {
-  constructor(modalId) {
-    this.modal = document.getElementById(modalId);
-    this.fieldsContainer = this.modal.querySelector('.modal-fields');
-    this.submitBtn = this.modal.querySelector('.modal-submit');
-    this.closeBtn = this.modal.querySelector('.modal-close');
-
-    this.closeBtn.addEventListener('click', () => this.hide());
-    window.addEventListener('click', (e) => { if (e.target === this.modal) this.hide(); });
-    this.submitBtn.addEventListener('click', () => this.submit());
-  }
-
-  show(fields = []) {
-    this.fieldsContainer.innerHTML = '';
-
-    // Reset submit button
-    this.submitBtn.disabled = false;
-    this.submitBtn.textContent = 'List Item';
-
-    fields.forEach(f => {
-      const wrapper = document.createElement('div');
-      const label = document.createElement('label');
-      label.textContent = f.label;
-      label.style.fontSize = '11px';
-      label.style.color = '#888';
-      label.style.textTransform = 'uppercase';
-      label.style.marginBottom = '4px';
-
-      let input;
-      if (f.type === 'textarea') {
-        input = document.createElement('textarea');
-        input.style.minHeight = '80px';
-      } else {
-        input = document.createElement('input');
-        input.type = f.type || 'text';
-      }
-
-      input.id = f.id;
-      input.value = f.value || '';
-      input.style.width = '100%';
-      input.style.padding = '10px';
-      input.style.backgroundColor = '#1a1a1a';
-      input.style.border = '1px solid #333';
-      input.style.color = '#fff';
-      input.style.borderRadius = '4px';
-        if (f.readonly) input.readOnly = true; // ✅ make read-only
-
-      wrapper.appendChild(label);
-      wrapper.appendChild(input);
-      this.fieldsContainer.appendChild(wrapper);
-    });
-
-    this.modal.style.display = 'flex';
-    this.modal.classList.remove('hidden');
-  }
-
-  hide() {
-    this.modal.style.display = 'none';
-    this.modal.classList.add('hidden');
-  }
-
-  async submit() {
-    const modalSubmitBtn = this.submitBtn;
-    const values = {};
-    this.fieldsContainer.querySelectorAll('input, textarea').forEach(f => {
-      values[f.id] = f.value;
-    });
-
-    modalSubmitBtn.disabled = true;
-    modalSubmitBtn.textContent = 'Launching Automation...';
-
-    const itemName = values['modal-item-name'];
-    const description = values['modal-description'];
-    const price = values['modal-price'];
-    const serialNumber = values['modal-serial-number'];
-    this.hide()
-      await launchPlaywrightListing(itemName, description, price, serialNumber);
-  }
-}
-
-// Initialize the reusable modal
-const confirmModal = new ConfirmListModal('reusable-list-modal');
-
-// Function triggered by the row "Confirm & List" button
-function confirmAndList(barcode) {
-  const row = document.querySelector(`tr[data-barcode="${barcode}"]`);
-  if (!row) return;
-
-  // Show modal and populate fields from the row
-  confirmModal.show([
-    { id: 'modal-item-name', label: 'Item Name', type: 'text', value: row.cells[3].textContent },
-    { id: 'modal-description', label: 'Description', type: 'textarea', value: row.cells[4].textContent },
-    { id: 'modal-price', label: 'Price', type: 'text', value: row.cells[13].textContent },
-    { id: 'modal-serial-number', label: 'Serial Number', type: 'text', value: row.cells[2].textContent, readonly: true }
-  ]);
 }
 
 // helper to get CSRF token
@@ -878,18 +336,26 @@ function getCookie(name) {
   return cookieValue;
 }
 
-function applyMinMarginHighlight() {
-  const minMargin = parseFloat(document.getElementById('minMarginInput').value) || 0;
-  const rows = document.querySelectorAll('#barcodeTable tr');
+function viewAnalysis(barcode) {
+  const product = productData.find(p => p.barcode === barcode);
+  if (!product) {
+    alert("Item data not found. Please scrape this item first.");
+    return;
+  }
 
-  rows.forEach(row => {
-    const marginCell = row.cells[14]; // Margin column
-    if (!marginCell) return;
-    const margin = parseFloat(marginCell.textContent);
-    if (!isNaN(margin)) {
-      row.style.backgroundColor = margin < minMargin ? '#330000' : '';
-    }
+  // Build query params for the analyzer
+  const params = new URLSearchParams({
+    name: product.name || '',
+    description: product.description || '',
+    barserial: product.barserial || '',
+    cost_price: product.cost_price || '',
+    barcode: product.barcode || ''
   });
+
+  // Assuming your analyzer view is named 'individual_item_analyser'
+  const baseUrl = "{% url 'individual_item_analyser' %}";
+  // Navigate to analyzer page
+  window.open(`${baseUrl}?${params.toString()}`, '_blank'); // or use window.location.href to replace current page
 }
 
 

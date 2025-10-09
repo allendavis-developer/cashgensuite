@@ -63,12 +63,12 @@ def generate_search_term(request):
 
 
 def get_prefilled_data(request):
-    """Extract prefilled data from request parameters"""
     return {
-        'item': request.GET.get('item', ''),
-        'market_item': request.GET.get('market_item', ''),
-        'description': request.GET.get('description', ''),
-        'serial': request.GET.get('serial', ''),
+        "name": request.GET.get("name", ""),
+        "description": request.GET.get("description", ""),
+        "barserial": request.GET.get("barserial", ""),
+        "cost_price": request.GET.get("cost_price", ""),
+        "barcode": request.GET.get("barcode", "")
     }
 
 

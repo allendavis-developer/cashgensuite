@@ -504,18 +504,25 @@
   <div class="input-panel">
     <div class="panel-title">{% block panel_title %}INPUT PANEL{% endblock %}</div>
     {% block input_panel_content %}
+      {% block item_name %}
         <div class="input-row">
           <div class="input-group" style="flex: 2;">
             <label class="input-label">Item Name</label>
             <input type="text" id="item-name" class="input-field" placeholder="iPhone 14" required>
           </div>
         </div>
+      {% endblock item_name %}
 
+      {% block description %}
         <div class="input-group">
           <label class="input-label">Description</label>
           <textarea id="description" class="input-field description-field" placeholder="Good condition, minor scratches, original box included..." required></textarea>
         </div>
+      {% endblock description %}
 
+      {% block after_description %}{% endblock after_description %}
+
+      {% block urgency %}
         <div class="input-group">
           <label class="input-label" for="urgency">Sale Urgency</label>
           <select id="urgency" class="input-field" style="cursor: pointer;">
@@ -526,18 +533,23 @@
             <option value="5">5 - Must Sell ASAP</option>
           </select>
         </div>
+      {% endblock urgency %}
 
+  {% block margin %}
+    <div class="input-group">
+      <label class="input-label">Minimum Margin (%)</label>
+      <input type="number" id="minimum-margin" class="input-field" placeholder="37.5" value="37.5" step="0.1" min="0" max="100">
+    </div>
+  {% endblock margin %}
 
-        <div class="input-group">
-          <label class="input-label">Minimum Margin (%)</label>
-          <input type="number" id="minimum-margin" class="input-field" placeholder="37.5" value="37.5" step="0.1" min="0" max="100">
-        </div>
+  {% block analyze_button %}
+    <button type="button" id="analyze-btn" class="analyze-button" onclick="analyzeItem()">
+      <span id="button-text">ANALYZE PRICING</span>
+      <span id="button-spinner" class="loading-spinner hidden"></span>
+    </button>
+  {% endblock analyze_button %}
+{% endblock input_panel_content %}
 
-        <button type="button" id="analyze-btn" class="analyze-button" onclick="analyzeItem()">
-          <span id="button-text">ANALYZE PRICING</span>
-          <span id="button-spinner" class="loading-spinner hidden"></span>
-        </button>
-      {% endblock %}
   </div>
 
   <div class="competitor-panel">

@@ -6,9 +6,64 @@
 
 {% block panel_title %}INPUT PANEL{% endblock %}
 
-{% block input_panel_content %}
-{{ block.super }}
-{% endblock %}
+{% block item_name %}
+  <div class="input-row">
+    <div class="input-group" style="flex: 2;">
+      <label class="input-label">Item Name</label>
+      <input
+        type="text"
+        id="item-name"
+        class="input-field"
+        value="{{ prefilled_data.name|default:'' }}"
+        placeholder="iPhone 14"
+        required
+      >
+    </div>
+  </div>
+{% endblock item_name %}
+
+{% block description %}
+  <div class="input-group">
+    <label class="input-label">Description</label>
+    <textarea
+      id="description"
+      class="input-field description-field"
+      required>{{ prefilled_data.description|default:'' }}</textarea>
+  </div>
+{% endblock description %}
+
+
+{% block after_description %}
+  <div class="input-row">
+    <div class="input-group" style="flex: 1;">
+      <label class="input-label" for="cost-price">Cost Price (£)</label>
+      <input
+        type="number"
+        id="cost-price"
+        class="input-field"
+        placeholder="Enter cost price"
+        step="0.01"
+        min="0"
+        value="{{ prefilled_data.cost_price|default_if_none:'' }}"
+        required
+      >
+    </div>
+
+    <div class="input-group" style="flex: 1;">
+      <label class="input-label" for="barserial">Bar/Serial Number</label>
+      <input
+        type="text"
+        id="barserial"
+        class="input-field"
+        placeholder="e.g., SN1234567890"
+        value="{{ prefilled_data.barserial|default_if_none:'' }}"
+        required
+      >
+    </div>
+  </div>
+{% endblock after_description %}
+
+
 
 {% block analysis_actions %}
 <button id="confirm-list-btn" class="analyze-button" style="margin-bottom:20px;">
