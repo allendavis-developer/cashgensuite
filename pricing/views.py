@@ -328,6 +328,7 @@ def home_view(request):
     return render(request, "home.html")
 
 
+@csrf_exempt
 def individual_item_analyser_view(request):
     # Handle prefilled data from URL parameters
     prefilled_data = get_prefilled_data(request)
