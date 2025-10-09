@@ -81,7 +81,7 @@
       <span id="button-spinner" class="loading-spinner hidden"></span>
     </button>
     <button type="button" id="analyze-btn" class="analyze-button" onclick="analyzeTable()">
-      <span id="button-text">ANALYZE RELEVANT DATA</span>
+      <span id="button-text">ANALYZE RELEVANT CC AND CG LISTINGS</span>
       <span id="button-spinner" class="loading-spinner hidden"></span>
     </button>
 
@@ -523,7 +523,7 @@ async function analyzeTable() {
         alert('Network error. Please try again.');
     } finally {
         analyzeBtn.disabled = false;
-        analyzeBtn.textContent = 'Analyze Pricing';
+        analyzeBtn.textContent = 'Analyze Relevant CC and CG listings';
     }
 }
 

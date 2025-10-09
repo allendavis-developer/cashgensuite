@@ -592,7 +592,9 @@
           <th>CEX - Discount % (20% for now)</th>
           <th>Cost Price + Your Minimum Margin</th>
           <th>Cash Converters Lowest</th>
+          <th>Cash Converters Avg</th>
           <th>Cash Generator Lowest</th>
+          <th>Cash Generator Avg</th>
         </tr>
       </thead>
       <tbody id="analysis-tbody">
@@ -1113,7 +1115,9 @@ function computeSourceAverages() {
             <td>${cexMinus20}</td>
             <td id="rrp-cell">${suggestedRRP}</td>
             <td>${cc.min ? `£${cc.min.toFixed(0)}` : '-'}</td>
+            <td>${cc.average ? `£${cc.average.toFixed(0)}` : '-'}</td>
             <td>${cg.min ? `£${cg.min.toFixed(0)}` : '-'}</td>
+            <td>${cg.average ? `£${cg.average.toFixed(0)}` : '-'}</td>
         </tr>
     `;
 
