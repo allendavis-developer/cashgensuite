@@ -15,13 +15,13 @@ def process_item_analysis(data):
     urgency = int(data.get("urgency", 3))  # Add this line, default to 3
 
     # Check if frontend already sent local scrape data
-    local_scrape_data = data.get("local_scrape_data")
+    competitor_data = data.get("competitor_data")
 
-    if local_scrape_data:
+    if competitor_data:
         print("Using local scraper data from browser")
 
-        # Update DB directly from local_scrape_data
-        if isinstance(local_scrape_data, list):
+        # Update DB directly from competitor_data
+        if isinstance(competitor_data, list):
 
             # Get or create the MarketItem
             market_item, _ = MarketItem.objects.get_or_create(
@@ -34,7 +34,7 @@ def process_item_analysis(data):
 
             # Prepare all listings for bulk creation
             listings_to_create = []
-            for entry in local_scrape_data:
+            for entry in competitor_data:
                 listings_to_create.append(
                     CompetitorListing(
                         market_item=market_item,
