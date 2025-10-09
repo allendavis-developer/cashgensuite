@@ -89,7 +89,8 @@
           <th>Retail Price</th>
           <th>Created At</th>
           <th>Quantity</th>
-          <th>Type</th><th>Actions</th>
+          <th>Bought in by</th>
+            <th>Actions</th>
         </tr>
       </thead>
      <tbody id="barcodeTable">  </tbody>
@@ -276,7 +277,7 @@ async function startScraping() {
           row.cells[6].textContent = product.retail_price || '';
           row.cells[7].textContent = product.created_at || '';
           row.cells[8].textContent = product.quantity || '';
-          row.cells[9].textContent = product.type || '';
+          row.cells[9].textContent = product.bought_by || '';
 
 
           //  Add or update productData
