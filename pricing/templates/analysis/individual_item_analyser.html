@@ -32,6 +32,7 @@
   </div>
 {% endblock description %}
 
+{% block urgency %} {% endblock urgency %}
 
 {% block after_description %}
   <div class="input-row">
@@ -463,7 +464,6 @@ async function scrapePrices() {
 async function analyzeTable() {
     const itemName = document.getElementById('item-name').value.trim();
     const description = document.getElementById('description').value.trim();
-    const urgency = parseInt(document.getElementById('urgency').value);
     const costPrice = parseFloat(document.getElementById('cost-price').value) || 0;
 
     if (!itemName || !description) {
@@ -492,91 +492,69 @@ async function analyzeTable() {
     reasoningText.innerHTML = '';
     analysisSection.style.display = 'none';
 
-    // urgency → position along the range
-    const urgencyMap = {
-        5: -0.04, // below lowest
-        4: 0.1,
-        3: 0.2,
-        2: 0.3,
-        1: 0.4
-    };
-    const position = urgencyMap[urgency] ?? 0.2;
-
     function getSuggestedPrice(data, source) {
-       if (data.length === 0) return null;
+    if (data.length === 0) return null;
 
-        // Sort data by price ascending (keep full objects for undercut checking)
-        const sortedData = [...data].sort((a, b) => a.price - b.price);
-        const prices = sortedData.map(d => d.price);
-        const minPrice = prices[0];
-        const maxPrice = prices[prices.length - 1];
+    const sortedData = [...data].sort((a, b) => a.price - b.price);
+    const undercutRows = sortedData.filter(d => d.undercut === true);
 
-        // Check if ANY undercut is selected for this specific source
-        const undercutRow = sortedData.find(d => d.undercut === true);
-        const anyUndercutSelected = !!undercutRow;
+    let suggested;
+    let reasoning;
 
-        console.log(`[${source}] Undercut selected:`, anyUndercutSelected, undercutRow);
-
-        let suggested;
-        let reasoning;
-
-        if (anyUndercutSelected) {
-            // === Undercut logic ===
-            const undercutPrice = undercutRow.price;
+    if (undercutRows.length > 0) {
+        if (undercutRows.length === 1) {
+            const undercutPrice = undercutRows[0].price;
             const undercutIndex = sortedData.findIndex(d => d.undercut === true);
 
-            // Find the price BELOW the undercut (previous in sorted list)
-            let lowerPrice = undercutIndex > 0 ? sortedData[undercutIndex - 1].price : null;
-
-            if (!lowerPrice) {
-                // Undercut is the lowest price - go 5% below it
-                suggested = undercutPrice * 0.95;
-                reasoning = `
-                    Undercut selected at £${undercutPrice.toFixed(2)} (the lowest price).
-                    Suggested price is 5% below: £${suggested.toFixed(2)}.
-                `;
-            } else {
-                // Calculate ratio to detect extreme gaps
-                const ratio = undercutPrice / lowerPrice;
-
-                if (ratio > 2.0) {
-                    // Large gap - price 10% below the undercut price (higher price)
-                    suggested = undercutPrice * 0.95; // 10% below higher price
-                    reasoning = `
-                        Undercut selected at £${undercutPrice.toFixed(2)}.
-                        Large price gap detected (ratio: ${ratio.toFixed(2)}x).
-                        Pricing 10% below the undercut price: £${suggested.toFixed(2)}.
-                    `;
-                } else {
-                    // Normal gap - split the difference
-                    const gap = undercutPrice - lowerPrice;
-                    suggested = lowerPrice + (gap * 0.5);
-                    reasoning = `
-                        Undercut selected at £${undercutPrice.toFixed(2)}.
-                        Suggested price positioned midway between £${lowerPrice.toFixed(2)}
-                        and £${undercutPrice.toFixed(2)}.
-                    `;
+            // Find the next *distinct* lower price
+            let lowerPrice = null;
+            for (let i = undercutIndex - 1; i >= 0; i--) {
+                const candidate = sortedData[i].price;
+                if (candidate < undercutPrice - 0.01) { // ensure it's meaningfully lower
+                    lowerPrice = candidate;
+                    break;
                 }
             }
-        } else {
-            // === Standard urgency logic ===
-            if (urgency === 5) {
-                suggested = minPrice * 0.95; // 5% below lowest
-            } else {
-                suggested = minPrice + (maxPrice - minPrice) * position;
-            }
 
+            if (!lowerPrice) {
+               // No lower distinct price found — fallback to next lower multiple of 2
+                function nextLowerMultipleOf2(value) {
+                    return Math.floor(value / 2) * 2; // rounds down to nearest even number
+                }
+                suggested = nextLowerMultipleOf2(undercutPrice);
+                reasoning = `Undercut selected at £${undercutPrice.toFixed(2)} (lowest or all equal). Suggested next lower multiple of £2: £${suggested.toFixed(2)}.`;
+            } else {
+                // Normal midpoint between undercut and next distinct lower price
+                const gap = undercutPrice - lowerPrice;
+                suggested = lowerPrice + (gap * 0.5);
+                reasoning = `Undercut selected at £${undercutPrice.toFixed(2)}. Next distinct lower price: £${lowerPrice.toFixed(2)}. Suggested midpoint: £${suggested.toFixed(2)}.`;
+            }
+        } else {
+            // Only include rows that are actually marked as undercut
+            const inBetweenRows = sortedData.filter(r => r.undercut);
+            const prices = inBetweenRows.map(r => r.price);
+            const sum = prices.reduce((sum, p) => sum + p, 0);
+            const avgPrice = sum / prices.length;
+
+            suggested = avgPrice;
+
+            // 🧮 Build reasoning string with detailed calculation
+            const formattedPrices = prices.map(p => `£${p.toFixed(2)}`).join(" + ");
             reasoning = `
-                Based on urgency level ${urgency},
-                prices range from £${minPrice.toFixed(2)} to £${maxPrice.toFixed(2)}.
-                The item is priced ${urgency === 5
-                    ? '5% below the lowest listing'
-                    : `${(position * 100).toFixed(0)}% of the way up`}.
+                Multiple listings selected from £${inBetweenRows[0].price.toFixed(2)}
+                to £${inBetweenRows[inBetweenRows.length - 1].price.toFixed(2)}.<br>
+                Average calculation: (${formattedPrices}) ÷ ${prices.length} =
+                <strong>£${avgPrice.toFixed(2)}</strong>.
             `;
         }
-
-        displayDualAnalysis(reasoning, suggested, source);
+    } else {
+        suggested = null;
+        reasoning = `No undercut selected. Cannot suggest a price.`;
     }
+
+    displayDualAnalysis(reasoning, suggested, source);
+}
+
 
     if (cashConvertersData.length > 0) getSuggestedPrice(cashConvertersData, 'CashConverters');
     if (cashGeneratorData.length > 0) getSuggestedPrice(cashGeneratorData, 'CashGenerator');

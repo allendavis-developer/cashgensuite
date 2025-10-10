@@ -679,7 +679,7 @@
           <th>ITEM</th>
           <th>PRICE</th>
           <th>STORE</th>
-          <th>UNDERCUT</th>
+          <th>RANGE</th>
           <th>RELEVANT?</th>
         </tr>
       </thead>
@@ -861,42 +861,56 @@ function updateCompetitorData(competitorData, competitorCount) {
     }
 }
 
+
 function handleUndercutSelect(checkbox) {
     const row = checkbox.closest('tr');
     const source = row.cells[0].textContent.trim().toUpperCase();
 
-    // Get all checkboxes with the same source
-    const allCheckboxes = document.querySelectorAll('.undercut-checkbox');
-    const sameSourceCheckboxes = Array.from(allCheckboxes).filter(cb => {
-        const r = cb.closest('tr');
-        if (!r) return false;
-        return r.cells[0].textContent.trim().toUpperCase() === source;
-    });
-
-    // If this checkbox was just checked, uncheck others in the same source group
+    // Auto-mark as relevant if checked
     if (checkbox.checked) {
-        sameSourceCheckboxes.forEach(cb => {
-            if (cb !== checkbox) cb.checked = false;
-        });
-
-        //  AUTO-MARK AS RELEVANT
         const relevanceSelect = row.cells[5]?.querySelector('.relevance-select');
         if (relevanceSelect) {
             relevanceSelect.value = 'Yes';
-            handleRelevanceChange(relevanceSelect); // Trigger the change handler
+            handleRelevanceChange(relevanceSelect);
         }
     }
 
-    // Optional: highlight selected undercut rows per source
+    // ===== RANGE SELECTION LOGIC =====
+    const allCheckboxes = Array.from(document.querySelectorAll('.undercut-checkbox'))
+        .filter(cb => cb.closest('tr').cells[0].textContent.trim().toUpperCase() === source);
+
+    if (checkbox.checked) {
+        // Only enforce range when user is checking
+        const checkedIndexes = allCheckboxes
+            .map((cb, idx) => cb.checked ? idx : -1)
+            .filter(idx => idx >= 0);
+
+        if (checkedIndexes.length >= 2) {
+            const minIdx = Math.min(...checkedIndexes);
+            const maxIdx = Math.max(...checkedIndexes);
+
+            // Auto-check everything in between
+            for (let i = minIdx; i <= maxIdx; i++) {
+                const cb = allCheckboxes[i];
+                if (!cb.checked) {
+                    cb.checked = true;
+
+                    const relevanceSelect = cb.closest('tr').cells[5]?.querySelector('.relevance-select');
+                    if (relevanceSelect) {
+                        relevanceSelect.value = 'Yes';
+                        handleRelevanceChange(relevanceSelect);
+                    }
+                }
+            }
+        }
+    }
+    // ✅ If user is unchecking, do nothing to other checkboxes
+
+    // Highlight checked rows
     document.querySelectorAll('#competitor-tbody tr').forEach(r => {
         const cb = r.querySelector('.undercut-checkbox');
         if (!cb) return;
-        const rowSource = r.cells[0].textContent.trim().toUpperCase();
-        if (rowSource === source && cb.checked) {
-            r.classList.add('highlight-undercut');
-        } else if (rowSource === source && !cb.checked) {
-            r.classList.remove('highlight-undercut');
-        }
+        r.classList.toggle('highlight-undercut', cb.checked);
     });
 }
 
