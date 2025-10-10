@@ -321,6 +321,32 @@
     animation: spin 1s linear infinite;
   }
 
+#market-stats {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap; /* allow wrapping if container is narrow */
+  width: auto; /* take only as much space as needed */
+  margin-bottom: 1rem;
+}
+
+#market-stats .stat-row {
+  flex: none; /* remove equal expansion */
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem; /* optional, for spacing between label and value */
+  font-size: 0.75rem;
+}
+
+#market-stats .stat-label {
+  white-space: nowrap; /* prevent label wrapping */
+}
+
+#market-stats .stat-value {
+  margin-left: 0.25rem; /* small spacing from label */
+}
+
+
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -611,7 +637,16 @@
       </tbody>
     </table>
 
-
+   <div id="market-stats" style="display: flex; gap: 1rem; align-items: center;">
+    <div class="stat-row" style="margin: 0;">
+      <span class="stat-label">MARKET RANGE:</span>
+      <span class="stat-value" id="price-range">-</span>
+    </div>
+    <div class="stat-row" style="margin: 0;">
+      <span class="stat-label">AVERAGE:</span>
+      <span class="stat-value" id="price-average">-</span>
+    </div>
+  </div>
 
     <div class="controls">
       <label for="sort-price">Sort by:</label>
@@ -629,6 +664,8 @@
         <option value="CeX">CeX</option>
         <option value="eBay">eBay</option>
       </select>
+
+
     </div>
 
     <div class="competitor-count" id="competitor-count">
@@ -654,17 +691,6 @@
         </tr>
       </tbody>
     </table>
-
-    <div class="market-stats" id="market-stats" style="display: none;">
-      <div class="stat-row">
-        <span class="stat-label">MARKET RANGE:</span>
-        <span class="stat-value" id="price-range">-</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">AVERAGE:</span>
-        <span class="stat-value" id="price-average">-</span>
-      </div>
-    </div>
 
     <div class="warning" id="data-warning" style="display: none;">
       ⚠ LIMITED DATA<br>
@@ -1070,7 +1096,7 @@ async function checkIrrelevantCompetitors(searchQuery) {
     // ===== INITIALIZE ALL COMPETITORS AS IRRELEVANT FOR NOW, EXCEPT CEX =====
     allCompetitorRows.forEach(row => {
         const store = row.cells[0].textContent.trim().toUpperCase();
-        const relevanceCell = row.cells[4];
+        const relevanceCell = row.cells[5];
         const select = relevanceCell.querySelector('.relevance-select');
 
         let isRelevant = store === "CEX"; // auto-relevant if store is CEX
@@ -1092,10 +1118,13 @@ function computeSourceAverages() {
     const rows = allCompetitorRows; // Use all rows, not filtered DOM
 
     const sourceData = {};
+    const relevantPrices = []
 
     rows.forEach(row => {
         if (row.cells.length >= 5) {
-            const isRelevant = row.cells[4].textContent.trim() === "Yes";
+            const relevanceSelect = row.cells[5]?.querySelector('.relevance-select');
+            const isRelevant = relevanceSelect && relevanceSelect.value === "Yes";
+
             if (!isRelevant) return; // skip irrelevant
 
             const source = row.cells[0].textContent.trim();
@@ -1103,6 +1132,7 @@ function computeSourceAverages() {
             if (!isNaN(price)) {
                 if (!sourceData[source]) sourceData[source] = [];
                 sourceData[source].push(price)
+                relevantPrices.push(price);
             }
         }
     });
@@ -1121,6 +1151,20 @@ function computeSourceAverages() {
         };
     });
 
+  // ===== Compute market stats only from relevant prices =====
+    const marketStats = document.getElementById('market-stats');
+    if (relevantPrices.length > 0) {
+        const minPrice = Math.min(...relevantPrices);
+        const maxPrice = Math.max(...relevantPrices);
+        const avgPrice = relevantPrices.reduce((a, b) => a + b, 0) / relevantPrices.length;
+
+        document.getElementById('price-range').textContent = `£${minPrice} - £${maxPrice}`;
+        document.getElementById('price-average').textContent = `£${avgPrice.toFixed(0)}`;
+        marketStats.style.display = 'flex';
+    } else {
+        document.getElementById('price-range').textContent = '-';
+        document.getElementById('price-average').textContent = '-';
+    }
 
     // ===== Populate analysis table =====
     const tbody = document.getElementById('analysis-tbody');
@@ -1158,7 +1202,9 @@ function computeSourceAverages() {
 
     updateRRPCell();
 
-}// ✅ Store cost price
+}
+
+// ✅ Store cost price
 function setRRPAfterTable(costPrice) {
     currentCostPrice = parseFloat(costPrice);
     if (isNaN(currentCostPrice)) {

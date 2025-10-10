@@ -541,7 +541,7 @@ async function analyzeTable() {
 
                 if (ratio > 2.0) {
                     // Large gap - price 10% below the undercut price (higher price)
-                    suggested = undercutPrice * 0.90; // 10% below higher price
+                    suggested = undercutPrice * 0.95; // 10% below higher price
                     reasoning = `
                         Undercut selected at £${undercutPrice.toFixed(2)}.
                         Large price gap detected (ratio: ${ratio.toFixed(2)}x).
