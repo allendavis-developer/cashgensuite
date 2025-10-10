@@ -346,6 +346,11 @@
   margin-left: 0.25rem; /* small spacing from label */
 }
 
+tr:not(:has(.range-checkbox:checked)) {
+  opacity: 0.7;
+}
+
+
 
   @keyframes spin {
     0% { transform: rotate(0deg); }
@@ -680,7 +685,6 @@
           <th>PRICE</th>
           <th>STORE</th>
           <th>RANGE</th>
-          <th>RELEVANT?</th>
         </tr>
       </thead>
       <tbody id="competitor-tbody">
@@ -812,15 +816,7 @@ function updateCompetitorData(competitorData, competitorCount) {
             if (!isNaN(numericPrice)) prices.push(numericPrice);
 
             const row = document.createElement('tr');
-            row.setAttribute('data-relevant', 'No');
 
-            // Create select dropdown for relevance
-            const selectHTML = `
-                <select class="relevance-select" onchange="handleRelevanceChange(this)">
-                    <option value="Yes">Yes</option>
-                    <option value="No" selected>No</option>
-                </select>
-            `;
 
             row.innerHTML = `
                 <td>${competitor}</td>
@@ -830,7 +826,6 @@ function updateCompetitorData(competitorData, competitorCount) {
                 <td class="range-cell">
                     <input type="checkbox" class="range-checkbox" onchange="handleRangeSelect(this)">
                 </td>
-                <td data-text-value="No">${selectHTML}</td>
             `;
             allCompetitorRows.push(row);
         }
@@ -853,12 +848,7 @@ function updateCompetitorData(competitorData, competitorCount) {
         }
     }
 
-    const itemName = document.getElementById('item-name');
     applySortAndFilter();
-
-    if (competitorCount > 0) {
-        checkIrrelevantCompetitors(itemName);
-    }
 }
 
 
@@ -905,11 +895,6 @@ function handleRangeSelect(checkbox) {
                 const cb = allCheckboxes[i];
                 cb.checked = true;
 
-                const relSelect = cb.closest('tr').cells[5]?.querySelector('.relevance-select');
-                if (relSelect) {
-                    relSelect.value = 'Yes';
-                    handleRelevanceChange(relSelect);
-                }
             }
 
             state.last = currentIndex;
@@ -926,33 +911,10 @@ function handleRangeSelect(checkbox) {
         if (!cb) return;
         r.classList.toggle('highlight-range', cb.checked);
     });
-}
 
-
-// Handle dropdown changes
-function handleRelevanceChange(selectElement) {
-    const row = selectElement.closest('tr');
-    const cell = selectElement.closest('td');
-    const newValue = selectElement.value;
-
-    // Update data attribute for backward compatibility
-    cell.setAttribute('data-text-value', newValue);
-    row.setAttribute('data-relevant', newValue);
-
-    // Update opacity
-    row.style.opacity = newValue === "Yes" ? "1" : "0.5";
-
-    if (newValue === "No") {
-        const checkbox = row.querySelector('.range-checkbox');
-        if (checkbox && checkbox.checked) {
-            checkbox.checked = false;
-            handleRangeSelect(checkbox); // reuse existing logic for highlight removal
-        }
-    }
-
-    // Recompute averages
     computeSourceAverages();
 }
+
 
 function displayAnalysis(reasoning, suggestedPrice, append = false) {
     const analysisSection = document.getElementById('analysis-section');
@@ -1030,155 +992,46 @@ function applySortAndFilter() {
 document.getElementById('sort-price').addEventListener('change', applySortAndFilter);
 document.getElementById('filter-source').addEventListener('change', applySortAndFilter);
 
-// Update checkIrrelevantCompetitors to work with the new system
-async function checkIrrelevantCompetitors(searchQuery) {
-    const tbody = document.getElementById('competitor-tbody');
-    const rows = [...tbody.querySelectorAll('tr')];
-
-    const competitorList = rows
-        .filter(row => row.cells.length >= 4)
-        .map(row => {
-            const priceText = row.cells[2].textContent.trim();
-            const hasPound = priceText.includes('£');
-            const numericPrice = hasPound
-                ? parseFloat(priceText.replace(/[^0-9.-]+/g, ""))
-                : null;
-
-            return {
-                title: row.cells[1].textContent.trim(),
-                store: row.cells[0].textContent.trim(),
-                price: numericPrice,
-                hasPoundSymbol: hasPound
-            };
-        });
-
-    const validPrices = competitorList
-        .filter(c => c.price !== null && c.price > 0)
-        .map(c => c.price);
-
-    if (validPrices.length === 0) return;
-
-    const mean = validPrices.reduce((a, b) => a + b, 0) / validPrices.length;
-    const median = [...validPrices].sort((a, b) => a - b)[Math.floor(validPrices.length / 2)];
-    const variance = validPrices.reduce((sum, price) => sum + Math.pow(price - mean, 2), 0) / validPrices.length;
-    const stdDev = Math.sqrt(variance);
-    const sorted = [...validPrices].sort((a, b) => a - b);
-    const q1 = sorted[Math.floor(sorted.length * 0.25)];
-    const q3 = sorted[Math.floor(sorted.length * 0.75)];
-    const iqr = q3 - q1;
-
-    let validIndex = 0;
-    rows.forEach((row, i) => {
-        if (!competitorList[i].hasPoundSymbol) return;
-
-        let isRelevant = true;
-        const price = competitorList[i].price;
-        const store = competitorList[i].store.toUpperCase();
-        const title = competitorList[i].title.toUpperCase();
-
-        if (store === "CEX") {
-            if (/\bA\b/.test(title)) {
-                isRelevant = false;
-            } else if (/\bC\b/.test(title)) {
-                isRelevant = false;
-            }
-        }
-
-        if (isRelevant && price !== null) {
-            const lowerBound = q1 - (1.5 * iqr);
-            const upperBound = q3 + (1.5 * iqr);
-
-            if (price < lowerBound || price > upperBound) {
-                isRelevant = false;
-            }
-
-            const zScore = Math.abs((price - mean) / stdDev);
-            if (zScore > 2.5) {
-                isRelevant = false;
-            }
-
-            const percentDiff = Math.abs((price - median) / median) * 100;
-            if (percentDiff > 80) {
-                isRelevant = false;
-            }
-
-            if (price < median * 0.3) {
-                isRelevant = false;
-            }
-        }
-
-        // Update the dropdown and cell
-        const relevanceCell = row.cells[4];
-        const select = relevanceCell.querySelector('.relevance-select');
-        if (select) {
-            select.value = isRelevant ? "Yes" : "No";
-            relevanceCell.setAttribute('data-text-value', isRelevant ? "Yes" : "No");
-        }
-        row.setAttribute('data-relevant', isRelevant ? "Yes" : "No");
-        row.style.opacity = isRelevant ? "1" : "0.3";
-
-        validIndex++;
-    });
-
-    // ===== INITIALIZE ALL COMPETITORS AS IRRELEVANT FOR NOW, EXCEPT CEX =====
-    allCompetitorRows.forEach(row => {
-        const store = row.cells[0].textContent.trim().toUpperCase();
-        const relevanceCell = row.cells[5];
-        const select = relevanceCell.querySelector('.relevance-select');
-
-        let isRelevant = store === "CEX"; // auto-relevant if store is CEX
-
-        if (select) {
-            select.value = isRelevant ? "Yes" : "No";
-            relevanceCell.setAttribute('data-text-value', isRelevant ? "Yes" : "No");
-        }
-
-        row.setAttribute('data-relevant', isRelevant ? "Yes" : "No");
-        row.style.opacity = isRelevant ? "1" : "0.3";
-    });
-
-    // ------- WE WILL REMOVE THIS BLOCK OF CODE -------------
-    computeSourceAverages();
-}
 
 function computeSourceAverages() {
     const rows = allCompetitorRows; // Use all rows, not filtered DOM
 
     const sourceData = {};
-    const relevantPrices = []
+    const relevantPrices = [];
 
     rows.forEach(row => {
         if (row.cells.length >= 5) {
-            const relevanceSelect = row.cells[5]?.querySelector('.relevance-select');
-            const isRelevant = relevanceSelect && relevanceSelect.value === "Yes";
-
-            if (!isRelevant) return; // skip irrelevant
-
-            const source = row.cells[0].textContent.trim();
+            const source = row.cells[0].textContent.trim().toUpperCase();
             const price = parseFloat(row.cells[2].textContent.replace(/[^0-9.-]+/g, ""));
-            if (!isNaN(price)) {
+            if (isNaN(price)) return;
+
+            const rangeCheckbox = row.querySelector('.range-checkbox');
+            const isIncluded = rangeCheckbox && rangeCheckbox.checked;
+
+            // ✅ Always include CEX data, even if unchecked
+            if (source === "CEX" || isIncluded) {
                 if (!sourceData[source]) sourceData[source] = [];
-                sourceData[source].push(price)
-                relevantPrices.push(price);
+                sourceData[source].push(price);
+
+                // Only count non-CEX for "market range" display
+                if (isIncluded || source !== "CEX") {
+                    relevantPrices.push(price);
+                }
             }
         }
     });
 
+    // Compute averages
     const sourceAverages = {};
     Object.keys(sourceData).forEach(source => {
         const prices = sourceData[source];
         const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
         const min = Math.min(...prices);
         const max = Math.max(...prices);
-        sourceAverages[source] = {
-            average: avg,
-            min: min,
-            max: max,
-            count: prices.length
-        };
+        sourceAverages[source] = { average: avg, min, max, count: prices.length };
     });
 
-  // ===== Compute market stats only from relevant prices =====
+    // ===== Compute market stats (from relevant prices only) =====
     const marketStats = document.getElementById('market-stats');
     if (relevantPrices.length > 0) {
         const minPrice = Math.min(...relevantPrices);
@@ -1197,24 +1050,17 @@ function computeSourceAverages() {
     const tbody = document.getElementById('analysis-tbody');
     if (!tbody) return;
 
-    // Normalize keys to uppercase for consistency
-    const normalizedAverages = {};
-    Object.keys(sourceAverages).forEach(key => {
-        normalizedAverages[key.toUpperCase()] = sourceAverages[key];
-    });
+    const normalized = {};
+    Object.keys(sourceAverages).forEach(k => normalized[k.toUpperCase()] = sourceAverages[k]);
 
-    // Grab the sources
-    const cex = normalizedAverages['CEX'] || {};
-    const cc = normalizedAverages['CASHCONVERTERS'] || {};
-    const cg = normalizedAverages['CASHGENERATOR'] || {};
-
-    // Suggested RRP left empty
-    const suggestedRRP = '';
+    const cex = normalized['CEX'] || {};
+    const cc = normalized['CASHCONVERTERS'] || {};
+    const cg = normalized['CASHGENERATOR'] || {};
 
     // Compute CEX - 20%
     const cexMinus20 = cex.average ? `£${(cex.average * 0.8).toFixed(0)}` : '-';
+    const suggestedRRP = '';
 
-    // Populate table
     tbody.innerHTML = `
         <tr>
             <td>${cex.average ? `£${cex.average.toFixed(0)}` : '-'}</td>
@@ -1228,8 +1074,8 @@ function computeSourceAverages() {
     `;
 
     updateRRPCell();
-
 }
+
 
 // ✅ Store cost price
 function setRRPAfterTable(costPrice) {
