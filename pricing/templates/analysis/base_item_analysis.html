@@ -538,7 +538,7 @@
       {% block item_name %}
         <div class="input-row">
           <div class="input-group" style="flex: 2;">
-            <label class="input-label">Item Name</label>
+            <label class="input-label">Search Term</label>
             <input type="text" id="item-name" class="input-field" placeholder="iPhone 14" required>
           </div>
         </div>
@@ -852,6 +852,13 @@ function handleUndercutSelect(checkbox) {
         sameSourceCheckboxes.forEach(cb => {
             if (cb !== checkbox) cb.checked = false;
         });
+
+        //  AUTO-MARK AS RELEVANT
+        const relevanceSelect = row.cells[5]?.querySelector('.relevance-select');
+        if (relevanceSelect) {
+            relevanceSelect.value = 'Yes';
+            handleRelevanceChange(relevanceSelect); // Trigger the change handler
+        }
     }
 
     // Optional: highlight selected undercut rows per source
@@ -880,37 +887,19 @@ function handleRelevanceChange(selectElement) {
     row.setAttribute('data-relevant', newValue);
 
     // Update opacity
-    row.style.opacity = newValue === "Yes" ? "1" : "0.3";
+    row.style.opacity = newValue === "Yes" ? "1" : "0.5";
+
+    if (newValue === "No") {
+        const checkbox = row.querySelector('.undercut-checkbox');
+        if (checkbox && checkbox.checked) {
+            checkbox.checked = false;
+            handleUndercutSelect(checkbox); // reuse existing logic for highlight removal
+        }
+    }
 
     // Recompute averages
     computeSourceAverages();
 }
-// Override textContent getter for backward compatibility
-Object.defineProperty(HTMLTableCellElement.prototype, 'textContent', {
-    get: function() {
-        // Check if this cell has the data-text-value attribute
-        if (this.hasAttribute('data-text-value')) {
-            return this.getAttribute('data-text-value');
-        }
-        // Otherwise use default behavior
-        return this.innerText || this.textContent;
-    },
-    set: function(value) {
-        // If setting "Yes" or "No" on a cell with a select
-        const select = this.querySelector('.relevance-select');
-        if (select && (value === "Yes" || value === "No")) {
-            select.value = value;
-            this.setAttribute('data-text-value', value);
-            const row = this.closest('tr');
-            row.setAttribute('data-relevant', value);
-            row.style.opacity = value === "Yes" ? "1" : "0.3";
-        } else {
-            // Default behavior for other cells
-            this.innerHTML = value;
-        }
-    }
-});
-
 
 function displayAnalysis(reasoning, suggestedPrice, append = false) {
     const analysisSection = document.getElementById('analysis-section');

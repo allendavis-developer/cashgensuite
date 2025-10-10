@@ -9,7 +9,7 @@
 {% block item_name %}
   <div class="input-row">
     <div class="input-group" style="flex: 2;">
-      <label class="input-label">Item Name</label>
+      <label class="input-label">Search Term</label>
       <input
         type="text"
         id="item-name"
@@ -464,6 +464,7 @@ async function analyzeTable() {
     const itemName = document.getElementById('item-name').value.trim();
     const description = document.getElementById('description').value.trim();
     const urgency = parseInt(document.getElementById('urgency').value);
+    const costPrice = parseFloat(document.getElementById('cost-price').value) || 0;
 
     if (!itemName || !description) {
         alert("Please fill in the item name and description.");
@@ -472,7 +473,6 @@ async function analyzeTable() {
 
     let competitorData = extractCompetitorTableData();
 
-    // Filter sets
     const cashConvertersData = competitorData.filter(
         item => item.competitor.toLowerCase() === 'cashconverters'
     );
@@ -480,88 +480,108 @@ async function analyzeTable() {
         item => item.competitor.toLowerCase() === 'cashgenerator'
     );
 
-   // Check if BOTH are empty
     if (cashConvertersData.length === 0 && cashGeneratorData.length === 0) {
         alert("Please scrape and mark relevant rows for Cash Converters or Cash Generators first.");
         return;
     }
 
-    // Always clear old analysis before starting a new one
-    const reasoningText = document.getElementById('reasoning-text');
     const analysisSection = document.getElementById('analysis-section');
+    const reasoningText = document.getElementById('reasoning-text');
     document.getElementById('recommended-price-cashconverters').innerHTML = '-';
     document.getElementById('recommended-price-cashgenerator').innerHTML = '-';
     reasoningText.innerHTML = '';
     analysisSection.style.display = 'none';
 
+    // urgency → position along the range
+    const urgencyMap = {
+        5: -0.04, // below lowest
+        4: 0.1,
+        3: 0.2,
+        2: 0.3,
+        1: 0.4
+    };
+    const position = urgencyMap[urgency] ?? 0.2;
 
-    const analyzeBtn = document.getElementById('analyze-btn');
-    analyzeBtn.disabled = true;
-    analyzeBtn.textContent = 'Analyzing CashConverters...';
+    function getSuggestedPrice(data, source) {
+       if (data.length === 0) return null;
 
-    // Run first analysis (CashConverters only)
-    try {
-        if (cashConvertersData.length > 0) {
-            const response1 = await fetch(window.location.href, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken':getCookie('csrftoken')
-                },
-                body: JSON.stringify({
-                    item_name: itemName,
-                    description: description,
-                    competitor_data: cashConvertersData,
-                    cost_price: document.getElementById('cost-price').value,
-                    urgency: urgency
-                })
-            });
-            const data1 = await response1.json();
+        // Sort data by price ascending (keep full objects for undercut checking)
+        const sortedData = [...data].sort((a, b) => a.price - b.price);
+        const prices = sortedData.map(d => d.price);
+        const minPrice = prices[0];
+        const maxPrice = prices[prices.length - 1];
 
-            if (data1.success) {
-                displayDualAnalysis(data1.reasoning, data1.suggested_price, 'CashConverters');
+        // Check if ANY undercut is selected for this specific source
+        const undercutRow = sortedData.find(d => d.undercut === true);
+        const anyUndercutSelected = !!undercutRow;
+
+        console.log(`[${source}] Undercut selected:`, anyUndercutSelected, undercutRow);
+
+        let suggested;
+        let reasoning;
+
+        if (anyUndercutSelected) {
+            // === Undercut logic ===
+            const undercutPrice = undercutRow.price;
+            const undercutIndex = sortedData.findIndex(d => d.undercut === true);
+
+            // Find the price BELOW the undercut (previous in sorted list)
+            let lowerPrice = undercutIndex > 0 ? sortedData[undercutIndex - 1].price : null;
+
+            if (!lowerPrice) {
+                // Undercut is the lowest price - go 5% below it
+                suggested = undercutPrice * 0.95;
+                reasoning = `
+                    Undercut selected at £${undercutPrice.toFixed(2)} (the lowest price).
+                    Suggested price is 5% below: £${suggested.toFixed(2)}.
+                `;
             } else {
-                alert(`CashConverters analysis failed: ${data1.error}`);
+                // Calculate ratio to detect extreme gaps
+                const ratio = undercutPrice / lowerPrice;
+
+                if (ratio > 2.0) {
+                    // Large gap - price 10% below the undercut price (higher price)
+                    suggested = undercutPrice * 0.90; // 10% below higher price
+                    reasoning = `
+                        Undercut selected at £${undercutPrice.toFixed(2)}.
+                        Large price gap detected (ratio: ${ratio.toFixed(2)}x).
+                        Pricing 10% below the undercut price: £${suggested.toFixed(2)}.
+                    `;
+                } else {
+                    // Normal gap - split the difference
+                    const gap = undercutPrice - lowerPrice;
+                    suggested = lowerPrice + (gap * 0.5);
+                    reasoning = `
+                        Undercut selected at £${undercutPrice.toFixed(2)}.
+                        Suggested price positioned midway between £${lowerPrice.toFixed(2)}
+                        and £${undercutPrice.toFixed(2)}.
+                    `;
+                }
             }
         } else {
-            console.warn("No CashConverters data found.");
-        }
-
-        // Run second analysis (CashGenerator only)
-        analyzeBtn.textContent = 'Analyzing CashGenerator...';
-        if (cashGeneratorData.length > 0) {
-            const response2 = await fetch(window.location.href, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: JSON.stringify({
-                    item_name: itemName,
-                    description: description,
-                    competitor_data: cashGeneratorData,
-                    cost_price: document.getElementById('cost-price').value,
-                    urgency: urgency
-                })
-            });
-            const data2 = await response2.json();
-
-            if (data2.success) {
-                displayDualAnalysis(data2.reasoning, data2.suggested_price, 'CashGenerator');
+            // === Standard urgency logic ===
+            if (urgency === 5) {
+                suggested = minPrice * 0.95; // 5% below lowest
             } else {
-                alert(`CashGenerator analysis failed: ${data2.error}`);
+                suggested = minPrice + (maxPrice - minPrice) * position;
             }
-        } else {
-            console.warn("No CashGenerator data found.");
+
+            reasoning = `
+                Based on urgency level ${urgency},
+                prices range from £${minPrice.toFixed(2)} to £${maxPrice.toFixed(2)}.
+                The item is priced ${urgency === 5
+                    ? '5% below the lowest listing'
+                    : `${(position * 100).toFixed(0)}% of the way up`}.
+            `;
         }
 
-    } catch (error) {
-        console.error('Analysis error:', error);
-        alert('Network error. Please try again.');
-    } finally {
-        analyzeBtn.disabled = false;
-        analyzeBtn.textContent = 'Analyze Relevant CC and CG listings';
+        displayDualAnalysis(reasoning, suggested, source);
     }
+
+    if (cashConvertersData.length > 0) getSuggestedPrice(cashConvertersData, 'CashConverters');
+    if (cashGeneratorData.length > 0) getSuggestedPrice(cashGeneratorData, 'CashGenerator');
+
+    analysisSection.style.display = 'block';
 }
 
 async function launchPlaywrightListing(itemName, description, price, serialNumber) {
@@ -581,7 +601,6 @@ async function launchPlaywrightListing(itemName, description, price, serialNumbe
   }
 }
 
-
 // 🧾 Extract table data for analysis
 function extractCompetitorTableData() {
     const rows = allCompetitorRows;
@@ -589,11 +608,13 @@ function extractCompetitorTableData() {
         .filter(row => row.getAttribute('data-relevant') === 'Yes') // only relevant
         .map(row => {
             const cells = row.querySelectorAll('td');
+            const undercutCheckbox = cells[4]?.querySelector('.undercut-checkbox');
             return {
                 competitor: cells[0]?.textContent.trim() || '',
                 price: parseFloat(cells[2]?.textContent.replace(/[^0-9.]/g, '')) || 0,
                 condition: cells[1]?.textContent.trim() || '',
-                link: cells[3]?.querySelector('a')?.href || ''
+                link: cells[3]?.querySelector('a')?.href || '',
+                undercut: undercutCheckbox ? undercutCheckbox.checked : false // ✅ Track undercut status
             };
         }).filter(item => item.competitor);
 }
@@ -628,11 +649,19 @@ function displayDualAnalysis(reasoning, suggestedPrice, source) {
         marginText = ` (<span style="color:#888;">n/a</span>)`;
     }
 
-    // Update the recommended price for the correct source
+    // Helper function to round to nearest multiple of 2
+    function roundToNearest2(value) {
+        return Math.round(value / 2) * 2;
+    }
+
+    // In displayDualAnalysis, update priceValue
+    const roundedPrice = roundToNearest2(priceValue);
+
+    // Update the recommended price for the correct source using roundedPrice
     if (source === 'CashConverters') {
-        document.getElementById('recommended-price-cashconverters').innerHTML = `£${priceValue.toFixed(2)}${marginText}`;
+        document.getElementById('recommended-price-cashconverters').innerHTML = `£${roundedPrice.toFixed(2)}${marginText}`;
     } else if (source === 'CashGenerator') {
-        document.getElementById('recommended-price-cashgenerator').innerHTML = `£${priceValue.toFixed(2)}${marginText}`;
+        document.getElementById('recommended-price-cashgenerator').innerHTML = `£${roundedPrice.toFixed(2)}${marginText}`;
     }
 
     // Append reasoning instead of replacing
