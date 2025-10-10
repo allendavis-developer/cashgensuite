@@ -529,7 +529,7 @@
       scrollbar-color: #444 #111; /* thumb color, track color */
     }
 
-    .highlight-undercut {
+    .highlight-range {
   background-color: #141414 !important;
   border-left: 3px solid #00e0ff;
 }
@@ -827,8 +827,8 @@ function updateCompetitorData(competitorData, competitorCount) {
                 <td><a href="${url}" target="_blank" rel="noopener noreferrer">${listingTitle}</a></td>
                 <td>${price}</td>
                 <td>${storeName}</td>
-                <td class="undercut-cell">
-                    <input type="checkbox" class="undercut-checkbox" onchange="handleUndercutSelect(this)">
+                <td class="range-cell">
+                    <input type="checkbox" class="range-checkbox" onchange="handleRangeSelect(this)">
                 </td>
                 <td data-text-value="No">${selectHTML}</td>
             `;
@@ -862,58 +862,71 @@ function updateCompetitorData(competitorData, competitorCount) {
 }
 
 
-function handleUndercutSelect(checkbox) {
+// Keep a global or higher-scope object to track last clicked per source
+let lastCheckedIndexBySource = {};
+
+let selectionStateBySource = {};
+
+function handleRangeSelect(checkbox) {
     const row = checkbox.closest('tr');
     const source = row.cells[0].textContent.trim().toUpperCase();
-
-    // Auto-mark as relevant if checked
-    if (checkbox.checked) {
-        const relevanceSelect = row.cells[5]?.querySelector('.relevance-select');
-        if (relevanceSelect) {
-            relevanceSelect.value = 'Yes';
-            handleRelevanceChange(relevanceSelect);
-        }
-    }
-
-    // ===== RANGE SELECTION LOGIC =====
-    const allCheckboxes = Array.from(document.querySelectorAll('.undercut-checkbox'))
+    const allCheckboxes = Array.from(document.querySelectorAll('.range-checkbox'))
         .filter(cb => cb.closest('tr').cells[0].textContent.trim().toUpperCase() === source);
 
+    const currentIndex = allCheckboxes.indexOf(checkbox);
+
+    // Initialize state if not existing
+    if (!selectionStateBySource[source]) {
+        selectionStateBySource[source] = { anchor: undefined, last: undefined };
+    }
+
+    const state = selectionStateBySource[source];
+
     if (checkbox.checked) {
-        // Only enforce range when user is checking
-        const checkedIndexes = allCheckboxes
-            .map((cb, idx) => cb.checked ? idx : -1)
-            .filter(idx => idx >= 0);
+        // If no anchor, set it
+        if (state.anchor === undefined) {
+            state.anchor = currentIndex;
+        }
 
-        if (checkedIndexes.length >= 2) {
-            const minIdx = Math.min(...checkedIndexes);
-            const maxIdx = Math.max(...checkedIndexes);
+        // Check if user clicked an already-selected checkbox within the current range
+        const inCurrentRange =
+            state.last !== undefined &&
+            currentIndex >= Math.min(state.anchor, state.last) &&
+            currentIndex <= Math.max(state.anchor, state.last);
 
-            // Auto-check everything in between
+        // Only clear & reselect if it’s a *new* range selection
+        if (!inCurrentRange) {
+            allCheckboxes.forEach(cb => cb.checked = false);
+
+            const minIdx = Math.min(state.anchor, currentIndex);
+            const maxIdx = Math.max(state.anchor, currentIndex);
+
             for (let i = minIdx; i <= maxIdx; i++) {
                 const cb = allCheckboxes[i];
-                if (!cb.checked) {
-                    cb.checked = true;
+                cb.checked = true;
 
-                    const relevanceSelect = cb.closest('tr').cells[5]?.querySelector('.relevance-select');
-                    if (relevanceSelect) {
-                        relevanceSelect.value = 'Yes';
-                        handleRelevanceChange(relevanceSelect);
-                    }
+                const relSelect = cb.closest('tr').cells[5]?.querySelector('.relevance-select');
+                if (relSelect) {
+                    relSelect.value = 'Yes';
+                    handleRelevanceChange(relSelect);
                 }
             }
+
+            state.last = currentIndex;
         }
+    } else {
+        // If unchecking, reset anchor and last
+        state.anchor = undefined;
+        state.last = undefined;
     }
-    // ✅ If user is unchecking, do nothing to other checkboxes
 
     // Highlight checked rows
     document.querySelectorAll('#competitor-tbody tr').forEach(r => {
-        const cb = r.querySelector('.undercut-checkbox');
+        const cb = r.querySelector('.range-checkbox');
         if (!cb) return;
-        r.classList.toggle('highlight-undercut', cb.checked);
+        r.classList.toggle('highlight-range', cb.checked);
     });
 }
-
 
 
 // Handle dropdown changes
@@ -930,10 +943,10 @@ function handleRelevanceChange(selectElement) {
     row.style.opacity = newValue === "Yes" ? "1" : "0.5";
 
     if (newValue === "No") {
-        const checkbox = row.querySelector('.undercut-checkbox');
+        const checkbox = row.querySelector('.range-checkbox');
         if (checkbox && checkbox.checked) {
             checkbox.checked = false;
-            handleUndercutSelect(checkbox); // reuse existing logic for highlight removal
+            handleRangeSelect(checkbox); // reuse existing logic for highlight removal
         }
     }
 
