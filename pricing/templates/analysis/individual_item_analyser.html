@@ -504,68 +504,80 @@ async function analyzeTable() {
     analysisSection.style.display = 'none';
 
     function getSuggestedPrice(data, source) {
-    if (data.length === 0) return null;
+        if (data.length === 0) return null;
 
-    const sortedData = [...data].sort((a, b) => a.price - b.price);
-    const rangeRows = sortedData.filter(d => d.range === true);
+        const sortedData = [...data].sort((a, b) => a.price - b.price);
+        const rangeRows = sortedData.filter(d => d.range === true);
 
-    let suggested;
-    let reasoning;
+        let suggested;
+        let reasoning;
 
-    if (rangeRows.length > 0) {
-        if (rangeRows.length === 1) {
-            const rangePrice = rangeRows[0].price;
-            const rangeIndex = sortedData.findIndex(d => d.range === true);
+        // Returns the largest multiple of 2 that is STRICTLY less than value.
+        function nextLowerMultipleOf2Strict(value) {
+            let m = Math.floor(value / 2) * 2;
+            // if value is already exactly a multiple of 2, step down one multiple
+            if (Math.abs(m - value) < 0.01) m -= 2;
+            if (m < 0) m = 0;
+            return m;
+        }
 
-            // Find the next *distinct* lower price
-            let lowerPrice = null;
-            for (let i = rangeIndex - 1; i >= 0; i--) {
-                const candidate = sortedData[i].price;
-                if (candidate < rangePrice - 0.01) { // ensure it's meaningfully lower
-                    lowerPrice = candidate;
-                    break;
+        if (rangeRows.length > 0) {
+            if (rangeRows.length === 1) {
+                const rangePrice = rangeRows[0].price;
+                const rangeIndex = sortedData.findIndex(d => d.range === true);
+
+                // Find the next *distinct* lower price
+                let lowerPrice = null;
+                for (let i = rangeIndex - 1; i >= 0; i--) {
+                    const candidate = sortedData[i].price;
+                    if (candidate < rangePrice - 0.01) { // ensure it's meaningfully lower
+                        lowerPrice = candidate;
+                        break;
+                    }
                 }
-            }
 
-            if (!lowerPrice) {
-               // No lower distinct price found — fallback to next lower multiple of 2
-                function nextLowerMultipleOf2(value) {
-                    return Math.floor(value / 2) * 2; // rounds down to nearest even number
+                if (!lowerPrice) {
+                    // No distinct lower price found — pick the next strictly lower multiple of £2
+                    suggested = nextLowerMultipleOf2Strict(rangePrice);
+                    reasoning = `range selected at £${rangePrice.toFixed(2)} (no distinct lower price). Suggested next lower multiple of £2: £${suggested.toFixed(2)}.`;
+                } else {
+                    // midpoint between the range price and next distinct lower price
+                    const gap = rangePrice - lowerPrice;
+                    suggested = lowerPrice + (gap * 0.5);
+                    reasoning = `range selected at £${rangePrice.toFixed(2)}. Next distinct lower price: £${lowerPrice.toFixed(2)}. Suggested midpoint: £${suggested.toFixed(2)}.`;
                 }
-                suggested = nextLowerMultipleOf2(rangePrice);
-                reasoning = `range selected at £${rangePrice.toFixed(2)} (lowest or all equal). Suggested next lower multiple of £2: £${suggested.toFixed(2)}.`;
             } else {
-                // Normal midpoint between range and next distinct lower price
-                const gap = rangePrice - lowerPrice;
-                suggested = lowerPrice + (gap * 0.5);
-                reasoning = `range selected at £${rangePrice.toFixed(2)}. Next distinct lower price: £${lowerPrice.toFixed(2)}. Suggested midpoint: £${suggested.toFixed(2)}.`;
+                // multiple range rows selected
+                const inBetweenRows = sortedData.filter(r => r.range);
+                const prices = inBetweenRows.map(r => r.price);
+                const max = Math.max(...prices);
+                const min = Math.min(...prices);
+
+                if (Math.abs(max - min) < 0.01) {
+                    // All selected prices are effectively equal → use next strictly lower multiple of £2
+                    suggested = nextLowerMultipleOf2Strict(max);
+                    reasoning = `Multiple listings selected but all prices equal at £${max.toFixed(2)}. Suggested next lower multiple of £2: £${suggested.toFixed(2)}.`;
+                } else {
+                    // normal average behaviour
+                    const sum = prices.reduce((sum, p) => sum + p, 0);
+                    const avgPrice = sum / prices.length;
+                    suggested = avgPrice;
+                    const formattedPrices = prices.map(p => `£${p.toFixed(2)}`).join(" + ");
+                    reasoning = `
+                        Multiple listings selected from £${inBetweenRows[0].price.toFixed(2)}
+                        to £${inBetweenRows[inBetweenRows.length - 1].price.toFixed(2)}.<br>
+                        Average calculation: (${formattedPrices}) ÷ ${prices.length} =
+                        <strong>£${avgPrice.toFixed(2)}</strong>.
+                    `;
+                }
             }
         } else {
-            // Only include rows that are actually marked as range
-            const inBetweenRows = sortedData.filter(r => r.range);
-            const prices = inBetweenRows.map(r => r.price);
-            const sum = prices.reduce((sum, p) => sum + p, 0);
-            const avgPrice = sum / prices.length;
-
-            suggested = avgPrice;
-
-            // 🧮 Build reasoning string with detailed calculation
-            const formattedPrices = prices.map(p => `£${p.toFixed(2)}`).join(" + ");
-            reasoning = `
-                Multiple listings selected from £${inBetweenRows[0].price.toFixed(2)}
-                to £${inBetweenRows[inBetweenRows.length - 1].price.toFixed(2)}.<br>
-                Average calculation: (${formattedPrices}) ÷ ${prices.length} =
-                <strong>£${avgPrice.toFixed(2)}</strong>.
-            `;
+            suggested = null;
+            reasoning = `No range selected. Cannot suggest a price.`;
         }
-    } else {
-        suggested = null;
-        reasoning = `No range selected. Cannot suggest a price.`;
+
+        displayDualAnalysis(reasoning, suggested, source);
     }
-
-    displayDualAnalysis(reasoning, suggested, source);
-}
-
 
     if (cashConvertersData.length > 0) getSuggestedPrice(cashConvertersData, 'CashConverters');
     if (cashGeneratorData.length > 0) getSuggestedPrice(cashGeneratorData, 'CashGenerator');
@@ -590,11 +602,10 @@ async function launchPlaywrightListing(itemName, description, price, serialNumbe
   }
 }
 
-// 🧾 Extract table data for analysis
+// Extract table data for analysis
 function extractCompetitorTableData() {
     const rows = allCompetitorRows;
     return Array.from(rows)
-        .filter(row => row.getAttribute('data-relevant') === 'Yes') // only relevant
         .map(row => {
             const cells = row.querySelectorAll('td');
             const rangeCheckbox = cells[4]?.querySelector('.range-checkbox');
@@ -603,9 +614,11 @@ function extractCompetitorTableData() {
                 price: parseFloat(cells[2]?.textContent.replace(/[^0-9.]/g, '')) || 0,
                 condition: cells[1]?.textContent.trim() || '',
                 link: cells[3]?.querySelector('a')?.href || '',
-                range: rangeCheckbox ? rangeCheckbox.checked : false // ✅ Track range status
+                range: rangeCheckbox ? rangeCheckbox.checked : false
             };
-        }).filter(item => item.competitor);
+        })
+        // 🧩 only include rows that have a range checkbox checked
+        .filter(item => item.range && item.competitor);
 }
 
 // Remove irrelevant competitor rows
