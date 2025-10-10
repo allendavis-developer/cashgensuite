@@ -82,7 +82,7 @@
       <span id="button-spinner" class="loading-spinner hidden"></span>
     </button>
     <button type="button" id="analyze-btn" class="analyze-button" onclick="analyzeTable()">
-      <span id="button-text">ANALYZE RELEVANT CC AND CG LISTINGS</span>
+      <span id="button-text">ANALYZE SELECTED RANGE</span>
       <span id="button-spinner" class="loading-spinner hidden"></span>
     </button>
 
@@ -484,6 +484,17 @@ async function analyzeTable() {
         alert("Please scrape and mark relevant rows for Cash Converters or Cash Generators first.");
         return;
     }
+
+    // 🧩 Check if any undercuts were selected at all
+    const anyUndercuts =
+        cashConvertersData.some(d => d.undercut) ||
+        cashGeneratorData.some(d => d.undercut);
+
+    if (!anyUndercuts) {
+        alert("No items selected for range. Please select at least one items before analyzing.");
+        return;
+    }
+
 
     const analysisSection = document.getElementById('analysis-section');
     const reasoningText = document.getElementById('reasoning-text');
