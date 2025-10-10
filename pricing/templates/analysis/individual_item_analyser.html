@@ -486,6 +486,15 @@ async function analyzeTable() {
         return;
     }
 
+    // Always clear old analysis before starting a new one
+    const reasoningText = document.getElementById('reasoning-text');
+    const analysisSection = document.getElementById('analysis-section');
+    document.getElementById('recommended-price-cashconverters').innerHTML = '-';
+    document.getElementById('recommended-price-cashgenerator').innerHTML = '-';
+    reasoningText.innerHTML = '';
+    analysisSection.style.display = 'none';
+
+
     const analyzeBtn = document.getElementById('analyze-btn');
     analyzeBtn.disabled = true;
     analyzeBtn.textContent = 'Analyzing CashConverters...';
@@ -603,13 +612,6 @@ function displayDualAnalysis(reasoning, suggestedPrice, source) {
     const analysisSection = document.getElementById('analysis-section');
     const reasoningText = document.getElementById('reasoning-text');
     const analysisTime = document.getElementById('analysis-time');
-
-     // Clear old analysis only for the first source
-    if (source === 'CashConverters') {
-        reasoningText.innerHTML = ''; // empty old reasoning
-        document.getElementById('recommended-price-cashconverters').innerHTML = '-';
-        document.getElementById('recommended-price-cashgenerator').innerHTML = '-';
-    }
 
     // Ensure suggested price is a number
     const priceValue = parseFloat(suggestedPrice.toString().replace(/[^0-9.]/g, ''));

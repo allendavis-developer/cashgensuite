@@ -135,8 +135,8 @@ def build_price_analysis_prompt(
         1: "No rush to sell — prioritize maximum profit.",
         2: "Standard timeline — balance profit and sellability.",
         3: "Moderate urgency — prefer faster turnover.",
-        4: "High urgency — prioritize quick sale.",
-        5: "Very urgent — must sell quickly, price aggressively."
+        4: "Urgent — not the lowest, somewhere along the second or third lowest.",
+        5: "ASAP — make sure selling price is lower than the lowest selling price."
     }
 
     urgency_text = urgency_context.get(urgency, urgency_context[3])
@@ -153,7 +153,6 @@ Your task is to suggest an ideal selling price for listing this item on the **CG
 - Market Item: {market_item_title or "N/A"}
 - Description: {description or "N/A"}
 - Sale Urgency: {urgency}/5 → {urgency_text}
-- Cost Price: {cost_price or "N/A"}
 
 ---
 
@@ -181,15 +180,11 @@ Follow these rules carefully:
 3. **Urgency Impact**
    - Factor in the sale urgency:
      - High urgency (4–5): Lower, faster-selling prices.  
-     - Low urgency (1–2): Higher margin pricing is acceptable.
+     - Low urgency (1–2): Higher margin pricing, middle of the listings, is acceptable.
 
 4. **Desirability & Sellability**
    - Consider desirability (demand/popularity) and sellability (ease of sale).  
    - Use real competitor pricing context to judge this balance.
-
-5. **Cost Price Awareness**
-   - If a cost price is provided, mention that you have received a cost price and mention what it is.  
-   - If a cost price is not provided, say I have not received a cost price for this item.
 
 ---
 

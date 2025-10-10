@@ -503,6 +503,11 @@
       scrollbar-color: #444 #111; /* thumb color, track color */
     }
 
+    .highlight-undercut {
+  background-color: #141414 !important;
+  border-left: 3px solid #00e0ff;
+}
+
 
   {% block extra_style %}{% endblock %}
 </style>
@@ -637,6 +642,7 @@
           <th>ITEM</th>
           <th>PRICE</th>
           <th>STORE</th>
+          <th>UNDERCUT</th>
           <th>RELEVANT?</th>
         </tr>
       </thead>
@@ -795,7 +801,10 @@ function updateCompetitorData(competitorData, competitorCount) {
                 <td><a href="${url}" target="_blank" rel="noopener noreferrer">${listingTitle}</a></td>
                 <td>${price}</td>
                 <td>${storeName}</td>
-                <td data-text-value="Yes">${selectHTML}</td>
+                <td class="undercut-cell">
+                    <input type="checkbox" class="undercut-checkbox" onchange="handleUndercutSelect(this)">
+                </td>
+                <td data-text-value="No">${selectHTML}</td>
             `;
             allCompetitorRows.push(row);
         }
@@ -825,6 +834,40 @@ function updateCompetitorData(competitorData, competitorCount) {
         checkIrrelevantCompetitors(itemName);
     }
 }
+
+function handleUndercutSelect(checkbox) {
+    const row = checkbox.closest('tr');
+    const source = row.cells[0].textContent.trim().toUpperCase();
+
+    // Get all checkboxes with the same source
+    const allCheckboxes = document.querySelectorAll('.undercut-checkbox');
+    const sameSourceCheckboxes = Array.from(allCheckboxes).filter(cb => {
+        const r = cb.closest('tr');
+        if (!r) return false;
+        return r.cells[0].textContent.trim().toUpperCase() === source;
+    });
+
+    // If this checkbox was just checked, uncheck others in the same source group
+    if (checkbox.checked) {
+        sameSourceCheckboxes.forEach(cb => {
+            if (cb !== checkbox) cb.checked = false;
+        });
+    }
+
+    // Optional: highlight selected undercut rows per source
+    document.querySelectorAll('#competitor-tbody tr').forEach(r => {
+        const cb = r.querySelector('.undercut-checkbox');
+        if (!cb) return;
+        const rowSource = r.cells[0].textContent.trim().toUpperCase();
+        if (rowSource === source && cb.checked) {
+            r.classList.add('highlight-undercut');
+        } else if (rowSource === source && !cb.checked) {
+            r.classList.remove('highlight-undercut');
+        }
+    });
+}
+
+
 
 // Handle dropdown changes
 function handleRelevanceChange(selectElement) {
