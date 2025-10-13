@@ -386,8 +386,12 @@ priceSourceSelect.addEventListener('change', () => {
     }
 
     // Clean up the price string (remove £ if present)
-    priceValue = parseFloat(priceValue.replace(/[^0-9.]/g, '')).toFixed(2);
-    modalPrice.value = priceValue;
+    priceValue = parseFloat(priceValue.replace(/[^0-9.]/g, ''));
+    // Round to nearest multiple of 2 before fixing decimals
+    priceValue = Math.round(priceValue / 2) * 2;
+
+
+    modalPrice.value = priceValue.toFixed(2);
 });
 
 
