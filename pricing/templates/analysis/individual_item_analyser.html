@@ -47,11 +47,12 @@
         min="0"
         value="{{ prefilled_data.cost_price|default_if_none:'' }}"
         required
+        readonly
       >
     </div>
 
     <div class="input-group" style="flex: 1;">
-      <label class="input-label" for="barserial">Bar/Serial Number</label>
+      <label class="input-label" for="barserial">Barserial</label>
       <input
         type="text"
         id="barserial"
@@ -59,8 +60,21 @@
         placeholder="e.g., SN1234567890"
         value="{{ prefilled_data.barserial|default_if_none:'' }}"
         required
+        readonly
       >
     </div>
+
+     <div class="input-group" style="flex: 1;">
+      <label class="input-label" for="branch">Branch</label>
+      <input
+        type="text"
+        id="branch"
+        class="input-field"
+        value="{{ prefilled_data.branch|default:'' }}"
+        readonly
+      >
+    </div>
+
   </div>
 
     <div class="input-group" style="margin-top: 16px;">
@@ -157,7 +171,7 @@
 
     <div style="margin-bottom: 16px;">
       <label style="font-size: 11px; color: #888; text-transform: uppercase;">Serial Number</label>
-      <input id="modal-serial-number" type="text" style="
+      <input id="modal-serial-number" type="text" readonly style="
           width: 100%;
           padding: 10px;
           background-color: #1a1a1a;
@@ -167,6 +181,20 @@
           margin-top: 4px;
       ">
     </div>
+
+    <div style="margin-bottom: 12px;">
+    <label style="font-size: 11px; color: #888; text-transform: uppercase;">Branch</label>
+    <input id="modal-branch" type="text" readonly style="
+        width: 100%;
+        padding: 10px;
+        background-color: #1a1a1a;
+        border: 1px solid #333;
+        color: #fff;
+        border-radius: 4px;
+        margin-top: 4px;
+    ">
+    </div>
+
 
     <div style="margin-bottom: 12px;">
       <label style="font-size: 11px; color: #888; text-transform: uppercase;">Select Price Source</label>
@@ -325,6 +353,7 @@ confirmListBtn.addEventListener('click', () => {
     modalDescription.value = document.getElementById('description').value;
 {#    modalPrice.value = document.getElementById('recommended-price').textContent.replace(/[^0-9.]+/g, '');#}
     document.getElementById('modal-serial-number').value = document.getElementById('barserial').value;
+    document.getElementById('modal-branch').value = document.getElementById('branch').value;
 });
 
 modalClose.addEventListener('click', () => {
@@ -383,9 +412,11 @@ modalSubmitBtn.addEventListener('click', async function() {
     }
 
     price = parseFloat(price.replace(/[^0-9.]/g, '')).toFixed(2);
+    const branch = document.getElementById('modal-branch').value; 
+    const serialNumber = document.getElementById('modal-serial-number').value;
 
     try {
-        await launchPlaywrightListing(modalItemName.value, modalDescription.value, price, document.getElementById('modal-serial-number').value);
+        await launchPlaywrightListing(modalItemName.value, modalDescription.value, price, serialNumber, branch);
     } catch (err) {
         console.error("Launch error:", err);
         alert("Automation failed due to an unexpected error.");
@@ -585,12 +616,13 @@ async function analyzeTable() {
     analysisSection.style.display = 'block';
 }
 
-async function launchPlaywrightListing(itemName, description, price, serialNumber) {
+async function launchPlaywrightListing(itemName, description, price, serialNumber, branch) {
   const response = await callLocalAgent("/launch-playwright-listing", {
       item_name: itemName,
       description,
       price,
       serial_number: serialNumber,
+      branch
   });
 
   if (!response) return alert("Automation agent not running.");

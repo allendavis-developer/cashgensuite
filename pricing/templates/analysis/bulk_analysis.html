@@ -89,6 +89,7 @@
           <th>Created At</th>
           <th>Quantity</th>
           <th>Bought in by</th>
+          <th>Branch</th>
             <th>Actions</th>
         </tr>
       </thead>
@@ -158,6 +159,7 @@ function addBarcode() {
       <td>-</td> <!-- Created At -->
       <td>-</td> <!-- Quantity -->
       <td>-</td> <!-- Bought in by -->
+      <td>-</td> <!-- Branch -->   
       <td>
         <span class="remove-btn" onclick="removeRow(this, '${barcode}')">Remove</span>
         <span class="view-btn" style="margin-left:8px;" onclick="viewAnalysis('${barcode}')">Analyse</span>
@@ -277,6 +279,7 @@ async function startScraping() {
           row.cells[7].textContent = product.created_at || '';
           row.cells[8].textContent = product.quantity || '';
           row.cells[9].textContent = product.bought_by || '';
+          row.cells[10].textContent = product.branch || '';
 
 
           //  Add or update productData
@@ -349,7 +352,8 @@ function viewAnalysis(barcode) {
     description: product.description || '',
     barserial: product.barserial || '',
     cost_price: product.cost_price || '',
-    barcode: product.barcode || ''
+    barcode: product.barcode || '',
+    branch: product.branch || ''   
   });
 
   // Assuming your analyzer view is named 'individual_item_analyser'

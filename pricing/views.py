@@ -68,7 +68,8 @@ def get_prefilled_data(request):
         "description": request.GET.get("description", ""),
         "barserial": request.GET.get("barserial", ""),
         "cost_price": request.GET.get("cost_price", ""),
-        "barcode": request.GET.get("barcode", "")
+        "barcode": request.GET.get("barcode", ""),
+        "branch": request.GET.get("branch", ""),  
     }
 
 
