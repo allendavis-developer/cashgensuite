@@ -227,6 +227,32 @@ async function callLocalAgent(endpoint, payload = {}) {
   }
 }
 
+function normalizeBranchName(branch) {
+  if (!branch) return "Warrington"; // default fallback
+
+  const cleaned = branch.trim().toLowerCase();
+
+  // Remove common prefixes
+  const stripped = cleaned
+    .replace(/^cg\s*/i, '')        // remove "CG " prefix
+    .replace(/^cashgen\s*/i, '')   // remove "Cashgen " prefix
+    .trim();
+
+  // Handle known branches and spelling mistakes
+  if (stripped.includes("tox") || stripped.includes("toxt") || stripped.includes("toxthen"))
+    return "Toxteth";
+  if (stripped.includes("nether"))
+    return "Netherton";
+  if (stripped.includes("wyth"))
+    return "Wythenshawe";
+  if (stripped.includes("warr"))
+    return "Warrington";
+
+  // fallback
+  return "Warrington";
+}
+
+
 
 async function startScraping() {
   const tbody = document.getElementById("barcodeTable");
@@ -289,6 +315,12 @@ async function startScraping() {
         // Successful scrape - update row
         successCount++;
         if (row) {
+          // Normalize branch name consistently
+          let branchName = normalizeBranchName(product.branch);
+          product.branch = branchName;
+
+          product.branch = branchName;
+
           row.cells[2].textContent = product.barserial || '-';
           row.cells[3].textContent = product.name || '-';
           row.cells[4].textContent = product.description || '-';
@@ -297,7 +329,7 @@ async function startScraping() {
           row.cells[7].textContent = product.created_at || '-';
           row.cells[8].textContent = product.quantity || '-';
           row.cells[9].textContent = product.bought_by || '-';
-          row.cells[10].textContent = product.branch || '-';
+          row.cells[10].textContent = branchName;
 
           // Reset any error styling
           row.cells[3].style.color = '';
@@ -353,6 +385,14 @@ async function startScraping() {
     }
   }
 }
+
+// Allow pressing Enter to add barcode
+document.getElementById("barcodeInput").addEventListener("keydown", function(event) {
+  if (event.key === "Enter") {
+    event.preventDefault(); // stop form submission or unwanted behavior
+    addBarcode(); // call your existing add function
+  }
+});
 
 // helper to get CSRF token
 function getCookie(name) {
