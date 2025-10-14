@@ -114,7 +114,6 @@ class PriceAnalysis(models.Model):
 
 
 # -- Web listing
-from django.db import models
 class ListingSnapshot(models.Model):
     item_name = models.CharField(max_length=255)
     description = models.TextField()

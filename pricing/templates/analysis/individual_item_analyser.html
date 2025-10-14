@@ -436,6 +436,28 @@ modalSubmitBtn.addEventListener('click', async function() {
 
         if (response.success) {
             alert("Opened WebEpos succesfully!");
+            
+            const listingData = collectListingData();  
+            listingData.branch = branch;
+
+            // 🔹 3️⃣ Save snapshot to Django
+            const saveResponse = await fetch("/save_listing/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken"),
+                },
+                body: JSON.stringify(listingData),
+            });
+
+            const saveResult = await saveResponse.json();
+            if (saveResult.success) {
+                console.log("✅ Listing snapshot saved:", saveResult.id);
+            } else {
+                console.error("❌ Failed to save snapshot:", saveResult.error);
+                alert("Listing created, but failed to save snapshot.");
+            }
+
         } else {
             alert(`Listing failed: ${response.error || "Unknown error"}`);
         }
@@ -757,7 +779,9 @@ function collectListingData() {
     const margin = parseFloat(document.getElementById('minimum-margin').value || 37.5);
     const marketRange = document.getElementById('price-range').textContent;
     const marketAverage = document.getElementById('price-average').textContent;
-    const recommendedPrice = document.getElementById('recommended-price').textContent;
+    const recommendedPriceCC = document.getElementById('recommended-price-cashconverters').textContent;
+    const recommendedPriceCG = document.getElementById('recommended-price-cashgenerator').textContent;
+
     const reasoning = document.getElementById('reasoning-text').innerText;
 
     const analysisTds = document.querySelectorAll('#analysis-tbody tr td');
@@ -775,7 +799,8 @@ function collectListingData() {
         cc_avg: analysisTds[4]?.textContent || null,
         cg_lowest: analysisTds[5]?.textContent || null,
         cg_avg: analysisTds[6]?.textContent || null,
-        recommended_price: recommendedPrice,
+        cc_recommended_price: recommendedPriceCC,
+        cg_recommended_price: recommendedPriceCG,
         reasoning,
         timestamp: new Date().toISOString(),
         competitors: allCompetitorRows.map(row => ({

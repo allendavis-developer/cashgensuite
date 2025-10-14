@@ -38,5 +38,6 @@ urlpatterns = [
     path("api/buying-range-analysis/", v.buying_range_analysis, name="buying_range_analysis"),
     path('api/negotiation-step/', v.negotiation_step, name='negotiation-step'),
     path("generate-search-term/", v.generate_search_term, name="generate_search_term"),
+    path('save_listing/', v.save_listing, name='save_listing'),
 
 ]

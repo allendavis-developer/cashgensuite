@@ -319,8 +319,6 @@ async function startScraping() {
           let branchName = normalizeBranchName(product.branch);
           product.branch = branchName;
 
-          product.branch = branchName;
-
           row.cells[2].textContent = product.barserial || '-';
           row.cells[3].textContent = product.name || '-';
           row.cells[4].textContent = product.description || '-';

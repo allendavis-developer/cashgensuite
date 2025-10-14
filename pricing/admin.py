@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import MarketItem, CompetitorListing, Category, InventoryItem, PriceAnalysis, PawnShopAgreement, MarginRule, Category
+from .models import ListingSnapshot, MarketItem, CompetitorListing, Category, InventoryItem, PriceAnalysis, PawnShopAgreement, MarginRule, Category
 
 # -------------------------------
 # Scraped Market Data Admin
@@ -89,3 +89,69 @@ class MarginRuleAdmin(admin.ModelAdmin):
     search_fields = ("match_value", "description")
     ordering = ("category", "order")
 
+
+@admin.register(ListingSnapshot)
+class ListingSnapshotAdmin(admin.ModelAdmin):
+    list_display = (
+        'item_name',
+        'branch',
+        'market_average',
+        'user_margin',
+        'rrp_with_margin',
+        'created_at',
+    )
+    list_filter = (
+        'branch',
+        'created_at',
+    )
+    search_fields = (
+        'item_name',
+        'description',
+        'branch',
+    )
+    readonly_fields = (
+        'created_at',
+    )
+    ordering = ('-created_at',)
+
+    fieldsets = (
+        ('Basic Info', {
+            'fields': (
+                'item_name',
+                'description',
+                'branch',
+                'listing_url',
+                'created_at',
+            )
+        }),
+        ('Market Data', {
+            'fields': (
+                'market_range',
+                'market_average',
+                'cex_avg',
+                'cex_discounted',
+                'cc_lowest',
+                'cc_avg',
+                'cg_lowest',
+                'cg_avg',
+            ),
+            'classes': ('collapse',)
+        }),
+        ('Pricing', {
+            'fields': (
+                'cost_price',
+                'user_margin',
+                'rrp_with_margin',
+                'cc_recommended_price',
+                'cg_recommended_price',
+            ),
+            'classes': ('collapse',)
+        }),
+        ('Analysis', {
+            'fields': (
+                'reasoning',
+                'competitors',
+            ),
+            'classes': ('collapse',)
+        }),
+    )

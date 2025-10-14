@@ -5,9 +5,10 @@ from django.db.models import Q, Prefetch
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
-from pricing.models import InventoryItem, MarketItem, CompetitorListing, PriceAnalysis, Category, MarginRule, GlobalMarginRule
+from pricing.models import  ListingSnapshot, InventoryItem, MarketItem, CompetitorListing, PriceAnalysis, Category, MarginRule, GlobalMarginRule
 
 import json, traceback, re
+from decimal import Decimal, InvalidOperation
 
 from pricing.utils.ai_utils import call_gemini_sync, generate_price_analysis, generate_bulk_price_analysis
 from pricing.utils.competitor_utils import get_competitor_data
@@ -851,21 +852,31 @@ def save_listing(request):
         try:
             data = json.loads(request.body)
 
+             # Helper to convert to Decimal safely
+            def to_decimal(value):
+                if value in [None, "", "null"]:
+                    return None
+                try:
+                    return Decimal(str(value))
+                except (InvalidOperation, ValueError):
+                    return None
+
             snapshot = ListingSnapshot.objects.create(
                 item_name=data.get("item_name"),
                 description=data.get("description"),
-                cost_price=data.get("cost_price"),
-                user_margin=data.get("user_margin"),
+                cost_price=to_decimal(data.get("cost_price")),
+                user_margin=to_decimal(data.get("user_margin")),
                 market_range=data.get("market_range"),
-                market_average=data.get("market_average"),
-                cex_avg=data.get("cex_avg"),
-                cex_discounted=data.get("cex_discounted"),
-                rrp_with_margin=data.get("rrp_with_margin"),
-                cc_lowest=data.get("cc_lowest"),
-                cc_avg=data.get("cc_avg"),
-                cg_lowest=data.get("cg_lowest"),
-                cg_avg=data.get("cg_avg"),
-                recommended_price=data.get("recommended_price"),
+                market_average=to_decimal(data.get("market_average")),
+                cex_avg=to_decimal(data.get("cex_avg")),
+                cex_discounted=to_decimal(data.get("cex_discounted")),
+                rrp_with_margin=to_decimal(data.get("rrp_with_margin")),
+                cc_lowest=to_decimal(data.get("cc_lowest")),
+                cc_avg=to_decimal(data.get("cc_avg")),
+                cg_lowest=to_decimal(data.get("cg_lowest")),
+                cg_avg=to_decimal(data.get("cg_avg")),
+                cc_recommended_price=to_decimal(data.get("cc_recommended_price")),
+                cg_recommended_price=to_decimal(data.get("cg_recommended_price")),
                 reasoning=data.get("reasoning"),
                 competitors=data.get("competitors", []),
                 branch=data.get("branch", ""),
