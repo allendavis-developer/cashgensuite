@@ -1,3 +1,5 @@
+<!-- vscode: set syntax to Jinja HTML -->
+
 {% extends "analysis/base_item_analysis.html" %}
 
 {% block title %}Pricing Analysis{% endblock %}
@@ -333,6 +335,7 @@
 {% endblock %}
 
 {% block extra_script %}
+<script>
 const modal = document.getElementById('list-modal');
 const modalClose = document.getElementById('modal-close');
 const modalItemName = document.getElementById('modal-item-name');
@@ -420,9 +423,24 @@ modalSubmitBtn.addEventListener('click', async function() {
     const serialNumber = document.getElementById('modal-serial-number').value;
 
     try {
-        await launchPlaywrightListing(modalItemName.value, modalDescription.value, price, serialNumber, branch);
+        const response = await sendExtensionMessage({
+            action: "createWebEposListing",
+                data: {
+                item_name: modalItemName.value,
+                description: modalDescription.value,
+                price,
+                serial_number: serialNumber,
+                branch,
+            },
+        });
+
+        if (response.success) {
+            alert("Opened WebEpos succesfully!");
+        } else {
+            alert(`Listing failed: ${response.error || "Unknown error"}`);
+        }
     } catch (err) {
-        console.error("Launch error:", err);
+        console.error("Extension communication error:", err);
         alert("Automation failed due to an unexpected error.");
     } finally {
         modalSubmitBtn.disabled = false;
@@ -438,7 +456,7 @@ modalSubmitBtn.addEventListener('click', async function() {
 // 🧱 SCRAPING PHASE
 // -------------------------------
 async function scrapePrices() {
-    const itemName = document.getElementById('item-name').value.trim();
+  const itemName = document.getElementById('item-name').value.trim();
     if (!itemName) {
         alert('Please enter an item name first.');
         return;
@@ -449,7 +467,7 @@ async function scrapePrices() {
     scrapeBtn.textContent = 'Scraping...';
 
     const selectedCompetitors = Array.from(document.querySelectorAll('input[name="competitors"]:checked'))
-    .map(cb => cb.value);
+        .map(cb => cb.value);
 
     if (selectedCompetitors.length === 0) {
         alert('Please select at least one website to scrape.');
@@ -458,34 +476,41 @@ async function scrapePrices() {
         return;
     }
 
-
     try {
-        const response = await callLocalAgent("/scrape-prices", {
-            query: itemName,
-            competitors: selectedCompetitors,
+        // Send message to Chrome extension via bridge
+        const response = await sendExtensionMessage({
+            action: "scrape",
+            data: {
+                query: itemName,
+                competitors: selectedCompetitors
+            }
         });
 
-        if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-                // Convert object array to the string format your updateCompetitorData expects
-                const formattedData = data.results.map(item => {
-                    // competitor | title | price | store | url
-                    return `${item.competitor} | ${item.title || ""} | £${item.price} | ${item.store || ""} | ${item.url || ""}`;
-                });
+        if (response.success) {
+            // Convert extension response to the format your updateCompetitorData expects
+            const formattedData = response.results.map(item => {
+                // competitor | title | price | store | url
+                return `${item.competitor} | ${item.title || ""} | £${item.price} | ${item.store || ""} | ${item.url || ""}`;
+            });
 
-                console.log(data)
-                updateCompetitorData(formattedData, formattedData.length);
-            } else {
-                alert("Scraping failed: " + data.error);
+            console.log("Scraped data:", response.results);
+            updateCompetitorData(formattedData, formattedData.length);
+            
+            if (response.partial) {
+                alert("Scraping partially completed. Some sites may have timed out.");
             }
         } else {
-            alert("Local scraper unavailable or returned an error.");
+            alert("Scraping failed: " + (response.error || "Unknown error"));
         }
 
     } catch (error) {
         console.error('Scraping error:', error);
-        alert('Error running scraper. Check local agent connection.');
+        
+        if (error.message.includes('timeout')) {
+            alert('Extension communication timeout. Make sure the extension is installed and enabled.');
+        } else {
+            alert('Error running scraper: ' + error.message + '\n\nMake sure the Chrome extension is installed and enabled.');
+        }
     } finally {
         scrapeBtn.disabled = false;
         scrapeBtn.textContent = 'Scrape Prices';
@@ -629,6 +654,9 @@ async function launchPlaywrightListing(itemName, description, price, serialNumbe
       branch
   });
 
+
+
+
   if (!response) return alert("Automation agent not running.");
 
   let data;
@@ -723,6 +751,46 @@ function displayDualAnalysis(reasoning, suggestedPrice, source) {
 }
 
 
+function collectListingData() {
+    const itemName = document.getElementById('item-name').value;
+    const description = document.getElementById('description').value;
+    const margin = parseFloat(document.getElementById('minimum-margin').value || 37.5);
+    const marketRange = document.getElementById('price-range').textContent;
+    const marketAverage = document.getElementById('price-average').textContent;
+    const recommendedPrice = document.getElementById('recommended-price').textContent;
+    const reasoning = document.getElementById('reasoning-text').innerText;
+
+    const analysisTds = document.querySelectorAll('#analysis-tbody tr td');
+    const data = {
+        item_name: itemName,
+        description,
+        cost_price: currentCostPrice,
+        user_margin: margin,
+        market_range: marketRange,
+        market_average: marketAverage,
+        cex_avg: analysisTds[0]?.textContent || null,
+        cex_discounted: analysisTds[1]?.textContent || null,
+        rrp_with_margin: analysisTds[2]?.textContent || null,
+        cc_lowest: analysisTds[3]?.textContent || null,
+        cc_avg: analysisTds[4]?.textContent || null,
+        cg_lowest: analysisTds[5]?.textContent || null,
+        cg_avg: analysisTds[6]?.textContent || null,
+        recommended_price: recommendedPrice,
+        reasoning,
+        timestamp: new Date().toISOString(),
+        competitors: allCompetitorRows.map(row => ({
+            source: row.cells[0].textContent.trim(),
+            title: row.cells[1].textContent.trim(),
+            price: row.cells[2].textContent.trim(),
+            store: row.cells[3].textContent.trim(),
+            selected: row.querySelector('.range-checkbox')?.checked || false
+        }))
+    };
+
+    return data;
+}
+
+
 document.addEventListener('DOMContentLoaded', function() {
     // Existing prefilled item/description logic
     const prefilledItem = "{{ prefilled_item|escapejs }}";
@@ -738,5 +806,5 @@ document.addEventListener('DOMContentLoaded', function() {
         setRRPAfterTable(costInput.value);
     }
 });
-
+</script>
 {% endblock %}

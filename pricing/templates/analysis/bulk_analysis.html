@@ -228,7 +228,6 @@ async function callLocalAgent(endpoint, payload = {}) {
 }
 
 
-// Start scraping via local agent - ONLY for new/pending items
 async function startScraping() {
   const tbody = document.getElementById("barcodeTable");
   const rows = tbody.querySelectorAll('tr');
@@ -254,72 +253,104 @@ async function startScraping() {
 
   const statusDiv = document.getElementById("scrape-status");
   statusDiv.className = "";
-  statusDiv.innerHTML = `Scraping ${pendingBarcodes.length} new item(s) locally <span class='spinner'></span>`;
+  statusDiv.innerHTML = `Scraping ${pendingBarcodes.length} new item(s) from NOSPOS <span class='spinner'></span>`;
 
   try {
-    // 🔥 Use local FastAPI agent instead of Django
-    const data = await callLocalAgent("/scrape-barcodes", { barcodes: pendingBarcodes });
+    // Send message to Chrome extension for NOSPOS scraping
+    const response = await sendExtensionMessage({
+      action: "scrapeNosposBarcodes",
+      data: {
+        barcodes: pendingBarcodes
+      }
+    });
 
-    if (!data) {
-      statusDiv.className = "error";
-      statusDiv.textContent = "❌ Could not reach local agent.";
-      return;
-    }
+    if (response.success) {
+      const results = response.results;
+      let successCount = 0;
+      let errorCount = 0;
 
-    if (data.success) {
-      // Update existing rows with scraped data
-      data.products.forEach(product => {
+      console.log(results)
+
+      // Update table with results
+      results.forEach(product => {
         const row = document.querySelector(`tr[data-barcode="${product.barcode}"]`);
+        
+        if (product.error) {
+          // Handle error case
+          errorCount++;
+          if (row) {
+            row.cells[3].textContent = `Error: ${product.error}`;
+            row.cells[3].style.color = '#f00';
+          }
+          console.error(`Error for barcode ${product.barcode}:`, product.error);
+          return;
+        }
+
+        // Successful scrape - update row
+        successCount++;
         if (row) {
-          row.cells[2].textContent = product.barserial || '';
-          row.cells[3].textContent = product.name || '';
-          row.cells[4].textContent = product.description || '';
-          row.cells[5].textContent = product.cost_price || '';
-          row.cells[6].textContent = product.retail_price || '';
-          row.cells[7].textContent = product.created_at || '';
-          row.cells[8].textContent = product.quantity || '';
-          row.cells[9].textContent = product.bought_by || '';
-          row.cells[10].textContent = product.branch || '';
+          row.cells[2].textContent = product.barserial || '-';
+          row.cells[3].textContent = product.name || '-';
+          row.cells[4].textContent = product.description || '-';
+          row.cells[5].textContent = product.cost_price || '-';
+          row.cells[6].textContent = product.retail_price || '-';
+          row.cells[7].textContent = product.created_at || '-';
+          row.cells[8].textContent = product.quantity || '-';
+          row.cells[9].textContent = product.bought_by || '-';
+          row.cells[10].textContent = product.branch || '-';
 
+          // Reset any error styling
+          row.cells[3].style.color = '';
 
-          //  Add or update productData
-        const productIndex = productData.findIndex(p => p.barcode === product.barcode);
-        if (productIndex !== -1) {
-          productData[productIndex] = { ...productData[productIndex], ...product, status: 'scraped' };
-        } else {
-          productData.push({ ...product, status: 'scraped' });
-        }
-
+          // Update productData array
+          const productIndex = productData.findIndex(p => p.barcode === product.barcode);
+          if (productIndex !== -1) {
+            productData[productIndex] = { 
+              ...productData[productIndex], 
+              ...product, 
+              status: 'scraped' 
+            };
+          } else {
+            productData.push({ 
+              ...product, 
+              status: 'scraped' 
+            });
+          }
         }
       });
 
-      statusDiv.className = "success";
-      statusDiv.textContent = `✅ Local scraping completed for ${data.products.length} new barcode(s).`;
+      // Update status message
+      if (errorCount > 0) {
+        statusDiv.className = "warning";
+        statusDiv.textContent = `⚠️ Completed: ${successCount} successful, ${errorCount} failed`;
+      } else {
+        statusDiv.className = "success";
+        statusDiv.textContent = `✅ Successfully scraped ${successCount} barcode(s) from NOSPOS`;
+      }
 
-      // Update button based on whether we have any pending items left
-      const scrapeBtn = document.getElementById("scrapeBtn");
-      const hasPendingItems = Array.from(tbody.querySelectorAll('tr')).some(row => {
-        if (row.cells.length >= 10) {
-          return row.cells[3].textContent.trim() === ''; // Name cell empty
-        }
-        return false;
-      });
-
-    scrapeBtn.textContent = "Scrape New Items";
-    scrapeBtn.onclick = startScraping;
+      if (response.partial) {
+        statusDiv.textContent += " (some items may have timed out)";
+      }
 
       isFirstScrape = false;
-      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
 
     } else {
+      // Extension returned failure
       statusDiv.className = "error";
-      statusDiv.textContent = `❌ Error: ${data.error || "Unknown error"}`;
+      statusDiv.textContent = `❌ Error: ${response.error || "Unknown error"}`;
     }
 
   } catch (err) {
-    console.error("Scrape error:", err);
+    console.error("Extension scrape error:", err);
     statusDiv.className = "error";
-    statusDiv.textContent = `❌ Request failed: ${err.message}`;
+    
+    if (err.message.includes('timeout')) {
+      statusDiv.textContent = `❌ Scraping timeout - make sure you're logged into NOSPOS`;
+    } else if (err.message.includes('Extension')) {
+      statusDiv.textContent = `❌ Extension not available - make sure it's installed and enabled`;
+    } else {
+      statusDiv.textContent = `❌ Scraping failed: ${err.message}`;
+    }
   }
 }
 
@@ -362,7 +393,10 @@ function viewAnalysis(barcode) {
   window.open(`${baseUrl}?${params.toString()}`, '_blank'); // or use window.location.href to replace current page
 }
 
-
 </script>
+
+{% load static %}
+<script src="{% static 'extension_bridge.js' %}"></script>
+
 </body>
 </html>

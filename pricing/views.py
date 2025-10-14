@@ -843,3 +843,37 @@ OUTPUT FORMAT (JSON only):
     except Exception as e:
         traceback.print_exc()
         return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+@csrf_exempt
+def save_listing(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+
+            snapshot = ListingSnapshot.objects.create(
+                item_name=data.get("item_name"),
+                description=data.get("description"),
+                cost_price=data.get("cost_price"),
+                user_margin=data.get("user_margin"),
+                market_range=data.get("market_range"),
+                market_average=data.get("market_average"),
+                cex_avg=data.get("cex_avg"),
+                cex_discounted=data.get("cex_discounted"),
+                rrp_with_margin=data.get("rrp_with_margin"),
+                cc_lowest=data.get("cc_lowest"),
+                cc_avg=data.get("cc_avg"),
+                cg_lowest=data.get("cg_lowest"),
+                cg_avg=data.get("cg_avg"),
+                recommended_price=data.get("recommended_price"),
+                reasoning=data.get("reasoning"),
+                competitors=data.get("competitors", []),
+                branch=data.get("branch", ""),
+                listing_url=data.get("listing_url"),
+            )
+
+            return JsonResponse({"success": True, "id": snapshot.id})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+    return JsonResponse({"success": False, "error": "Invalid method"}, status=405)

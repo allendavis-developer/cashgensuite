@@ -114,32 +114,45 @@ class PriceAnalysis(models.Model):
 
 
 # -- Web listing
-class WebListing(models.Model):
-    inventory_item = models.ForeignKey(
-        InventoryItem,
-        on_delete=models.CASCADE,
-        related_name="web_listings"
-    )
-    listed_by = models.CharField(max_length=255)  # store username or staff name
-    first_uploaded_at = models.DateTimeField(auto_now_add=True)  # time first uploaded
-    last_updated_at = models.DateTimeField(auto_now=True)        # auto updates whenever record changes
-    update_count = models.PositiveIntegerField(default=0)       # number of times listing was changed
-    epos_listing_url = models.URLField(blank=True, null=True)   # optional link to the EPOS listing
-    title = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
-    final_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    status = models.CharField(
-        max_length=50,
-        choices=[
-            ("active", "Active"),
-            ("ended", "Ended"),
-            ("removed", "Removed")
-        ],
-        default="active"
-    )
+from django.db import models
+class ListingSnapshot(models.Model):
+    item_name = models.CharField(max_length=255)
+    description = models.TextField()
+    cost_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    user_margin = models.DecimalField(max_digits=5, decimal_places=2, default=37.5)
+    market_range = models.CharField(max_length=50, blank=True)
+    market_average = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    
+    cex_avg = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    cex_discounted = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    rrp_with_margin = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    
+    cc_lowest = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    cc_avg = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    
+    cg_lowest = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    cg_avg = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    
+    cc_recommended_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    cg_recommended_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+    reasoning = models.TextField(blank=True)
+    
+    # Competitor data (full raw table)
+    competitors = models.JSONField(blank=True, default=list)
+
+    # Store info
+    branch = models.CharField(max_length=255, blank=True)
+    listing_url = models.URLField(blank=True, null=True)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.inventory_item.title} listed by {self.listed_by} (£{self.final_price})"
+        return f"{self.item_name} ({self.branch or 'Unknown Branch'}) - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
 
 
 # BUYING MARGINS

@@ -1160,9 +1160,12 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
+</script>
+{% load static %}
+<script src="{% static 'extension_bridge.js' %}"></script>
+
 {% block extra_script %}{% endblock %}
 
-</script>
 
 </body>
 </html>
