@@ -1,5 +1,17 @@
 from django.contrib import admin
-from .models import ListingSnapshot, MarketItem, CompetitorListing, Category, InventoryItem, PriceAnalysis, PawnShopAgreement, MarginRule, Category
+from .models import (
+    Listing,
+    ListingSnapshot,
+    InventoryItem,
+    Category,
+    PawnShopAgreement,
+    MarketItem,
+    CompetitorListing,
+    PriceAnalysis,
+    MarginCategory,
+    MarginRule,
+    GlobalMarginRule,
+)
 
 # -------------------------------
 # Scraped Market Data Admin
@@ -90,68 +102,83 @@ class MarginRuleAdmin(admin.ModelAdmin):
     ordering = ("category", "order")
 
 
+class ListingSnapshotInline(admin.TabularInline):
+    model = ListingSnapshot
+    extra = 0
+    readonly_fields = (
+        "created_at",
+        "market_average",
+        "user_margin",
+        "cex_avg",
+        "cc_avg",
+        "cg_avg",
+        "reasoning",
+    )
+    fields = (
+        "created_at",
+        "market_average",
+        "user_margin",
+        "cex_avg",
+        "cc_avg",
+        "cg_avg",
+        "reasoning",
+    )
+    show_change_link = True
+
+
+# -----------------------------
+# LISTING ADMIN
+# -----------------------------
+@admin.register(Listing)
+class ListingAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "item",
+        "price",
+        "platform",
+        "branch",
+        "is_active",
+        "created_at",
+    )
+    list_filter = ("platform", "branch", "is_active", "created_at")
+    search_fields = ("item__title", "title", "description", "platform", "branch")
+    readonly_fields = ("created_at", "updated_at")
+    inlines = [ListingSnapshotInline]
+    ordering = ("-created_at",)
+
+    fieldsets = (
+        ("Item Info", {
+            "fields": ("item", "title", "description", "price", "platform", "url")
+        }),
+        ("Status & Location", {
+            "fields": ("branch", "is_active")
+        }),
+        ("Timestamps", {
+            "fields": ("created_at", "updated_at")
+        }),
+    )
+
+
+# -----------------------------
+# SNAPSHOT ADMIN
+# -----------------------------
 @admin.register(ListingSnapshot)
 class ListingSnapshotAdmin(admin.ModelAdmin):
     list_display = (
-        'item_name',
-        'branch',
-        'market_average',
-        'user_margin',
-        'rrp_with_margin',
-        'created_at',
+        "listing",
+        "created_at",
+        "market_average",
+        "user_margin",
+        "cex_avg",
+        "cc_avg",
+        "cg_avg",
     )
-    list_filter = (
-        'branch',
-        'created_at',
-    )
+    list_filter = ("created_at",)
     search_fields = (
-        'item_name',
-        'description',
-        'branch',
+        "listing__item__title",
+        "item_name",
+        "reasoning",
+        "listing__platform",
     )
-    readonly_fields = (
-        'created_at',
-    )
-    ordering = ('-created_at',)
-
-    fieldsets = (
-        ('Basic Info', {
-            'fields': (
-                'item_name',
-                'description',
-                'branch',
-                'listing_url',
-                'created_at',
-            )
-        }),
-        ('Market Data', {
-            'fields': (
-                'market_range',
-                'market_average',
-                'cex_avg',
-                'cex_discounted',
-                'cc_lowest',
-                'cc_avg',
-                'cg_lowest',
-                'cg_avg',
-            ),
-            'classes': ('collapse',)
-        }),
-        ('Pricing', {
-            'fields': (
-                'cost_price',
-                'user_margin',
-                'rrp_with_margin',
-                'cc_recommended_price',
-                'cg_recommended_price',
-            ),
-            'classes': ('collapse',)
-        }),
-        ('Analysis', {
-            'fields': (
-                'reasoning',
-                'competitors',
-            ),
-            'classes': ('collapse',)
-        }),
-    )
+    readonly_fields = ("created_at",)
+    ordering = ("-created_at",)

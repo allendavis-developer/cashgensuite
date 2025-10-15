@@ -114,44 +114,64 @@ class PriceAnalysis(models.Model):
 
 
 # -- Web listing
+class Listing(models.Model):
+    item = models.OneToOneField(
+        'InventoryItem',
+        on_delete=models.CASCADE,
+        related_name='listing',
+        help_text="The inventory item currently listed for sale"
+    )
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    platform = models.CharField(max_length=100, blank=True, help_text="Where this item is listed, e.g. eBay, Website, etc.")
+    url = models.URLField(blank=True, null=True)
+    branch = models.CharField(max_length=255, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Listing for {self.item.title} - £{self.price}"
+
+
 class ListingSnapshot(models.Model):
+    listing = models.ForeignKey(
+        'Listing',
+        on_delete=models.CASCADE,
+        related_name='snapshots',
+        help_text="The listing this snapshot belongs to"
+    )
+
     item_name = models.CharField(max_length=255)
     description = models.TextField()
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     user_margin = models.DecimalField(max_digits=5, decimal_places=2, default=37.5)
     market_range = models.CharField(max_length=50, blank=True)
     market_average = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    
+
     cex_avg = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     cex_discounted = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     rrp_with_margin = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    
+
     cc_lowest = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     cc_avg = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    
     cg_lowest = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     cg_avg = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    
+
     cc_recommended_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     cg_recommended_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     reasoning = models.TextField(blank=True)
-    
-    # Competitor data (full raw table)
     competitors = models.JSONField(blank=True, default=list)
 
-    # Store info
-    branch = models.CharField(max_length=255, blank=True)
-    listing_url = models.URLField(blank=True, null=True)
-
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.item_name} ({self.branch or 'Unknown Branch'}) - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+        return f"Snapshot for {self.listing.item.title} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
 
 
 # BUYING MARGINS

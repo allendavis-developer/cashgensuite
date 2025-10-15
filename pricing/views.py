@@ -846,45 +846,113 @@ OUTPUT FORMAT (JSON only):
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from decimal import Decimal, InvalidOperation
+import json
+
+from .models import Listing, ListingSnapshot, InventoryItem
+
+
 @csrf_exempt
 def save_listing(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": "Invalid method"}, status=405)
 
-             # Helper to convert to Decimal safely
-            def to_decimal(value):
-                if value in [None, "", "null"]:
-                    return None
-                try:
-                    return Decimal(str(value))
-                except (InvalidOperation, ValueError):
-                    return None
+    try:
+        data = json.loads(request.body)
 
-            snapshot = ListingSnapshot.objects.create(
-                item_name=data.get("item_name"),
-                description=data.get("description"),
-                cost_price=to_decimal(data.get("cost_price")),
-                user_margin=to_decimal(data.get("user_margin")),
-                market_range=data.get("market_range"),
-                market_average=to_decimal(data.get("market_average")),
-                cex_avg=to_decimal(data.get("cex_avg")),
-                cex_discounted=to_decimal(data.get("cex_discounted")),
-                rrp_with_margin=to_decimal(data.get("rrp_with_margin")),
-                cc_lowest=to_decimal(data.get("cc_lowest")),
-                cc_avg=to_decimal(data.get("cc_avg")),
-                cg_lowest=to_decimal(data.get("cg_lowest")),
-                cg_avg=to_decimal(data.get("cg_avg")),
-                cc_recommended_price=to_decimal(data.get("cc_recommended_price")),
-                cg_recommended_price=to_decimal(data.get("cg_recommended_price")),
-                reasoning=data.get("reasoning"),
-                competitors=data.get("competitors", []),
-                branch=data.get("branch", ""),
-                listing_url=data.get("listing_url"),
-            )
+        def to_decimal(value):
+            if value in [None, "", "null", "-"]:
+                return None
+            try:
+                # Clean the value (remove £, commas, etc.)
+                cleaned = str(value).replace('£', '').replace(',', '').strip()
+                return Decimal(cleaned)
+            except (InvalidOperation, ValueError):
+                return None
 
-            return JsonResponse({"success": True, "id": snapshot.id})
-        except Exception as e:
-            return JsonResponse({"success": False, "error": str(e)}, status=400)
+        title = data.get("item_name")
+        branch = data.get("branch", "")
+        serial = data.get("serial_number") or None
 
-    return JsonResponse({"success": False, "error": "Invalid method"}, status=405)
+        # 1️⃣ Find or create InventoryItem
+        item, created_item = InventoryItem.objects.get_or_create(
+            title=title,
+            defaults={
+                "status": "free_stock",
+                "description": data.get("description", ""),
+                "serial_number": serial,
+            }
+        )
+
+        # 2️⃣ Determine the listing price
+        listing_price = (
+            to_decimal(data.get("listing_price")) or  # From modal if available
+            to_decimal(data.get("cc_recommended_price")) or 
+            to_decimal(data.get("cg_recommended_price")) or 
+            to_decimal(data.get("rrp_with_margin")) or
+            to_decimal(data.get("market_average"))
+        )
+
+        if not listing_price:
+            return JsonResponse({
+                "success": False, 
+                "error": "No valid price found. Please analyze prices first."
+            }, status=400)
+
+        # 3️⃣ Find or create Listing WITH PRICE
+        listing, created_listing = Listing.objects.get_or_create(
+            item=item,
+            branch=branch,
+            defaults={
+                "price": listing_price,
+                "title": title,
+                "description": data.get("description", ""),
+                "platform": "WebEpos",  # or whatever platform you're using
+            }
+        )
+
+        # If listing already exists, update its price
+        if not created_listing:
+            listing.price = listing_price
+            listing.title = title
+            listing.description = data.get("description", "")
+            listing.save()
+
+        # 4️⃣ Create new Snapshot linked to this listing
+        snapshot = ListingSnapshot.objects.create(
+            listing=listing,
+            item_name=title,
+            description=data.get("description"),
+            cost_price=to_decimal(data.get("cost_price")),
+            user_margin=to_decimal(data.get("user_margin")),
+            market_range=data.get("market_range"),
+            market_average=to_decimal(data.get("market_average")),
+            cex_avg=to_decimal(data.get("cex_avg")),
+            cex_discounted=to_decimal(data.get("cex_discounted")),
+            rrp_with_margin=to_decimal(data.get("rrp_with_margin")),
+            cc_lowest=to_decimal(data.get("cc_lowest")),
+            cc_avg=to_decimal(data.get("cc_avg")),
+            cg_lowest=to_decimal(data.get("cg_lowest")),
+            cg_avg=to_decimal(data.get("cg_avg")),
+            cc_recommended_price=to_decimal(data.get("cc_recommended_price")),
+            cg_recommended_price=to_decimal(data.get("cg_recommended_price")),
+            reasoning=data.get("reasoning", ""),
+            competitors=data.get("competitors", []),
+        )
+
+        return JsonResponse({
+            "success": True,
+            "inventory_item_id": item.id,
+            "listing_id": listing.id,
+            "snapshot_id": snapshot.id,
+            "listing_price": str(listing_price),
+            "created_item": created_item,
+            "created_listing": created_listing,
+        })
+
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())  # For debugging
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
