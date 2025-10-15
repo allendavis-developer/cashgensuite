@@ -517,7 +517,6 @@ async function scrapePrices() {
 
             console.log("Scraped data:", response.results);
             updateCompetitorData(formattedData, formattedData.length);
-            
             if (response.partial) {
                 alert("Scraping partially completed. Some sites may have timed out.");
             }
