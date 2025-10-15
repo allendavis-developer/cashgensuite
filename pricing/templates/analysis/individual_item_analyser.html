@@ -435,29 +435,7 @@ modalSubmitBtn.addEventListener('click', async function() {
         });
 
         if (response.success) {
-            alert("Opened WebEpos succesfully!");
-            
-            const listingData = collectListingData();  
-            listingData.branch = branch;
-
-            // 🔹 3️⃣ Save snapshot to Django
-            const saveResponse = await fetch("/save_listing/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": getCookie("csrftoken"),
-                },
-                body: JSON.stringify(listingData),
-            });
-
-            const saveResult = await saveResponse.json();
-            if (saveResult.success) {
-                console.log("✅ Listing snapshot saved:", saveResult.id);
-            } else {
-                console.error("❌ Failed to save snapshot:", saveResult.error);
-                alert("Listing created, but failed to save snapshot.");
-            }
-
+            console.log("Opened WebEpos succesfully!");
         } else {
             alert(`Listing failed: ${response.error || "Unknown error"}`);
         }
@@ -814,7 +792,6 @@ function collectListingData() {
     return data;
 }
 
-
 document.addEventListener('DOMContentLoaded', function() {
     // Existing prefilled item/description logic
     const prefilledItem = "{{ prefilled_item|escapejs }}";
@@ -830,5 +807,35 @@ document.addEventListener('DOMContentLoaded', function() {
         setRRPAfterTable(costInput.value);
     }
 });
+
+
+window.addEventListener('message', async (event) => {
+    if (event.source !== window) return;
+    if (event.data.type === 'EXTENSION_EVENT' && event.data.action === 'webEposSaveCompleted') {
+        console.log('WebEpos item saved!', event.data.data);
+        // Save snapshot to Django
+        const listingData = collectListingData();  
+        listingData.branch = branch;
+
+        const saveResponse = await fetch("/save_listing/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken"),
+            },
+            body: JSON.stringify(listingData),
+        });
+
+        const saveResult = await saveResponse.json();
+        if (saveResult.success) {
+            console.log("Listing snapshot saved:", saveResult.id);
+        } else {
+            console.error("Failed to save snapshot:", saveResult.error);
+            alert("Listing created, but failed to save snapshot.");
+        }    
+    }
+});
+
+
 </script>
 {% endblock %}
