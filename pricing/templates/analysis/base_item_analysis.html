@@ -621,11 +621,11 @@
         <tr>
           <th>CEX Price Avg</th>
           <th>CEX - Discount % (20% for now)</th>
-          <th>Cost Price + Your Minimum Margin</th>
+          <th>Cost Price + Minimum Margin</th>
           <th>Cash Converters Lowest</th>
-          <th>Cash Converters Avg</th>
+          <th>Cash Converters Mode</th>
           <th>Cash Generator Lowest</th>
-          <th>Cash Generator Avg</th>
+          <th>Cash Generator Mode</th>
         </tr>
       </thead>
       <tbody id="analysis-tbody">
@@ -844,7 +844,9 @@ function updateCompetitorData(competitorData, competitorCount) {
     }
 
     applySortAndFilter();
-    computeSourceAverages();
+    // Wait for the DOM to finish updating before computing
+    
+    console.log("computing averages");
 }
 
 
@@ -983,6 +985,9 @@ function applySortAndFilter() {
     }
 
     document.getElementById('competitor-number').textContent = rows.length;
+        // Recompute averages/stats after re-render so summary matches current checkbox state
+
+    requestAnimationFrame(() => computeSourceAverages());
 }
 
 document.getElementById('sort-price').addEventListener('change', applySortAndFilter);
@@ -990,44 +995,81 @@ document.getElementById('filter-source').addEventListener('change', applySortAnd
 
 
 function computeSourceAverages() {
-    const rows = allCompetitorRows; // Use all rows, not filtered DOM
+    const rows = allCompetitorRows;
 
-    const sourceData = {};
-    const relevantPrices = [];
+    const sourceData = {};       // Prices actually included per source
+    const sourceModeData = {};   // All prices per source for mode calculation
+    const relevantPrices = [];   // All prices included for market stats
 
+    // 1️⃣ Determine if any checkboxes are checked per source
+    const sourceCheckedState = {};
     rows.forEach(row => {
-        if (row.cells.length >= 5) {
-            const source = row.cells[0].textContent.trim().toUpperCase();
-            const price = parseFloat(row.cells[2].textContent.replace(/[^0-9.-]+/g, ""));
-            if (isNaN(price)) return;
+        if (row.cells.length < 5) return;
+        const source = row.cells[0].textContent.trim().toUpperCase();
+        const checkbox = row.querySelector('.range-checkbox');
+        if (!sourceCheckedState[source]) sourceCheckedState[source] = false;
+        if (checkbox && checkbox.checked) sourceCheckedState[source] = true;
+    });
 
-            const rangeCheckbox = row.querySelector('.range-checkbox');
-            const isIncluded = rangeCheckbox && rangeCheckbox.checked;
+    // 2️⃣ Collect prices based on selection logic
+    rows.forEach(row => {
+        if (row.cells.length < 5) return;
 
-            // ✅ Always include CEX data, even if unchecked
-            if (source === "CEX" || isIncluded) {
-                if (!sourceData[source]) sourceData[source] = [];
-                sourceData[source].push(price);
+        const source = row.cells[0].textContent.trim().toUpperCase();
+        const price = parseFloat(row.cells[2].textContent.replace(/[^0-9.-]+/g, ""));
+        if (isNaN(price)) return;
 
-                // Only count non-CEX for "market range" display
-                if (isIncluded || source !== "CEX") {
-                    relevantPrices.push(price);
-                }
-            }
+        // Save all prices for mode calculation
+        if (!sourceModeData[source]) sourceModeData[source] = [];
+        sourceModeData[source].push(price);
+
+        const checkbox = row.querySelector('.range-checkbox');
+        let includeRow = false;
+
+        if (source === "CEX") {
+            // ✅ Always include CEX
+            includeRow = true;
+        } else if (sourceCheckedState[source]) {
+            // ✅ Some rows checked → include only checked
+            includeRow = checkbox && checkbox.checked;
+        } else {
+            // ✅ No rows checked → include all
+            includeRow = true;
+        }
+
+        if (includeRow) {
+            if (!sourceData[source]) sourceData[source] = [];
+            sourceData[source].push(price);
+            relevantPrices.push(price);
         }
     });
 
-    // Compute averages
+
+
+    // 3️⃣ Compute averages, min, max, mode
     const sourceAverages = {};
     Object.keys(sourceData).forEach(source => {
         const prices = sourceData[source];
         const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
         const min = Math.min(...prices);
         const max = Math.max(...prices);
-        sourceAverages[source] = { average: avg, min, max, count: prices.length };
+
+          // Compute mode from the currently included prices (respecting selected range)
+        const freq = {};
+        prices.forEach(p => { freq[p] = (freq[p] || 0) + 1; });
+        let mode;
+        let highest = 0;
+        Object.keys(freq).forEach(k => {
+            if (freq[k] > highest) {
+                highest = freq[k];
+                mode = parseFloat(k);
+            }
+        });
+        sourceAverages[source] = { average: avg, min, max, count: prices.length, mode };
     });
 
-    // ===== Compute market stats (from relevant prices only) =====
+
+    // 4️⃣ Update market stats
     const marketStats = document.getElementById('market-stats');
     if (relevantPrices.length > 0) {
         const minPrice = Math.min(...relevantPrices);
@@ -1042,7 +1084,7 @@ function computeSourceAverages() {
         document.getElementById('price-average').textContent = '-';
     }
 
-    // ===== Populate analysis table =====
+    // 5️⃣ Populate analysis table
     const tbody = document.getElementById('analysis-tbody');
     if (!tbody) return;
 
@@ -1053,7 +1095,6 @@ function computeSourceAverages() {
     const cc = normalized['CASHCONVERTERS'] || {};
     const cg = normalized['CASHGENERATOR'] || {};
 
-    // Compute CEX - 20%
     const cexMinus20 = cex.average ? `£${(cex.average * 0.8).toFixed(0)}` : '-';
     const suggestedRRP = '';
 
@@ -1063,9 +1104,9 @@ function computeSourceAverages() {
             <td>${cexMinus20}</td>
             <td id="rrp-cell">${suggestedRRP}</td>
             <td>${cc.min ? `£${cc.min.toFixed(0)}` : '-'}</td>
-            <td>${cc.average ? `£${cc.average.toFixed(0)}` : '-'}</td>
+            <td>${cc.mode ? `£${cc.mode.toFixed(0)}` : '-'}</td>
             <td>${cg.min ? `£${cg.min.toFixed(0)}` : '-'}</td>
-            <td>${cg.average ? `£${cg.average.toFixed(0)}` : '-'}</td>
+            <td>${cg.mode ? `£${cg.mode.toFixed(0)}` : '-'}</td>
         </tr>
     `;
 
@@ -1073,7 +1114,7 @@ function computeSourceAverages() {
 }
 
 
-// ✅ Store cost price
+// Store cost price
 function setRRPAfterTable(costPrice) {
     currentCostPrice = parseFloat(costPrice);
     if (isNaN(currentCostPrice)) {
