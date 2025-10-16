@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Cash Generator System{% endblock %}</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* === Base Typography & Layout === */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { font-size: 14px; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #000;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      font-size: 0.875rem;
+    }
+    a { color: #fff !important; text-decoration: underline; }
+
+    /* === Header === */
+   .header {
+    position: relative;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #333;
+    background-color: #111;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 12px;
+    }
+
+    .header h1 {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.03em;
+    }
+    .menu-card {
+      padding: 6px 12px;
+      background: #444;
+      color: #fff;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .header-right {
+      font-size: 0.6875rem;
+      color: #666;
+      white-space: nowrap;
+    }
+
+    /* === Panels === */
+    .main-content {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .input-panel, .competitor-panel, .analysis-section {
+      padding: 1.5rem;
+    }
+    .input-panel {
+      width: clamp(320px, 25vw, 400px);
+      border-right: 1px solid #333;
+      background-color: #111;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+
+    /* === Inputs === */
+    .input-group { margin-bottom: 1rem; }
+    .input-label {
+      display: block;
+      font-size: 0.6875rem;
+      color: #888;
+      margin-bottom: 0.25rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .input-field {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: #1a1a1a;
+      border: 1px solid #333;
+      color: #fff;
+      border-radius: 0.25rem;
+      font-size: 0.8125rem;
+    }
+    .input-field:focus {
+      outline: none;
+      border-color: #555;
+      background-color: #222;
+    }
+
+    /* === Buttons === */
+   .btn {
+    padding: 1rem 1.5rem;
+    background-color: #ffffff;
+    color: #000000;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-top: 1.25rem;
+    border-radius: 0.25rem;
+    width: auto;
+    display: inline-block; 
+}
+
+  .btn:hover:not(:disabled) {
+    background-color: #e6e6e6;
+  }
+
+  .btn:disabled {
+    background-color: #333333;
+    color: #666666;
+    cursor: not-allowed;
+  }
+
+
+    /* === Scrollbars (Global) === */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: #111; border-radius: 8px; }
+    ::-webkit-scrollbar-thumb {
+      background-color: #444;
+      border-radius: 8px;
+      border: 2px solid #111;
+    }
+    ::-webkit-scrollbar-thumb:hover { background-color: #666; }
+    * { scrollbar-width: thin; scrollbar-color: #444 #111; }
+
+    /* === Resizable Analysis Section === */
+    .resize-handle {
+      height: 16px;
+      background-color: #1a1a1a;
+      border: 1px solid #333;
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      cursor: ns-resize;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+    .resize-grip, .resize-grip::before, .resize-grip::after {
+      width: 40px; height: 4px; background-color: #444; border-radius: 2px;
+      position: relative; content: '';
+    }
+    .resize-grip::before { top: -6px; position: absolute; }
+    .resize-grip::after { top: 6px; position: absolute; }
+
+    {% block extra_style %}{% endblock %}
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    {% block back_button %}
+      <a href="{% url 'home' %}" class="menu-card">BACK TO HOME PAGE</a>
+    {% endblock %}
+    <h1>{% block header_title %}CASH GENERATOR SYSTEM{% endblock %}</h1>
+    <div class="header-right">{% block header_right %}SYSTEM DASHBOARD{% endblock %}</div>
+  </div>
+
+  {% block content %}{% endblock %}
+
+  {% load static %}
+  <script src="{% static 'extension_bridge.js' %}"></script>
+
+  <script>
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+  </script>
+{% block extra_script %}{% endblock %}
+
+</body>
+</html>

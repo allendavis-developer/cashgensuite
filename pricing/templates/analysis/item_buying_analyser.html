@@ -1,77 +1,20 @@
-{% extends "analysis/pricing_analysis.html" %}
+{% extends "analysis/individual_item_analyser.html" %}
 
-{% block title %}Pricing Analysis v2{% endblock %}
-{% block header_title %}PRICING ANALYSIS V2{% endblock %}
-{% block panel_title %}INPUT PANEL (v2){% endblock %}
+{% block title %}Buyer{% endblock %}
+{% block header_title %}BUYING ANALYSIS{% endblock %}
+{% block panel_title %}INPUT PANEL{% endblock %}
 
 {% block analysis_section %}
   {{ block.super }}
 
-  <!-- 🌟 NEW SECTION: Additional Insights -->
-  <div class="analysis-extension" style="margin-top: 1.5rem; padding: 1rem; border-top: 1px solid #333;">
-    <h3 style="font-size: 14px; text-transform: uppercase; color: #ccc; margin-bottom: 0.8rem;">
-      Additional Insights (v2)
-    </h3>
-
-    <div id="extra-insights" style="display: flex; flex-direction: column; gap: 0.5rem;">
-      <div class="insight-card" style="background: #111; padding: 0.8rem 1rem; border-radius: 6px;">
-        <strong>Market Volatility:</strong> <span id="insight-volatility">–</span>
-      </div>
-      <div class="insight-card" style="background: #111; padding: 0.8rem 1rem; border-radius: 6px;">
-        <strong>Competitor Spread:</strong> <span id="insight-spread">–</span>
-      </div>
-      <div class="insight-card" style="background: #111; padding: 0.8rem 1rem; border-radius: 6px;">
-        <strong>Suggested Listing Window:</strong> <span id="insight-window">–</span>
-      </div>
-    </div>
-  </div>
 {% endblock %}
 
 {% block extra_style %}
   {{ block.super }}
-
-  .analysis-extension {
-    background-color: #0a0a0a;
-    border-radius: 10px;
-    padding: 16px;
-  }
-
-  .insight-card {
-    display: flex;
-    justify-content: space-between;
-    background-color: #141414;
-    color: #eee;
-    border: 1px solid #222;
-    border-radius: 8px;
-    padding: 12px 14px;
-    font-size: 13px;
-  }
-
-  .insight-card strong {
-    color: #fff;
-  }
 {% endblock %}
 
 {% block extra_script %}
   {{ block.super }}
   <script>
-    // --- v2 Additional Analysis Logic ---
-
-    function computeAdditionalInsights() {
-      // Placeholder logic; will replace with real data later
-      document.getElementById('insight-volatility').textContent = 'Low (Stable Market)';
-      document.getElementById('insight-spread').textContent = '£20 – £30';
-      document.getElementById('insight-window').textContent = '3–5 days';
-    }
-
-    // Run insights when analysis completes
-    document.addEventListener('analysisComplete', () => {
-      computeAdditionalInsights();
-    });
-
-    // For testing / DOMContentLoaded
-    document.addEventListener('DOMContentLoaded', () => {
-      computeAdditionalInsights();
-    });
   </script>
 {% endblock %}

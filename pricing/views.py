@@ -354,6 +354,9 @@ def item_buying_analyser_view(request):
     # GET (render page)
     return render(request, "analysis/item_buying_analyser.html", {"prefilled_data": prefilled_data})
 
+def repricer_view(request):
+    return render(request, "analysis/repricer.html")
+
 
 # Note: This is technically not in the home page right now
 def inventory_free_stock_view(request):

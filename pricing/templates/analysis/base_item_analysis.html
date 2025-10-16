@@ -755,24 +755,6 @@ function getCookie(name) {
     return cookieValue;
 }
 
-async function callLocalAgent(endpoint, payload = {}) {
-    const agentUrl = "http://127.0.0.1:8001"; // local FastAPI agent
-    const fullUrl = `${agentUrl}${endpoint}`;
-    try {
-      const res = await fetch(fullUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      return res; // <-- Return the actual Response object for consistency
-    } catch (err) {
-      console.error("Could not connect to local automation agent:", err);
-      alert("Could NOT connect to local agent, are you sure it's running?");
-      return null;
-    }
-}
-
 
 let allCompetitorRows = [];
 let currentCostPrice = null; // ✅ Store cost price globally

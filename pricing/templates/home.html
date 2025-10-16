@@ -105,21 +105,28 @@
   <div class="menu">
     <a href="{% url 'bulk_analysis' %}" class="menu-card">
       <div>
-        <div class="menu-title">Barcode Bulk Analysis</div>
-        <div class="menu-desc">Add barcodes in for items and then analyse.</div>
+        <div class="menu-title">Barcode Analysis</div>
+        <div class="menu-desc">Add barcodes in for items and then analyse prices.</div>
+      </div>
+    </a>
+
+    <a href="{% url 'repricer' %}" class="menu-card">
+      <div>
+        <div class="menu-title">Repricer</div>
+        <div class="menu-desc">Reprice old items.</div>
       </div>
     </a>
 
     <a href="{% url 'individual_item_analyser' %}" class="menu-card">
       <div>
-        <div class="menu-title">Individual Item Analyser</div>
-        <div class="menu-desc">Analyse a single item in detail with custom input.</div>
+        <div class="menu-title">Item Analyser</div>
+        <div class="menu-desc">Analyse a single item in detail.</div>
       </div>
     </a>
 
     <a href="{% url 'item_buying_analyser' %}" class="menu-card">
       <div>
-        <div class="menu-title">Item Buying Analyser</div>
+        <div class="menu-title">Buyer</div>
         <div class="menu-desc">Analyse an item for buying purposes.</div>
       </div>
     </a>
@@ -131,12 +138,13 @@
       </div>
     </a>
 
-      <a href="{% url 'category_list' %}" class="menu-card">
+    <a href="{% url 'category_list' %}" class="menu-card">
       <div>
         <div class="menu-title">Category and Global Rules Dashboard</div>
         <div class="menu-desc">Update margin rules.</div>
       </div>
     </a>
+
   </div>
 </div>
 
