@@ -28,12 +28,7 @@ urlpatterns = [
     path("rules/<int:pk>/delete/", v.delete_rule, name="delete_rule"),
 
     # ----------------------------- API -----------------------------
-    path('marketitem_suggestions', v.marketitem_suggestions, name='marketitem_suggestions'),
-    path('link_inventory_to_marketitem/', v.link_inventory_to_marketitem, name='link_inventory_to_marketitem'),
-    path('unlink_inventory_from_marketitem/', v.unlink_inventory_from_marketitem, name='unlink_inventory_from_marketitem'),
-    path('update_marketitem_keywords/', v.update_marketitem_keywords, name='update_marketitem_keywords'),
     path("bulk-analysis", v.bulk_analysis, name='bulk_analysis'),
-    path('bulk-analyse-items/', v.bulk_analyse_items, name='bulk_analyse_items'),
     path("generate-search-term/", v.generate_search_term, name="generate_search_term"),
     path('save_listing/', v.save_listing, name='save_listing'),
     path("save_scraped_data/", v.save_scraped_data, name="save_scraped_data"),
@@ -46,4 +41,8 @@ urlpatterns = [
     path('api/models/', v.models, name='api-models'),
     path('api/category_attributes/', v.category_attributes, name='api-category-attributes'),
 
+     # Creation endpoints (allow adding new items)
+    path('api/add_category/', v.add_category, name='api-add-category'),
+    path('api/add_manufacturer/', v.add_manufacturer, name='api-add-manufacturer'),
+    path('api/add_model/', v.add_model, name='api-add-model'),
 ]

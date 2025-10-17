@@ -98,223 +98,10 @@ def handle_item_analysis_request(request):
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
-@require_GET
-def marketitem_suggestions(request):
-    query = request.GET.get("q", "").strip()
-    suggestions = []
-
-    if query:
-        market_items = MarketItem.objects.filter(title__icontains=query)[:10]
-        suggestions = [item.title for item in market_items]
-
-    return JsonResponse({
-        "suggestions": suggestions,
-        "query": query,
-        "count": len(suggestions),
-    })
-
-
-@csrf_exempt
-@require_POST
-def link_inventory_to_marketitem(request):
-    try:
-        data = json.loads(request.body)
-        inventory_title = (data.get('inventory_title') or '').strip()
-        marketitem_title = (data.get('marketitem_title') or '').strip()
-        exclude_keywords = (data.get('exclude_keywords') or '').strip()  # optional
-
-        if not inventory_title:
-            return JsonResponse({'success': False, 'error': 'Missing inventory title'})
-        if not marketitem_title:
-            return JsonResponse({'success': False, 'error': 'Missing market item title'})
-
-        inventory_item, inventory_created = InventoryItem.objects.get_or_create(
-            title__iexact=inventory_title,
-            defaults={'title': inventory_title}  # optional fields
-        )
-
-        # Check if MarketItem exists
-        market_item, marketitem_created = MarketItem.objects.get_or_create(
-            title__iexact=marketitem_title,
-            defaults={'title': marketitem_title, 'exclude_keywords': exclude_keywords}
-        )
-
-        competitor_count = market_item.listings.count()
-
-
-        # Link the inventory item
-        inventory_item.market_item = market_item
-        inventory_item.save()
-
-        return JsonResponse({
-            'success': True,
-            'competitor_count': competitor_count,
-            'linked_inventory': inventory_item.title,
-            'linked_market_item': market_item.title,
-            'created_new_marketitem': marketitem_created  # True if a new MarketItem was created
-        })
-
-    except Exception as e:
-        import traceback; traceback.print_exc()
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-
-@require_POST
-@csrf_exempt
-def unlink_inventory_from_marketitem(request):
-    try:
-        data = json.loads(request.body.decode('utf-8') if isinstance(request.body, bytes) else request.body)
-        inventory_title = (data.get('inventory_title') or '').strip()
-        marketitem_title = (data.get('marketitem_title') or '').strip()
-
-        if not inventory_title:
-            return JsonResponse({'success': False, 'error': 'Missing inventory_title'}, status=400)
-
-        try:
-            inventory_item = InventoryItem.objects.get(title__iexact=inventory_title)
-        except InventoryItem.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Inventory item not found'}, status=404)
-
-        if not inventory_item.market_item:
-            return JsonResponse({'success': False, 'error': 'Inventory item is not linked'}, status=400)
-
-        if marketitem_title and inventory_item.market_item.title.lower() != marketitem_title.lower():
-            return JsonResponse({'success': False, 'error': 'Inventory item is linked to a different MarketItem'}, status=400)
-
-        inventory_item.market_item = None
-        inventory_item.save()
-
-        return JsonResponse({'success': True})
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
-    except Exception as e:
-        import traceback; traceback.print_exc()
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-
-@csrf_exempt
-@require_POST
-def update_marketitem_keywords(request):
-    try:
-        data = json.loads(request.body)
-        marketitem_title = (data.get("marketitem_title") or "").strip()
-        exclude_keywords = (data.get("exclude_keywords") or "").strip()
-
-        if not marketitem_title:
-            return JsonResponse({"success": False, "error": "Missing MarketItem title"}, status=400)
-
-        market_item = MarketItem.objects.get(title__iexact=marketitem_title)
-        market_item.exclude_keywords = exclude_keywords
-        market_item.save()
-
-        return JsonResponse({"success": True, "message": "Keywords updated successfully"})
-    except MarketItem.DoesNotExist:
-        return JsonResponse({"success": False, "error": "MarketItem not found"}, status=404)
-    except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)}, status=500)
-
 
 def bulk_analysis(request):
     return render(request, 'analysis/bulk_analysis.html')
 
-
-@csrf_exempt
-@require_POST
-def bulk_analyse_items(request):
-    """
-        Analyse multiple items in bulk, using local scrape data if available.
-        """
-    try:
-        data = json.loads(request.body)
-        items = data.get("items", [])
-        local_scrape_data = data.get("local_scrape_data", [])
-
-        if not items:
-            return JsonResponse({"success": False, "error": "No items provided"})
-
-        # Map scraped data by barcode for easier lookup
-        scrape_lookup = {
-            entry.get("barcode"): entry for entry in local_scrape_data or []
-        }
-
-        results = []
-
-        for item_data in items:
-            barcode = item_data.get("barcode", "")
-            item_name = (item_data.get("name") or "").strip()
-            description = (item_data.get("description") or "").strip()
-            market_item_title = (item_data.get("market_item") or "").strip()
-            cost_price = item_data.get("cost_price", "").strip()
-            urgency = int(item_data.get("urgency", 3))  # per item
-
-            # Skip invalid entries
-            if not item_name:
-                results.append({
-                    "barcode": barcode,
-                    "success": False,
-                    "error": "Missing item name"
-                })
-                continue
-
-            # Get scraped competitor data from the lookup
-            scraped_entry = scrape_lookup.get(barcode)
-            local_listings = (
-                scraped_entry.get("competitor_data", [])
-                if scraped_entry and scraped_entry.get("success") else []
-            )
-
-            if local_listings:
-                print(f"Using local scrape data for {item_name}")
-
-                # Save listings to DB
-                market_item, _ = MarketItem.objects.get_or_create(
-                    title__iexact=item_name, defaults={"title": item_name}
-                )
-                CompetitorListing.objects.filter(market_item=market_item).delete()
-
-                CompetitorListing.objects.bulk_create([
-                    CompetitorListing(
-                        market_item=market_item,
-                        competitor=l.get("competitor", "Unknown"),
-                        title=l.get("title", "Untitled"),
-                        price=l.get("price", 0.0),
-                        store_name=l.get("store") or "N/A",
-                        url=l.get("url", "#")
-                    ) for l in local_listings
-                ])
-            else:
-                print(f"⚠️ No local data found for {item_name}, skipping scrape save.")
-
-
-
-            # Continue AI analysis logic (unchanged)
-            competitor_data_for_ai = get_competitor_data(item_name, include_url=False)
-            competitor_data_for_frontend = get_competitor_data(item_name, include_url=True)
-
-            ai_response, reasoning, suggested_price = generate_bulk_price_analysis(
-                item_name, description, competitor_data_for_ai, cost_price, urgency
-            )
-
-            analysis_result = save_analysis_to_db(
-                item_name, description, reasoning, suggested_price, competitor_data_for_frontend, cost_price
-            )
-
-            results.append({
-                "barcode": barcode,
-                "success": True,
-                "suggested_price": suggested_price,
-                "reasoning": reasoning,
-                "competitor_data": competitor_data_for_frontend,
-                "competitor_count": analysis_result["competitor_count"],
-                "analysis_id": analysis_result["analysis_id"]
-            })
-
-        return JsonResponse({"success": True, "results": results})
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
 @require_GET
@@ -772,11 +559,14 @@ def get_models(request):
     return JsonResponse({'models': models_data})
 
 
+# ----------------------------------------------------------------------------------------
+# ENDPOINTS FOR DROPDOWN CATEGORY, MANUFACTURER, MODEL, ATTRIBUTE SEARCHING AND CREATION
+# ----------------------------------------------------------------------------------------
+
+
 def manufacturers(request):
-    category_id = request.GET.get('category')
-    manufacturers = Manufacturer.objects.filter(models__category_id=category_id).distinct()
+    manufacturers = Manufacturer.objects.all().order_by('name')
     data = [{"id": m.id, "name": m.name} for m in manufacturers]
-    print(data)
     return JsonResponse(data, safe=False)
 
 
@@ -802,6 +592,42 @@ def category_attributes(request):
     ]
     return JsonResponse(data, safe=False)
 
+
+@csrf_exempt
+def add_category(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        name = data.get('name')
+        if not name:
+            return JsonResponse({'error': 'Name required'}, status=400)
+        cat, _ = Category.objects.get_or_create(name=name)
+        return JsonResponse({'id': cat.id, 'name': cat.name})
+
+@csrf_exempt
+def add_manufacturer(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        name = (data.get('name') or '').strip()
+        if not name:
+            return JsonResponse({'error': 'Name required'}, status=400)
+        manufacturer, _ = Manufacturer.objects.get_or_create(name=name)
+        return JsonResponse({'id': manufacturer.id, 'name': manufacturer.name})
+
+@csrf_exempt
+def add_model(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        name = data.get('name')
+        manufacturer_id = data.get('manufacturer')
+        category_id = data.get('category')
+        if not (name and manufacturer_id and category_id):
+            return JsonResponse({'error': 'Missing fields'}, status=400)
+        model, _ = ItemModel.objects.get_or_create(
+            name=name, 
+            manufacturer_id=manufacturer_id, 
+            category_id=category_id
+        )
+        return JsonResponse({'id': model.id, 'name': model.name})
 
 @csrf_exempt
 @require_POST
