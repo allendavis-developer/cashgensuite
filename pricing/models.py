@@ -23,19 +23,6 @@ class Category(models.Model):
         return f"{self.name} ({self.base_margin * 100:.0f}%)"
 
 
-class ItemModel(models.Model):
-    """e.g. Apple iPhone 15 (in Smartphones category)"""
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='models')
-    manufacturer = models.ForeignKey(Manufacturer, on_delete=models.CASCADE, related_name='models')
-    name = models.CharField(max_length=100)
-
-    class Meta:
-        unique_together = ('category', 'manufacturer', 'name')
-
-    def __str__(self):
-        return f"{self.manufacturer.name} {self.name}"
-
-
 class CategoryAttribute(models.Model):
     """Defines what extra attributes a category has (storage, color, etc.)"""
     FIELD_TYPES = [
@@ -60,9 +47,44 @@ class CategoryAttribute(models.Model):
     def __str__(self):
         return f"{self.category.name} - {self.label}"
 
+class ItemModel(models.Model):
+    """e.g. Apple iPhone 15 (in Smartphones category)"""
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='models')
+    manufacturer = models.ForeignKey(Manufacturer, on_delete=models.CASCADE, related_name='models')
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        unique_together = ('category', 'manufacturer', 'name')
+
+    def __str__(self):
+        return f"{self.manufacturer.name} {self.name}"
+
+class ItemModelAttributeValue(models.Model):
+    """Stores the canonical attribute values for each ItemModel."""
+    item_model = models.ForeignKey(ItemModel, on_delete=models.CASCADE, related_name='attribute_values')
+    attribute = models.ForeignKey(CategoryAttribute, on_delete=models.CASCADE)
+    value_text = models.CharField(max_length=255, blank=True, null=True)
+    value_number = models.FloatField(blank=True, null=True)
+    value_boolean = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('item_model', 'attribute')
+
+    def __str__(self):
+        return f"{self.item_model} - {self.attribute.label}"
+
+    def get_display_value(self):
+        if self.attribute.field_type in ['text', 'select']:
+            return self.value_text or ''
+        elif self.attribute.field_type == 'number':
+            return str(self.value_number) if self.value_number is not None else ''
+        elif self.attribute.field_type == 'boolean':
+            return 'Yes' if self.value_boolean else 'No'
+        return ''
+
 
 class MarketItem(models.Model):
-    """The main item - has ONE manufacturer and ONE model"""
+    """The main item"""
     title = models.CharField(max_length=255)
     category = models.ForeignKey(
         Category,
@@ -71,53 +93,20 @@ class MarketItem(models.Model):
         blank=True,
         related_name="market_items"
     )
-    
-    # THESE ARE THE KEY FIELDS - Direct ForeignKeys, not in attributes!
-    manufacturer = models.ForeignKey(
-        Manufacturer,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="market_items"
-    )
-    model = models.ForeignKey(
-        ItemModel,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="market_items",
-        help_text="Will be filtered by category + manufacturer"
-    )
-    
     last_scraped = models.DateTimeField(blank=True, null=True)
     exclude_keywords = models.JSONField(blank=True, null=True)
+    item_model = models.ForeignKey(ItemModel, on_delete=models.SET_NULL, null=True, blank=True, related_name='market_items')
+
+
+    # Optional helper property for convenience
+    @property
+    def model(self):
+        """Return the first ItemModel in the category if exists"""
+        return getattr(self, "_cached_model", None)
 
     def __str__(self):
         return self.title
 
-
-class MarketItemAttributeValue(models.Model):
-    """Stores ONLY the extra attributes (storage, color, etc.) - NOT manufacturer/model"""
-    market_item = models.ForeignKey(MarketItem, on_delete=models.CASCADE, related_name='attribute_values')
-    attribute = models.ForeignKey(CategoryAttribute, on_delete=models.CASCADE)
-    value_text = models.CharField(max_length=255, blank=True, null=True)
-    value_number = models.FloatField(blank=True, null=True)
-    value_boolean = models.BooleanField(default=False)
-
-    class Meta:
-        unique_together = ('market_item', 'attribute')
-
-    def __str__(self):
-        return f"{self.market_item.title} - {self.attribute.label}"
-    
-    def get_display_value(self):
-        if self.attribute.field_type == 'text' or self.attribute.field_type == 'select':
-            return self.value_text or ''
-        elif self.attribute.field_type == 'number':
-            return str(self.value_number) if self.value_number is not None else ''
-        elif self.attribute.field_type == 'boolean':
-            return 'Yes' if self.value_boolean else 'No'
-        return ''
 
 
 class CompetitorListing(models.Model):

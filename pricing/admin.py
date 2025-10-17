@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django import forms
+from django.utils.html import format_html
 
 from .models import (
     Listing,
@@ -14,6 +15,7 @@ from .models import (
     MarginCategory,
     MarginRule,
     GlobalMarginRule,
+    ItemModelAttributeValue
 )
 
 # -------------------------------
@@ -95,8 +97,7 @@ class CompetitorListingAdmin(admin.ModelAdmin):
 
 
 from .models import (
-    MarketItem, Category, CategoryAttribute, 
-    MarketItemAttributeValue, Manufacturer, ItemModel
+    MarketItem, Category, CategoryAttribute, Manufacturer, ItemModel
 )
 
 class MarketItemForm(forms.ModelForm):
@@ -133,40 +134,57 @@ class MarketItemForm(forms.ModelForm):
                 manufacturer=self.instance.manufacturer
             )
 
-
-from .forms import MarketItemAttributeValueForm
-class MarketItemAttributeValueInline(admin.StackedInline):
-    model = MarketItemAttributeValue
-    form = MarketItemAttributeValueForm
+class ItemModelAttributeValueInlineFromMarketItem(admin.StackedInline):
+    model = ItemModelAttributeValue
     extra = 0
+    can_delete = False
+    verbose_name = "Model Attribute"
+    verbose_name_plural = "Model Attributes"
+
+    # Only allow editing if there is a parent object with a model
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if hasattr(self, 'parent_object') and self.parent_object.item_model:
+            return qs.filter(item_model=self.parent_object.item_model).order_by('attribute__order')
+        return qs.none()
+
+    def has_add_permission(self, request, obj=None):
+        # No adding from MarketItemAdmin
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        # No deletion from MarketItemAdmin
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        # Optional: allow editing values from MarketItemAdmin
+        return obj and obj.model is not None
 
 
 
 @admin.register(MarketItem)
 class MarketItemAdmin(admin.ModelAdmin):
-    form = MarketItemForm
-    list_display = ('title', 'category', 'manufacturer', 'model', 'last_scraped')
-    list_filter = ('category', 'manufacturer')
+    list_display = ('title', 'category', 'model_name', 'model_attributes', 'last_scraped')
+    list_filter = ('category',)
     search_fields = ('title',)
-    inlines = [MarketItemAttributeValueInline, CompetitorListingInline]
-    
-    fieldsets = (
-        ('Basic Info', {
-            'fields': ('title', 'category')
-        }),
-        ('Manufacturer & Model', {
-            'fields': ('manufacturer', 'model'),
-            'description': 'Select category first, then manufacturer, then model will be filtered automatically'
-        }),
-        ('Scraping', {
-            'fields': ('last_scraped', 'exclude_keywords'),
-            'classes': ('collapse',)
-        }),
-    )
-    
-    class Media:
-        js = ('admin/js/market_item_admin.js',)
+    readonly_fields = ('model_attributes',)
+    inlines = [CompetitorListingInline]  
 
+    def model_name(self, obj):
+        if obj.item_model:
+            return str(obj.item_model)
+        return "-"
+    model_name.short_description = "Item Model"
+
+    def model_attributes(self, obj):
+        if not obj.item_model:
+            return "-"
+        lines = [f"<strong>{av.attribute.label}:</strong> {av.get_display_value()}" 
+                for av in obj.item_model.attribute_values.all()]
+        return format_html("<br>".join(lines))
+    model_attributes.short_description = "Model Attributes"
+
+    model_attributes.short_description = "Model Attributes"
 
 class CategoryAttributeInline(admin.TabularInline):
     model = CategoryAttribute
@@ -200,12 +218,74 @@ class ManufacturerAdmin(admin.ModelAdmin):
         return obj.models.count()
     model_count.short_description = 'Models'
 
+class ItemModelAttributeValueForm(forms.ModelForm):
+    class Meta:
+        model = ItemModelAttributeValue
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        attribute = getattr(self.instance, 'attribute', None)
+        if attribute:
+            field_type = attribute.field_type
+            options = getattr(attribute, 'options', []) or []
+
+            # Hide all value fields first
+            for field_name in ['value_text', 'value_number', 'value_boolean']:
+                if field_name in self.fields:
+                    self.fields[field_name].widget = forms.HiddenInput()
+                    self.fields[field_name].required = False
+
+            # Show only the relevant field based on attribute type
+            if field_type == 'select' and options:
+                if 'value_text' in self.fields:
+                    self.fields['value_text'].widget = forms.Select(
+                        choices=[('', '---')] + [(opt, opt) for opt in options]
+                    )
+                    self.fields['value_text'].required = attribute.required
+            elif field_type == 'number':
+                if 'value_number' in self.fields:
+                    self.fields['value_number'].widget = forms.NumberInput()
+                    self.fields['value_number'].required = attribute.required
+            elif field_type == 'boolean':
+                if 'value_boolean' in self.fields:
+                    self.fields['value_boolean'].widget = forms.CheckboxInput()
+                    self.fields['value_boolean'].required = False  # Checkboxes are never "required"
+            else:  # text, default
+                if 'value_text' in self.fields:
+                    self.fields['value_text'].widget = forms.TextInput()
+                    self.fields['value_text'].required = attribute.required
+
+
+class ItemModelAttributeValueInline(admin.StackedInline):
+    model = ItemModelAttributeValue
+    extra = 0
+    form = ItemModelAttributeValueForm
+    
+    def get_fields(self, request, obj=None):
+        # Dynamically show only relevant value field based on attribute type
+        base_fields = ['item_model', 'attribute']
+        
+        if obj and hasattr(obj, 'attribute') and obj.attribute:
+            field_type = obj.attribute.field_type
+            if field_type == 'select' or field_type == 'text':
+                return base_fields + ['value_text']
+            elif field_type == 'number':
+                return base_fields + ['value_number']
+            elif field_type == 'boolean':
+                return base_fields + ['value_boolean']
+        
+        # Default: show all fields (for new items without attribute selected yet)
+        return base_fields + ['value_text', 'value_number', 'value_boolean']
 
 @admin.register(ItemModel)
 class ItemModelAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'category', 'manufacturer')
     list_filter = ('category', 'manufacturer')
     search_fields = ('name', 'manufacturer__name')
+    inlines = [ItemModelAttributeValueInline]
+
 
 # -------------------------------
 # SHOP INVENTORY ADMIN

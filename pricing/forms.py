@@ -1,5 +1,5 @@
 from django import forms
-from .models import Category, MarginRule, GlobalMarginRule, MarketItemAttributeValue
+from .models import Category, MarginRule, GlobalMarginRule
 
 
 class CategoryForm(forms.ModelForm):
@@ -28,32 +28,3 @@ class GlobalMarginRuleForm(forms.ModelForm):
         model = GlobalMarginRule
         fields = ["rule_type", "match_value", "adjustment", "description", "is_active"]
 
-class MarketItemAttributeValueForm(forms.ModelForm):
-    class Meta:
-        model = MarketItemAttributeValue
-        fields = '__all__'
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        attribute = getattr(self.instance, 'attribute', None)
-
-        # Hide all value fields by default
-        for field_name in ['value_text', 'value_number', 'value_boolean']:
-            self.fields[field_name].widget = forms.HiddenInput()
-
-        if attribute:
-            if attribute.field_type == 'text':
-                self.fields['value_text'].widget = forms.TextInput()
-            elif attribute.field_type == 'number':
-                self.fields['value_number'].widget = forms.NumberInput()
-            elif attribute.field_type == 'boolean':
-                self.fields['value_boolean'].widget = forms.CheckboxInput()
-            elif attribute.field_type == 'select':
-                # Make sure value_text is a ChoiceField with proper options
-                choices = [(opt, opt) for opt in (attribute.options or [])]
-                self.fields['value_text'] = forms.ChoiceField(
-                    choices=choices,
-                    widget=forms.Select(),
-                    label=self.fields['value_text'].label,
-                    required=self.fields['value_text'].required
-                )
