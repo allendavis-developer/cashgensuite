@@ -7,7 +7,20 @@ from django.utils import timezone
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
-from pricing.models import  ListingSnapshot, InventoryItem, MarketItem, CompetitorListing, CompetitorListingHistory, PriceAnalysis, Category, MarginRule, GlobalMarginRule
+from pricing.models import (
+    ListingSnapshot, 
+    InventoryItem, 
+    MarketItem, 
+    CompetitorListing, 
+    CompetitorListingHistory, 
+    PriceAnalysis, 
+    Category, 
+    MarginRule, 
+    GlobalMarginRule,
+    Manufacturer,
+    ItemModel,
+    CategoryAttribute
+    )
 
 import json, traceback, re
 from decimal import Decimal, InvalidOperation
@@ -336,12 +349,14 @@ def home_view(request):
 def individual_item_analyser_view(request):
     # Handle prefilled data from URL parameters
     prefilled_data = get_prefilled_data(request)
-    
+
+    categories = Category.objects.all()
+
     if request.method == "POST" and request.headers.get("Content-Type") == "application/json":
         return handle_item_analysis_request(request)
     
     # GET (render page)
-    return render(request, "analysis/individual_item_analyser.html", {"prefilled_data": prefilled_data})
+    return render(request, "analysis/individual_item_analyser.html", {"prefilled_data": prefilled_data, "categories": categories})
 
 from .forms import CategoryForm, MarginRuleForm, GlobalMarginRuleForm
 
@@ -755,6 +770,38 @@ def get_models(request):
     ]
     
     return JsonResponse({'models': models_data})
+
+
+def manufacturers(request):
+    category_id = request.GET.get('category')
+    manufacturers = Manufacturer.objects.filter(models__category_id=category_id).distinct()
+    data = [{"id": m.id, "name": m.name} for m in manufacturers]
+    print(data)
+    return JsonResponse(data, safe=False)
+
+
+def models(request):
+    category_id = request.GET.get('category')
+    manufacturer_id = request.GET.get('manufacturer')
+    models = ItemModel.objects.filter(category_id=category_id, manufacturer_id=manufacturer_id)
+    data = [{"id": m.id, "name": m.name} for m in models]
+    return JsonResponse(data, safe=False)
+
+def category_attributes(request):
+    category_id = request.GET.get('category')
+    attrs = CategoryAttribute.objects.filter(category_id=category_id).order_by('order')
+    data = [
+        {
+            "id": a.id,
+            "name": a.name,
+            "label": a.label,
+            "field_type": a.field_type,
+            "required": a.required,
+            "options": a.options or []
+        } for a in attrs
+    ]
+    return JsonResponse(data, safe=False)
+
 
 @csrf_exempt
 @require_POST

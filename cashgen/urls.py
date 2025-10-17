@@ -34,11 +34,16 @@ urlpatterns = [
     path('update_marketitem_keywords/', v.update_marketitem_keywords, name='update_marketitem_keywords'),
     path("bulk-analysis", v.bulk_analysis, name='bulk_analysis'),
     path('bulk-analyse-items/', v.bulk_analyse_items, name='bulk_analyse_items'),
-    path("api/price-analysis/<int:analysis_id>/", v.price_analysis_detail, name="price_analysis_detail"),
-    path("api/buying-range-analysis/", v.buying_range_analysis, name="buying_range_analysis"),
-    path('api/negotiation-step/', v.negotiation_step, name='negotiation-step'),
     path("generate-search-term/", v.generate_search_term, name="generate_search_term"),
     path('save_listing/', v.save_listing, name='save_listing'),
     path("save_scraped_data/", v.save_scraped_data, name="save_scraped_data"),
     path('admin/get-models/', v.get_models, name='get_models'),
+
+    path("api/price-analysis/<int:analysis_id>/", v.price_analysis_detail, name="price_analysis_detail"),
+    path("api/buying-range-analysis/", v.buying_range_analysis, name="buying_range_analysis"),
+    path('api/negotiation-step/', v.negotiation_step, name='negotiation-step'),
+    path('api/manufacturers/', v.manufacturers, name='api-manufacturers'),
+    path('api/models/', v.models, name='api-models'),
+    path('api/category_attributes/', v.category_attributes, name='api-category-attributes'),
+
 ]

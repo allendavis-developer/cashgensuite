@@ -60,4 +60,4 @@
             updateModelChoices();
         }
     });
-})(django.jQuery);
+})(django.jQuery);  

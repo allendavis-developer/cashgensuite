@@ -24,6 +24,8 @@
   </div>
 {% endblock item_name %}
 
+
+
 {% block description %}
   <div class="input-group">
     <label class="input-label">Description</label>
@@ -827,6 +829,73 @@ window.addEventListener('message', async (event) => {
         }    
     }
 });
+
+document.getElementById('category').addEventListener('change', async (e) => {
+    const categoryId = e.target.value;
+    document.getElementById('manufacturer').disabled = true;
+    document.getElementById('model').disabled = true;
+    document.getElementById('attributes-container').innerHTML = '';
+
+    // Fetch manufacturers for this category
+    const response = await fetch(`/api/manufacturers/?category=${categoryId}`);
+    const manufacturers = await response.json();
+
+    const manufacturerSelect = document.getElementById('manufacturer');
+    manufacturerSelect.innerHTML = `<option value="" selected disabled>-- Select Manufacturer --</option>`;
+    manufacturers.forEach(m => {
+        manufacturerSelect.innerHTML += `<option value="${m.id}">${m.name}</option>`;
+    });
+    manufacturerSelect.disabled = false;
+});
+
+document.getElementById('manufacturer').addEventListener('change', async (e) => {
+    const categoryId = document.getElementById('category').value;
+    const manufacturerId = e.target.value;
+
+    const modelSelect = document.getElementById('model');
+    modelSelect.disabled = true;
+    modelSelect.innerHTML = `<option value="" selected disabled>-- Select Model --</option>`;
+
+    // Fetch models for category + manufacturer
+    const response = await fetch(`/api/models/?category=${categoryId}&manufacturer=${manufacturerId}`);
+    const models = await response.json();
+
+    models.forEach(m => {
+        modelSelect.innerHTML += `<option value="${m.id}">${m.name}</option>`;
+    });
+    modelSelect.disabled = false;
+});
+
+document.getElementById('model').addEventListener('change', async (e) => {
+    const categoryId = document.getElementById('category').value;
+    const attributesContainer = document.getElementById('attributes-container');
+    attributesContainer.innerHTML = '';
+
+    // Fetch attributes for the selected category
+    const response = await fetch(`/api/category_attributes/?category=${categoryId}`);
+    const attributes = await response.json();
+
+    attributes.forEach(attr => {
+        let html = '';
+        switch(attr.field_type) {
+            case 'text':
+                html = `<div class="input-group"><label>${attr.label}</label><input type="text" class="input-field" data-attr-id="${attr.id}"></div>`;
+                break;
+            case 'number':
+                html = `<div class="input-group"><label>${attr.label}</label><input type="number" class="input-field" data-attr-id="${attr.id}"></div>`;
+                break;
+            case 'select':
+                const options = attr.options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+                html = `<div class="input-group"><label>${attr.label}</label><select class="input-field" data-attr-id="${attr.id}">${options}</select></div>`;
+                break;
+            case 'boolean':
+                html = `<div class="input-group"><label><input type="checkbox" data-attr-id="${attr.id}"> ${attr.label}</label></div>`;
+                break;
+        }
+        attributesContainer.innerHTML += html;
+    });
+});
+
 
 </script>
 {% endblock %}
