@@ -661,6 +661,8 @@ def save_scraped_data(request):
                         )
                     )
 
+                    print("HISTORY CHANGEDDDDDDD listing", listing.title, " with url:", listing.url)
+
             else:
                 # ✅ New listing: always create history
                 listing = CompetitorListing(
@@ -708,6 +710,11 @@ def save_scraped_data(request):
         # --- Bulk insert histories (if any) ---
         if histories_to_create:
             CompetitorListingHistory.objects.bulk_create(histories_to_create)
+
+        # --- Update MarketItem last_scraped ---
+        market_item.last_scraped = now
+        market_item.save()
+
 
         print(f"✅ Created {len(listings_to_create)} listings, updated {len(listings_to_update)}, "
               f"added {len(histories_to_create)} histories")

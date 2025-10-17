@@ -6,6 +6,8 @@ from django.db import models
 
 class MarketItem(models.Model):
     title = models.CharField(max_length=255)
+    last_scraped = models.DateTimeField(blank=True, null=True, help_text="Last time competitor listings were updated")
+
     exclude_keywords = models.JSONField(blank=True, null=True, help_text="List of keywords to ignore when scraping/creating listings")
 
     def __str__(self):

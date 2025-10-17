@@ -94,9 +94,10 @@ class CompetitorListingAdmin(admin.ModelAdmin):
 
 @admin.register(MarketItem)
 class MarketItemAdmin(admin.ModelAdmin):
-    list_display = ("title",)
+    list_display = ("title", "last_scraped") 
     search_fields = ("title",)
-    readonly_fields = ("title",)
+    readonly_fields = ("title", "last_scraped")  
+
     inlines = [CompetitorListingInline]
 
     def has_add_permission(self, request):
