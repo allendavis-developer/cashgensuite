@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django import forms
+
 from .models import (
     Listing,
     ListingSnapshot,
@@ -92,20 +94,118 @@ class CompetitorListingAdmin(admin.ModelAdmin):
         return False  # read-only
 
 
+from .models import (
+    MarketItem, Category, CategoryAttribute, 
+    MarketItemAttributeValue, Manufacturer, ItemModel
+)
+
+class MarketItemForm(forms.ModelForm):
+    class Meta:
+        model = MarketItem
+        fields = '__all__'
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # If category is set, filter models to only that category
+        if 'category' in self.data:
+            try:
+                category_id = int(self.data.get('category'))
+                self.fields['model'].queryset = ItemModel.objects.filter(category_id=category_id)
+            except (ValueError, TypeError):
+                pass
+        elif self.instance.pk and self.instance.category:
+            self.fields['model'].queryset = ItemModel.objects.filter(category=self.instance.category)
+        else:
+            self.fields['model'].queryset = ItemModel.objects.none()
+        
+        # If manufacturer is also set, filter further
+        if 'manufacturer' in self.data:
+            try:
+                manufacturer_id = int(self.data.get('manufacturer'))
+                self.fields['model'].queryset = self.fields['model'].queryset.filter(
+                    manufacturer_id=manufacturer_id
+                )
+            except (ValueError, TypeError):
+                pass
+        elif self.instance.pk and self.instance.manufacturer:
+            self.fields['model'].queryset = self.fields['model'].queryset.filter(
+                manufacturer=self.instance.manufacturer
+            )
+
+
+from .forms import MarketItemAttributeValueForm
+class MarketItemAttributeValueInline(admin.StackedInline):
+    model = MarketItemAttributeValue
+    form = MarketItemAttributeValueForm
+    extra = 0
+
+
+
 @admin.register(MarketItem)
 class MarketItemAdmin(admin.ModelAdmin):
-    list_display = ("title", "last_scraped") 
-    search_fields = ("title",)
-    readonly_fields = ("title", "last_scraped")  
+    form = MarketItemForm
+    list_display = ('title', 'category', 'manufacturer', 'model', 'last_scraped')
+    list_filter = ('category', 'manufacturer')
+    search_fields = ('title',)
+    inlines = [MarketItemAttributeValueInline, CompetitorListingInline]
+    
+    fieldsets = (
+        ('Basic Info', {
+            'fields': ('title', 'category')
+        }),
+        ('Manufacturer & Model', {
+            'fields': ('manufacturer', 'model'),
+            'description': 'Select category first, then manufacturer, then model will be filtered automatically'
+        }),
+        ('Scraping', {
+            'fields': ('last_scraped', 'exclude_keywords'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    class Media:
+        js = ('admin/js/market_item_admin.js',)
 
-    inlines = [CompetitorListingInline]
 
-    def has_add_permission(self, request):
-        return False  # scraped only
+class CategoryAttributeInline(admin.TabularInline):
+    model = CategoryAttribute
+    extra = 1
+    fields = ('name', 'label', 'field_type', 'required', 'options', 'order')
 
-    def has_change_permission(self, request, obj=None):
-        return False  # read-only
 
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'base_margin', 'attribute_count')
+    inlines = [CategoryAttributeInline]
+    
+    def attribute_count(self, obj):
+        return obj.attributes.count()
+    attribute_count.short_description = 'Attributes'
+
+
+class ItemModelInline(admin.TabularInline):
+    model = ItemModel
+    extra = 1
+    fields = ('category', 'name')
+
+
+@admin.register(Manufacturer)
+class ManufacturerAdmin(admin.ModelAdmin):
+    list_display = ('name', 'model_count')
+    search_fields = ('name',)
+    inlines = [ItemModelInline]
+    
+    def model_count(self, obj):
+        return obj.models.count()
+    model_count.short_description = 'Models'
+
+
+@admin.register(ItemModel)
+class ItemModelAdmin(admin.ModelAdmin):
+    list_display = ('__str__', 'category', 'manufacturer')
+    list_filter = ('category', 'manufacturer')
+    search_fields = ('name', 'manufacturer__name')
 
 # -------------------------------
 # SHOP INVENTORY ADMIN
@@ -164,13 +264,6 @@ class InventoryItemAdmin(admin.ModelAdmin):
     list_filter = ("status", "category")
     search_fields = ("title", "serial_number")
     inlines = [PriceAnalysisInline]
-
-
-@admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "base_margin", "description")
-    search_fields = ("name",)
-    ordering = ("name",)
 
 
 @admin.register(MarginRule)

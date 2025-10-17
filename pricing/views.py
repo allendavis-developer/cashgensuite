@@ -730,6 +730,31 @@ def save_scraped_data(request):
         print("❌ Error saving scraped data:", e)
         return JsonResponse({'success': False, 'error': str(e)})
 
+from django.contrib.admin.views.decorators import staff_member_required
+from .models import ItemModel
+@staff_member_required
+def get_models(request):
+    """AJAX endpoint to get models filtered by category and optionally manufacturer"""
+    category_id = request.GET.get('category')
+    manufacturer_id = request.GET.get('manufacturer')
+    
+    if not category_id:
+        return JsonResponse({'models': []})
+    
+    models = ItemModel.objects.filter(category_id=category_id)
+    
+    if manufacturer_id:
+        models = models.filter(manufacturer_id=manufacturer_id)
+    
+    models_data = [
+        {
+            'id': model.id,
+            'name': str(model)  # This will show "Apple iPhone 15"
+        }
+        for model in models.order_by('manufacturer__name', 'name')
+    ]
+    
+    return JsonResponse({'models': models_data})
 
 @csrf_exempt
 @require_POST

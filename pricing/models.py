@@ -1,17 +1,124 @@
 from django.db import models
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 # -------------------------------
 # SCRAPED MARKET DATA
 # -------------------------------
 
-class MarketItem(models.Model):
-    title = models.CharField(max_length=255)
-    last_scraped = models.DateTimeField(blank=True, null=True, help_text="Last time competitor listings were updated")
+class Manufacturer(models.Model):
+    name = models.CharField(max_length=100, unique=True)
 
-    exclude_keywords = models.JSONField(blank=True, null=True, help_text="List of keywords to ignore when scraping/creating listings")
+    def __str__(self):
+        return self.name
+
+
+class Category(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    base_margin = models.FloatField(default=0.0)
+    description = models.TextField(blank=True)
+    metadata = models.JSONField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.base_margin * 100:.0f}%)"
+
+
+class ItemModel(models.Model):
+    """e.g. Apple iPhone 15 (in Smartphones category)"""
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='models')
+    manufacturer = models.ForeignKey(Manufacturer, on_delete=models.CASCADE, related_name='models')
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        unique_together = ('category', 'manufacturer', 'name')
+
+    def __str__(self):
+        return f"{self.manufacturer.name} {self.name}"
+
+
+class CategoryAttribute(models.Model):
+    """Defines what extra attributes a category has (storage, color, etc.)"""
+    FIELD_TYPES = [
+        ('text', 'Text'),
+        ('number', 'Number'),
+        ('select', 'Select'),
+        ('boolean', 'Boolean'),
+    ]
+
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='attributes')
+    name = models.CharField(max_length=100, help_text="e.g. 'storage'")
+    label = models.CharField(max_length=255, help_text="e.g. 'Storage Capacity'")
+    field_type = models.CharField(max_length=20, choices=FIELD_TYPES)
+    required = models.BooleanField(default=True)
+    options = models.JSONField(blank=True, null=True, help_text="For 'select' type: ['64GB','128GB']")
+    order = models.IntegerField(default=0)
+
+    class Meta:
+        unique_together = ('category', 'name')
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.category.name} - {self.label}"
+
+
+class MarketItem(models.Model):
+    """The main item - has ONE manufacturer and ONE model"""
+    title = models.CharField(max_length=255)
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="market_items"
+    )
+    
+    # THESE ARE THE KEY FIELDS - Direct ForeignKeys, not in attributes!
+    manufacturer = models.ForeignKey(
+        Manufacturer,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="market_items"
+    )
+    model = models.ForeignKey(
+        ItemModel,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="market_items",
+        help_text="Will be filtered by category + manufacturer"
+    )
+    
+    last_scraped = models.DateTimeField(blank=True, null=True)
+    exclude_keywords = models.JSONField(blank=True, null=True)
 
     def __str__(self):
         return self.title
+
+
+class MarketItemAttributeValue(models.Model):
+    """Stores ONLY the extra attributes (storage, color, etc.) - NOT manufacturer/model"""
+    market_item = models.ForeignKey(MarketItem, on_delete=models.CASCADE, related_name='attribute_values')
+    attribute = models.ForeignKey(CategoryAttribute, on_delete=models.CASCADE)
+    value_text = models.CharField(max_length=255, blank=True, null=True)
+    value_number = models.FloatField(blank=True, null=True)
+    value_boolean = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('market_item', 'attribute')
+
+    def __str__(self):
+        return f"{self.market_item.title} - {self.attribute.label}"
+    
+    def get_display_value(self):
+        if self.attribute.field_type == 'text' or self.attribute.field_type == 'select':
+            return self.value_text or ''
+        elif self.attribute.field_type == 'number':
+            return str(self.value_number) if self.value_number is not None else ''
+        elif self.attribute.field_type == 'boolean':
+            return 'Yes' if self.value_boolean else 'No'
+        return ''
+
 
 class CompetitorListing(models.Model):
     COMPETITOR_CHOICES = [
@@ -22,22 +129,19 @@ class CompetitorListing(models.Model):
     ]
 
     market_item = models.ForeignKey("MarketItem", on_delete=models.CASCADE, related_name="listings")
-
     competitor = models.CharField(max_length=50, choices=COMPETITOR_CHOICES)
     stable_id = models.CharField(max_length=100, db_index=True)  # competitor-specific unique identifier
     store_name = models.CharField(max_length=255, blank=True, null=True)
     url = models.URLField(blank=True, null=True)
-
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     condition = models.CharField(max_length=255, blank=True, null=True)
     price = models.FloatField()
-
-    is_active = models.BooleanField(default=True)  # mark inactive if not seen in last scrape
+    is_active = models.BooleanField(default=True)
     last_seen = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ("competitor", "stable_id")
+        unique_together = ("market_item", "competitor", "stable_id")
 
     def __str__(self):
         return f"{self.competitor} - {self.title} (£{self.price})"
@@ -61,16 +165,6 @@ class CompetitorListingHistory(models.Model):
 # -------------------------------
 # SHOP INVENTORY
 # -------------------------------
-
-class Category(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    base_margin = models.FloatField(default=0.0)  # store margin directly here
-    description = models.TextField(blank=True)
-    attributes = models.JSONField(blank=True, null=True)  # optional metadata
-
-    def __str__(self):
-        return f"{self.name} ({self.base_margin * 100:.0f}%)"
-
 
 class PawnShopAgreement(models.Model):
     agreement_number = models.CharField(max_length=50, unique=True)
