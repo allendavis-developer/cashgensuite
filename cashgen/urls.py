@@ -35,10 +35,9 @@ urlpatterns = [
     path("bulk-analysis", v.bulk_analysis, name='bulk_analysis'),
     path('bulk-analyse-items/', v.bulk_analyse_items, name='bulk_analyse_items'),
     path("api/price-analysis/<int:analysis_id>/", v.price_analysis_detail, name="price_analysis_detail"),
-    path('detect_irrelevant_competitors/', v.detect_irrelevant_competitors, name='detect_irrelevant_competitors'),
     path("api/buying-range-analysis/", v.buying_range_analysis, name="buying_range_analysis"),
     path('api/negotiation-step/', v.negotiation_step, name='negotiation-step'),
     path("generate-search-term/", v.generate_search_term, name="generate_search_term"),
     path('save_listing/', v.save_listing, name='save_listing'),
-
+    path("save_scraped_data/", v.save_scraped_data, name="save_scraped_data"),
 ]

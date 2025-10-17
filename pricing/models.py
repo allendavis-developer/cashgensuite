@@ -11,7 +11,6 @@ class MarketItem(models.Model):
     def __str__(self):
         return self.title
 
-
 class CompetitorListing(models.Model):
     COMPETITOR_CHOICES = [
         ("CeX", "CeX"),
@@ -20,17 +19,41 @@ class CompetitorListing(models.Model):
         ("eBay", "eBay"),
     ]
 
-    market_item = models.ForeignKey(MarketItem, on_delete=models.CASCADE, related_name="listings")
+    market_item = models.ForeignKey("MarketItem", on_delete=models.CASCADE, related_name="listings")
+
     competitor = models.CharField(max_length=50, choices=COMPETITOR_CHOICES)
-    title = models.CharField(max_length=255)  # raw listing title
-    price = models.FloatField()
-    url = models.URLField(blank=True, null=True)
-    timestamp = models.DateTimeField(auto_now=True)
+    stable_id = models.CharField(max_length=100, db_index=True)  # competitor-specific unique identifier
     store_name = models.CharField(max_length=255, blank=True, null=True)
+    url = models.URLField(blank=True, null=True)
+
+    title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
+    condition = models.CharField(max_length=255, blank=True, null=True)
+    price = models.FloatField()
+
+    is_active = models.BooleanField(default=True)  # mark inactive if not seen in last scrape
+    last_seen = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("competitor", "stable_id")
 
     def __str__(self):
         return f"{self.competitor} - {self.title} (£{self.price})"
+
+
+class CompetitorListingHistory(models.Model):
+    listing = models.ForeignKey(CompetitorListing, on_delete=models.CASCADE, related_name="history")
+    price = models.FloatField()
+    title = models.CharField(max_length=255)
+    condition = models.CharField(max_length=255, blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-timestamp"]
+
+    def __str__(self):
+        return f"{self.listing.competitor} ({self.timestamp:%Y-%m-%d %H:%M})"
+
 
 
 # -------------------------------

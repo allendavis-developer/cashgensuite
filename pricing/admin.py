@@ -7,6 +7,7 @@ from .models import (
     PawnShopAgreement,
     MarketItem,
     CompetitorListing,
+    CompetitorListingHistory,  # NEW
     PriceAnalysis,
     MarginCategory,
     MarginRule,
@@ -14,14 +15,81 @@ from .models import (
 )
 
 # -------------------------------
-# Scraped Market Data Admin
+# SCRAPED MARKET DATA ADMIN
 # -------------------------------
+
+class CompetitorListingHistoryInline(admin.TabularInline):
+    model = CompetitorListingHistory
+    extra = 0
+    readonly_fields = ("price", "title", "condition", "timestamp")
+    ordering = ("-timestamp",)
+    can_delete = False
+
 
 class CompetitorListingInline(admin.TabularInline):
     model = CompetitorListing
     extra = 0
-    readonly_fields = ("competitor", "title", "price", "url", "timestamp", "store_name", "description")
+    readonly_fields = (
+        "competitor",
+        "store_name",
+        "stable_id",
+        "title",
+        "price",
+        "url",
+        "condition",
+        "description",
+        "is_active",
+        "last_seen",
+    )
+    fields = (
+        "competitor",
+        "store_name",
+        "stable_id",
+        "title",
+        "price",
+        "url",
+        "condition",
+        "is_active",
+        "last_seen",
+    )
+    show_change_link = True
     can_delete = False
+
+
+@admin.register(CompetitorListing)
+class CompetitorListingAdmin(admin.ModelAdmin):
+    list_display = (
+        "competitor",
+        "market_item",
+        "title",
+        "price",
+        "store_name",
+        "is_active",
+        "last_seen",
+    )
+    list_filter = ("competitor", "is_active", "store_name")
+    search_fields = ("title", "market_item__title", "store_name", "stable_id")
+    readonly_fields = (
+        "competitor",
+        "market_item",
+        "stable_id",
+        "store_name",
+        "title",
+        "price",
+        "url",
+        "condition",
+        "description",
+        "is_active",
+        "last_seen",
+    )
+    ordering = ("-last_seen",)
+    inlines = [CompetitorListingHistoryInline]
+
+    def has_add_permission(self, request):
+        return False  # scraped only
+
+    def has_change_permission(self, request, obj=None):
+        return False  # read-only
 
 
 @admin.register(MarketItem)
@@ -32,16 +100,15 @@ class MarketItemAdmin(admin.ModelAdmin):
     inlines = [CompetitorListingInline]
 
     def has_add_permission(self, request):
-        return False  # disable adding
+        return False  # scraped only
 
     def has_change_permission(self, request, obj=None):
-        return False  # disable editing
+        return False  # read-only
 
 
 # -------------------------------
-# Shop Inventory Admin
+# SHOP INVENTORY ADMIN
 # -------------------------------
-
 
 class InventoryItemInline(admin.TabularInline):
     model = InventoryItem
@@ -56,7 +123,6 @@ class InventoryItemInline(admin.TabularInline):
         "created_at",
         "updated_at",
     )
-
     can_delete = False
 
 
@@ -66,13 +132,15 @@ class PawnShopAgreementAdmin(admin.ModelAdmin):
     search_fields = ("agreement_number", "customer", "created_by")
     inlines = [InventoryItemInline]
 
+
 @admin.register(PriceAnalysis)
 class PriceAnalysisAdmin(admin.ModelAdmin):
-    list_display = ('item', 'suggested_price', 'confidence', 'created_at')
-    list_filter = ('confidence', 'created_at')
-    search_fields = ('item__title', 'reasoning')
-    ordering = ('-created_at',)
-    readonly_fields = ('created_at',)
+    list_display = ("item", "suggested_price", "confidence", "created_at")
+    list_filter = ("confidence", "created_at")
+    search_fields = ("item__title", "reasoning")
+    ordering = ("-created_at",)
+    readonly_fields = ("created_at",)
+
 
 class PriceAnalysisInline(admin.TabularInline):
     model = PriceAnalysis
@@ -80,9 +148,18 @@ class PriceAnalysisInline(admin.TabularInline):
     readonly_fields = ("reasoning", "suggested_price", "confidence", "created_at")
     can_delete = False
 
+
 @admin.register(InventoryItem)
 class InventoryItemAdmin(admin.ModelAdmin):
-    list_display = ("title", "status", "category", "buyback_price", "suggested_price", "final_listing_price", "updated_at")
+    list_display = (
+        "title",
+        "status",
+        "category",
+        "buyback_price",
+        "suggested_price",
+        "final_listing_price",
+        "updated_at",
+    )
     list_filter = ("status", "category")
     search_fields = ("title", "serial_number")
     inlines = [PriceAnalysisInline]
@@ -94,6 +171,7 @@ class CategoryAdmin(admin.ModelAdmin):
     search_fields = ("name",)
     ordering = ("name",)
 
+
 @admin.register(MarginRule)
 class MarginRuleAdmin(admin.ModelAdmin):
     list_display = ("id", "category", "rule_type", "match_value", "adjustment", "is_active")
@@ -101,6 +179,10 @@ class MarginRuleAdmin(admin.ModelAdmin):
     search_fields = ("match_value", "description")
     ordering = ("category", "order")
 
+
+# -----------------------------
+# LISTING ADMIN
+# -----------------------------
 
 class ListingSnapshotInline(admin.TabularInline):
     model = ListingSnapshot
@@ -126,9 +208,6 @@ class ListingSnapshotInline(admin.TabularInline):
     show_change_link = True
 
 
-# -----------------------------
-# LISTING ADMIN
-# -----------------------------
 @admin.register(Listing)
 class ListingAdmin(admin.ModelAdmin):
     list_display = (
@@ -145,7 +224,6 @@ class ListingAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at", "updated_at")
     inlines = [ListingSnapshotInline]
     ordering = ("-created_at",)
-
     fieldsets = (
         ("Item Info", {
             "fields": ("item", "title", "description", "price", "platform", "url")

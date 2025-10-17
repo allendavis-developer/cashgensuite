@@ -1048,6 +1048,16 @@ function computeSourceAverages() {
             }
         });
         sourceAverages[source] = { average: avg, min, max, count: prices.length, mode };
+
+        //  Compute average of all values UNDER the mode
+        const valuesUnderMode = prices.filter(p => p < mode);
+        const underModeAverage = valuesUnderMode.length > 0 
+            ? valuesUnderMode.reduce((a, b) => a + b, 0) / valuesUnderMode.length 
+            : null;
+
+        if (source === 'CASHCONVERTERS' || source === 'CASHGENERATOR') {
+            console.log(`${source} - Mode: £${mode}, Average of Values Under Mode: £${underModeAverage?.toFixed(2) || '-'}`);
+        }
     });
 
 

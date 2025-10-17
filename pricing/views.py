@@ -1,11 +1,13 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
+from django.db import transaction
 from django.db.models import Q, Prefetch
+from django.utils import timezone
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
-from pricing.models import  ListingSnapshot, InventoryItem, MarketItem, CompetitorListing, PriceAnalysis, Category, MarginRule, GlobalMarginRule
+from pricing.models import  ListingSnapshot, InventoryItem, MarketItem, CompetitorListing, CompetitorListingHistory, PriceAnalysis, Category, MarginRule, GlobalMarginRule
 
 import json, traceback, re
 from decimal import Decimal, InvalidOperation
@@ -529,102 +531,6 @@ def delete_global_rule(request, pk):
     return render(request, "rules/delete_global_rule_confirm.html", {"rule": rule})
 
 
-
-@csrf_exempt
-@require_POST
-def detect_irrelevant_competitors(request):
-    """
-    Accepts a search query, description, and structured list of competitor listings.
-    Returns indices of irrelevant listings.
-    """
-    try:
-        data = json.loads(request.body)
-        search_query = (data.get("search_query") or "").strip()
-        item_description = (data.get("item_description") or "").strip()
-        competitor_list = data.get("competitor_list") or []  # list of dicts: [{title, store, price}]
-
-        if not search_query or not competitor_list:
-            return JsonResponse(
-                {"success": False, "error": "Missing search_query or competitor_list"},
-                status=400,
-            )
-
-        # 🟠 Auto-mark any competitors with missing/null price as irrelevant
-        irrelevant_indices = [
-            i for i, comp in enumerate(competitor_list)
-            if comp.get("price") in [None, "", "null"]
-        ]
-
-        # Build readable version for AI (only those with valid prices)
-        filtered_competitors = [
-            (i, comp)
-            for i, comp in enumerate(competitor_list)
-            if i not in irrelevant_indices
-        ]
-
-        prompt_lines = [
-            "You are filtering competitor listings for relevance.",
-            f"The user searched for: \"{search_query}\"",
-        ]
-
-        if item_description:
-            prompt_lines.append(f"Item description: \"{item_description}\"")
-
-        prompt_lines.append("Here is the list of competitor listings with indices:")
-        for idx, comp in filtered_competitors:
-            title = comp.get("title", "Unknown Title")
-            store = comp.get("store", "Unknown Store")
-            price = comp.get("price", "N/A")
-            prompt_lines.append(f"{idx}: {title} (Store: {store}, Price: £{price})")
-        
-        prompt_lines.append(
-            "Task: Identify which indices are NOT relevant to the search query and description.\n"
-            "- Relevant means: it is the same product of the product searched.\n"
-            "- Irrelevant means: wrong model, accessories, games, unrelated items, a variation (such as a Pro vs a Pro Max).\n"
-            "- Do not include any reasoning, only the indices.\n"
-            "- Be AS LENIENT as possible, do NOT determine the relevant listings as irrelevant.\n"
-            "- **IMPORTANT:** ALWAYS mark listings from the following stores as irrelevant, even if they appear fine: Cash Generator Warrington, Cash Generator Netherton, Cash Generator Wythenshawe.\n"
-            "- IMPORTANT: Ignore the description for judging relevance unless it contains clear model or variant information. Focus primarily on product title matching."
-            "- Respond ONLY with an array of integers, e.g., [0, 2, 5].\n"
-            "- If all listings are relevant, respond with an empty array [].\n"
-            "- STRICTLY FOLLOW ARRAY FORMAT, no trailing commas or extra spaces."
-        )
-
-        prompt = "\n".join(prompt_lines)
-        # 🧠 Call Gemini model
-        ai_response = call_gemini_sync(prompt)
-
-
-        # Attempt to parse JSON array from AI response
-        try:
-            ai_irrelevant_indices = json.loads(ai_response)
-            if not isinstance(ai_irrelevant_indices, list):
-                ai_irrelevant_indices = []
-        except Exception:
-            ai_irrelevant_indices = []
-            print("⚠ Failed to parse irrelevant indices from AI response!")
-
-        # Combine AI-excluded + null-price indices (deduplicated + sorted)
-        final_irrelevant = sorted(set(irrelevant_indices + ai_irrelevant_indices))
-
-        return JsonResponse({
-            "success": True,
-            "irrelevant_indices": final_irrelevant,
-            "auto_flagged_null_prices": irrelevant_indices,
-            "raw_ai_response": ai_response,
-        })
-
-    except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)}, status=500)
-
-
-CURRENT_GEN_MODELS = {
-    "iPhone": "iPhone 17",
-    "Samsung Galaxy": "Galaxy S25",
-    "Google Pixel": "Pixel 9",
-}
-
-
 from ai_context import MARGINS
 @csrf_exempt
 @require_POST
@@ -682,6 +588,140 @@ def buying_range_analysis(request):
     except Exception as e:
         import traceback; traceback.print_exc()
         return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+
+@csrf_exempt
+@require_POST
+def save_scraped_data(request):
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        item_name = data.get('item_name')
+        results = data.get('results', [])
+        if not results:
+            return JsonResponse({'success': False, 'error': 'No results to process'})
+
+        now = timezone.now()
+        market_item = MarketItem.objects.filter(title__iexact=item_name.strip()).first()
+        if not market_item:
+            market_item = MarketItem.objects.create(title=item_name.strip())
+
+
+        # Load existing listings for this market item
+        existing_listings = {
+            (l.competitor, l.stable_id): l
+            for l in CompetitorListing.objects.filter(market_item=market_item)
+        }
+
+        listings_to_create = []
+        listings_to_update = []
+        new_or_updated_listings = {}
+        histories_to_create = []
+
+        for item in results:
+            competitor = item.get('competitor')
+            stable_id = item.get('stable_id') or item.get('id') or item.get('url')
+            if not competitor or not stable_id:
+                continue
+
+            key = (competitor, stable_id)
+            price = float(item.get('price', 0))
+            title = item.get('title', '')
+            description = item.get('description', '')
+            condition = item.get('condition', '')
+            store = item.get('store', '')
+            url = item.get('url', '')
+
+            if key in existing_listings:
+                listing = existing_listings[key]
+
+                changed = (price != listing.price)
+
+                # Update fields
+                listing.price = price
+                listing.title = title
+                listing.description = description
+                listing.condition = condition
+                listing.store_name = store
+                listing.url = url
+                listing.is_active = True
+                listing.last_seen = now
+
+                listings_to_update.append(listing)
+                new_or_updated_listings[key] = listing
+
+                if changed:
+                    histories_to_create.append(
+                        CompetitorListingHistory(
+                            listing=listing,
+                            price=price,
+                            title=title,
+                            condition=condition,
+                            timestamp=now,
+                        )
+                    )
+
+            else:
+                # ✅ New listing: always create history
+                listing = CompetitorListing(
+                    market_item=market_item,
+                    competitor=competitor,
+                    stable_id=stable_id,
+                    price=price,
+                    title=title,
+                    description=description,
+                    condition=condition,
+                    store_name=store,
+                    url=url,
+                    is_active=True,
+                    last_seen=now,
+                )
+                listings_to_create.append(listing)
+                new_or_updated_listings[key] = listing
+
+        # --- Write to DB ---
+        with transaction.atomic():
+            if listings_to_create:
+                created = CompetitorListing.objects.bulk_create(listings_to_create)
+                for l in created:
+                    new_or_updated_listings[(l.competitor, l.stable_id)] = l
+                    # ✅ Add history for newly created listings
+                    histories_to_create.append(
+                        CompetitorListingHistory(
+                            listing=l,
+                            price=l.price,
+                            title=l.title,
+                            condition=l.condition,
+                            timestamp=now,
+                        )
+                    )
+
+            if listings_to_update:
+                CompetitorListing.objects.bulk_update(
+                    listings_to_update,
+                    [
+                        'price', 'title', 'description', 'condition',
+                        'store_name', 'url', 'is_active', 'last_seen'
+                    ]
+                )
+
+        # --- Bulk insert histories (if any) ---
+        if histories_to_create:
+            CompetitorListingHistory.objects.bulk_create(histories_to_create)
+
+        print(f"✅ Created {len(listings_to_create)} listings, updated {len(listings_to_update)}, "
+              f"added {len(histories_to_create)} histories")
+
+        return JsonResponse({
+            'success': True,
+            'created': len(listings_to_create),
+            'updated': len(listings_to_update),
+            'histories': len(histories_to_create),
+        })
+
+    except Exception as e:
+        print("❌ Error saving scraped data:", e)
+        return JsonResponse({'success': False, 'error': str(e)})
 
 
 @csrf_exempt
@@ -847,14 +887,6 @@ OUTPUT FORMAT (JSON only):
     except Exception as e:
         traceback.print_exc()
         return JsonResponse({"success": False, "error": str(e)}, status=500)
-
-
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-from decimal import Decimal, InvalidOperation
-import json
-
-from .models import Listing, ListingSnapshot, InventoryItem
 
 
 @csrf_exempt

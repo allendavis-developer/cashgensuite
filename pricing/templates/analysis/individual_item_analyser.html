@@ -486,6 +486,20 @@ async function scrapePrices() {
             }
         });
 
+        await fetch("/save_scraped_data/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken"),
+            },
+            body: JSON.stringify({
+                item_name: itemName,
+                competitors: selectedCompetitors,
+                results: response.results,
+                timestamp: new Date().toISOString(),
+            }),
+        });
+
         if (response.success) {
             // Convert extension response to the format your updateCompetitorData expects
             const formattedData = response.results.map(item => {
