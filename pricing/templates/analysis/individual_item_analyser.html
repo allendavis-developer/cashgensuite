@@ -524,70 +524,6 @@ modalSubmitBtn.addEventListener('click', async function() {
 // -------------------------------
 // 🧱 SCRAPING PHASE
 // -------------------------------
-async function fetchGeneratedSearchTerm() {
-    const categorySelect = document.getElementById('category');
-    const modelSelect = document.getElementById('model');
-    const category = categorySelect.value;
-    const model = modelSelect.value;
-
-    // Collect all attribute values with proper attribute names (not IDs)
-    const attributeInputs = document.querySelectorAll('#attributes-container .input-field');
-    const attributes = {};
-    attributeInputs.forEach(input => {
-        // Navigate to the parent input-group, then find the label
-        const inputGroup = input.closest('.input-group');
-        const label = inputGroup?.querySelector('label');
-        const labelText = label?.textContent?.trim() || '';
-        
-        if (!labelText) {
-            console.warn('Could not find label for input:', input);
-            return;
-        }
-        
-        const attributeKey = labelText.toLowerCase().replace(/\s+/g, '_');
-        const value = input.value.trim();
-        
-        console.log('Attribute found:', labelText, '->', attributeKey, '=', value);
-        
-        if (value) {  // Only include non-empty values
-            attributes[attributeKey] = value;
-        }
-    });
-
-    if (!category || !model) {
-        console.warn("Category or model not selected yet.");
-        return;
-    }
-
-    const categoryName = categorySelect.options[categorySelect.selectedIndex].text;
-    const modelName = modelSelect.options[modelSelect.selectedIndex].text;
-
-    try {
-        const response = await fetch('/api/generate_search_term/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                category: categoryName,
-                model: modelName,
-                attributes: attributes
-            })
-        });
-
-        const result = await response.json();
-        if (result.success) {
-            console.log("Generated Search Term:", result.data.generated_search_term);
-            document.getElementById('item-name').value = result.data.generated_search_term;
-        } else {
-            console.error("Error generating search term:", result.error);
-        }
-    } catch (err) {
-        console.error("Network error:", err);
-    }
-}
-
 
 async function scrapePrices() {
     await fetchGeneratedSearchTerm();
@@ -1202,9 +1138,126 @@ async function loadCategoryAttributes(categoryId) {
   }
 }
 
-// ------------------------------------------
-// Render attributes (your provided function)
-// ------------------------------------------
+function checkAllAttributesFilled() {
+    const attributeInputs = document.querySelectorAll('#attributes-container .input-field');
+    const allFilled = Array.from(attributeInputs).every(input => input.value.trim() !== '');
+    
+    if (allFilled && attributeInputs.length > 0) {
+        console.log("yes!");
+        checkExistingItems();
+        // Call any function here if needed
+    }
+}
+
+async function checkExistingItems() {
+    const data = collectAttributeData();
+    if (!data) return;
+
+    try {
+        const response = await fetch('/api/check_existing_items/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                category: data.categoryName,
+                model: data.modelName,
+                attributes: data.attributes
+            })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            console.log("Found this many items:", result.competitor_count);
+
+            updateCompetitorData(result.competitor_data, result.competitor_count);
+
+            if (result.competitor_count > 0) {
+                console.log(`Found ${result.competitor_count} existing item(s) matching this criteria.`);
+            } else {
+                console.log("No existing items found.");
+            }
+        } else {
+            console.error("Error checking items:", result.error);
+        }
+    } catch (err) {
+        console.error("Network error:", err);
+    }
+}
+
+
+// -------------------------------
+// 🧱 ATTRIBUTE COLLECTION
+// -------------------------------
+function collectAttributeData() {
+    const categorySelect = document.getElementById('category');
+    const modelSelect = document.getElementById('model');
+
+    if (!categorySelect.value || !modelSelect.value) {
+        console.warn("Category or model not selected yet.");
+        return null;
+    }
+
+    const categoryName = categorySelect.options[categorySelect.selectedIndex].text;
+    const modelName = modelSelect.options[modelSelect.selectedIndex].text;
+
+    // Collect all attribute values
+    const attributeInputs = document.querySelectorAll('#attributes-container .input-field');
+    const attributes = {};
+    attributeInputs.forEach(input => {
+        const inputGroup = input.closest('.input-group');
+        const label = inputGroup?.querySelector('label');
+        const labelText = label?.textContent?.trim() || '';
+
+        if (!labelText) return;
+
+        const key = labelText.toLowerCase().replace(/\s+/g, '_');
+        const value = input.value.trim();
+        if (value) attributes[key] = value;
+    });
+
+    return { categoryName, modelName, attributes };
+}
+
+// -------------------------------
+// 🧱 FETCH GENERATED SEARCH TERM
+// -------------------------------
+async function fetchGeneratedSearchTerm() {
+    const data = collectAttributeData();
+    if (!data) return;
+
+    try {
+        const response = await fetch('/api/generate_search_term/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                category: data.categoryName,
+                model: data.modelName,
+                attributes: data.attributes
+            })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            document.getElementById('item-name').value = result.data.generated_search_term;
+            console.log("Generated Search Term:", result.data.generated_search_term);
+        } else {
+            console.error("Error generating search term:", result.error);
+        }
+    } catch (err) {
+        console.error("Network error:", err);
+    }
+}
+
+
+// --------------------
+// Render attributes 
+// --------------------
+
 
 function renderAttributes(attributes) {
   const container = document.getElementById('attributes-container');
@@ -1260,11 +1313,22 @@ function renderAttributes(attributes) {
 
     container.appendChild(inputGroup);
   });
+
+  // Add attribute listeners
+  const acontainer = document.getElementById('attributes-container');
+    acontainer.querySelectorAll('.input-field').forEach(input => {
+        input.addEventListener('input', checkAllAttributesFilled);
+    });
 }
 
 
 document.getElementById('category').addEventListener('change', async (e) => {
     const categoryId = e.target.value;
+
+      // Clear competitor table
+    updateCompetitorData([], 0);
+
+
     document.getElementById('manufacturer').disabled = true;
     document.getElementById('model').disabled = true;
     document.getElementById('attributes-container').innerHTML = '';
@@ -1289,6 +1353,9 @@ document.getElementById('manufacturer').addEventListener('change', async (e) => 
     const categoryId = document.getElementById('category').value;
     const manufacturerId = e.target.value;
 
+    // Clear competitor table
+    updateCompetitorData([], 0);
+
     const modelSelect = document.getElementById('model');
     modelSelect.disabled = true;
     modelSelect.innerHTML = `<option value="" selected disabled>-- Select Model --</option>`;
@@ -1307,6 +1374,10 @@ document.getElementById('manufacturer').addEventListener('change', async (e) => 
 });
 
 document.getElementById('model').addEventListener('change', async (e) => {
+  
+    // Clear competitor table
+    updateCompetitorData([], 0);
+    
     const categoryId = document.getElementById('category').value;
     loadCategoryAttributes(categoryId);
 });

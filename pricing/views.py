@@ -28,6 +28,7 @@ from decimal import Decimal, InvalidOperation
 from pricing.utils.ai_utils import call_gemini_sync, generate_price_analysis, generate_bulk_price_analysis
 from pricing.utils.competitor_utils import get_competitor_data
 from pricing.utils.analysis_utils import process_item_analysis, save_analysis_to_db
+from pricing.utils.search_term import build_search_term
 
 
 def get_prefilled_data(request):
@@ -77,6 +78,36 @@ def price_analysis_detail(request, analysis_id):
         "serial_number": analysis.item.serial_number,     # <-- add this
         "cost_price": analysis.cost_price,
     })
+
+
+@require_POST
+def check_existing_items(request):
+    try:
+        data = json.loads(request.body)
+        category = data.get("category")
+        model = data.get("model")
+        attributes = data.get("attributes", {})
+
+        if not category or not model:
+            return JsonResponse({"success": False, "error": "Category and model are required."})
+
+        # Build search term
+        search_term = build_search_term(model, category, attributes)
+
+
+        # Get competitor data
+        competitor_data = get_competitor_data(search_term, include_url=True)
+        competitor_lines = competitor_data.split("\n") if competitor_data else []
+
+
+        return JsonResponse({
+            "success": True,
+            "search_term": search_term,
+            "competitor_data": competitor_lines,
+            "competitor_count": len(competitor_lines)
+        })
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
 
 
 # ----------------------- HOME PAGE VIEWS -------------------------------------
@@ -634,7 +665,6 @@ def add_attribute_option(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
-from pricing.utils.search_term import build_search_term
 @csrf_exempt
 def generate_search_term(request):
     if request.method == "POST":

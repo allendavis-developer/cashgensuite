@@ -41,6 +41,8 @@ urlpatterns = [
     path('api/manufacturers/', v.manufacturers, name='api-manufacturers'),
     path('api/models/', v.models, name='api-models'),
     path('api/category_attributes/', v.category_attributes, name='api-category-attributes'),
+    path('api/check_existing_items/', v.check_existing_items, name='api-check-existing-items'),
+
 
      # Creation endpoints (allow adding new items)
     path('api/add_category/', v.add_category, name='api-add-category'),
