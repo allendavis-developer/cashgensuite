@@ -637,7 +637,7 @@
     <table class="competitor-table" id="analysis-table">
       <thead>
         <tr>
-          <th>CEX Price Avg</th>
+          <th>CEX Mode</th>
           <th>CEX - Discount % (20% for now)</th>
           <th>Cost Price + Minimum Margin</th>
           <th>Cash Converters Lowest</th>
@@ -1118,12 +1118,12 @@ function computeSourceAverages() {
     const cc = normalized['CASHCONVERTERS'] || {};
     const cg = normalized['CASHGENERATOR'] || {};
 
-    const cexMinus20 = cex.average ? `£${(cex.average * 0.8).toFixed(0)}` : '-';
+    const cexMinus20 = cex.mode ? `£${(cex.mode * 0.8).toFixed(0)}` : '-';
     const suggestedRRP = '';
 
     tbody.innerHTML = `
         <tr>
-            <td>${cex.average ? `£${cex.average.toFixed(0)}` : '-'}</td>
+            <td>${cex.mode ? `£${cex.mode.toFixed(0)}` : '-'}</td>
             <td>${cexMinus20}</td>
             <td id="rrp-cell">${suggestedRRP}</td>
             <td>${cc.min ? `£${cc.min.toFixed(0)}` : '-'}</td>

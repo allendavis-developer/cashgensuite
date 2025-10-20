@@ -53,7 +53,7 @@
         id="item-name"
         class="input-field"
         value="{{ prefilled_data.name|default:'' }}"
-        placeholder="iPhone 14"
+        placeholder="This will be filled automatically when you scrape."
         readonly
       >
     </div>
@@ -317,6 +317,38 @@
     gap: 12px;
     margin-top: 6px;
   }
+
+  /* Make the search field obviously readonly */
+#item-name[readonly] {
+    background-color: #2a2a2a; /* darker gray */
+    color: #ccc;               /* lighter text */
+    cursor: not-allowed;
+}
+
+#item-name[readonly]::placeholder {
+    color: #888;               /* gray placeholder */
+}
+
+/* Optional: add a tooltip */
+#item-name[readonly]:hover {
+    position: relative;
+}
+
+#item-name[readonly]:hover::after {
+    content: "Auto-generated — cannot edit";
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #111;
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    margin-top: 2px;
+    z-index: 10;
+}
+
 
   /* Label wrapper */
   #competitor-checkboxes label {
