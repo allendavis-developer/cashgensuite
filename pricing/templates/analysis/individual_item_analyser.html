@@ -1149,10 +1149,12 @@ function checkAllAttributesFilled() {
     }
 }
 
-async function checkExistingItems() {
+// Called when model changes or attribute values change
+async function maybeCheckExistingItems() {
     const data = collectAttributeData();
     if (!data) return;
 
+    // data.attributes may be empty — that's fine
     try {
         const response = await fetch('/api/check_existing_items/', {
             method: 'POST',
@@ -1163,21 +1165,14 @@ async function checkExistingItems() {
             body: JSON.stringify({
                 category: data.categoryName,
                 model: data.modelName,
-                attributes: data.attributes
+                attributes: data.attributes  // optional, empty object if none
             })
         });
 
         const result = await response.json();
         if (result.success) {
-            console.log("Found this many items:", result.competitor_count);
-
             updateCompetitorData(result.competitor_data, result.competitor_count);
-
-            if (result.competitor_count > 0) {
-                console.log(`Found ${result.competitor_count} existing item(s) matching this criteria.`);
-            } else {
-                console.log("No existing items found.");
-            }
+            console.log(`Found ${result.competitor_count} existing item(s)`);
         } else {
             console.error("Error checking items:", result.error);
         }
@@ -1356,6 +1351,7 @@ document.getElementById('manufacturer').addEventListener('change', async (e) => 
     // Clear competitor table
     updateCompetitorData([], 0);
 
+
     const modelSelect = document.getElementById('model');
     modelSelect.disabled = true;
     modelSelect.innerHTML = `<option value="" selected disabled>-- Select Model --</option>`;
@@ -1377,10 +1373,19 @@ document.getElementById('model').addEventListener('change', async (e) => {
   
     // Clear competitor table
     updateCompetitorData([], 0);
-    
+    fetchGeneratedSearchTerm();
+
     const categoryId = document.getElementById('category').value;
     loadCategoryAttributes(categoryId);
+
+    // Check existing items based on category + model
+    maybeCheckExistingItems();
+
 });
+
+// When attributes change
+document.getElementById('attributes-container').addEventListener('input', maybeCheckExistingItems);
+document.getElementById('attributes-container').addEventListener('input', fetchGeneratedSearchTerm);
 
 
 
