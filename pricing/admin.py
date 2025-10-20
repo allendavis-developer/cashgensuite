@@ -164,10 +164,9 @@ class ItemModelAttributeValueInlineFromMarketItem(admin.StackedInline):
 
 @admin.register(MarketItem)
 class MarketItemAdmin(admin.ModelAdmin):
-    list_display = ('title', 'category', 'model_name', 'model_attributes', 'last_scraped')
+    list_display = ('title', 'category', 'model_name', 'last_scraped')
     list_filter = ('category',)
     search_fields = ('title',)
-    readonly_fields = ('model_attributes',)
     inlines = [CompetitorListingInline]  
 
     def model_name(self, obj):
@@ -176,15 +175,6 @@ class MarketItemAdmin(admin.ModelAdmin):
         return "-"
     model_name.short_description = "Item Model"
 
-    def model_attributes(self, obj):
-        if not obj.item_model:
-            return "-"
-        lines = [f"<strong>{av.attribute.label}:</strong> {av.get_display_value()}" 
-                for av in obj.item_model.attribute_values.all()]
-        return format_html("<br>".join(lines))
-    model_attributes.short_description = "Model Attributes"
-
-    model_attributes.short_description = "Model Attributes"
 
 class CategoryAttributeInline(admin.TabularInline):
     model = CategoryAttribute

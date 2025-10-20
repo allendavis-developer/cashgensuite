@@ -29,54 +29,6 @@ from pricing.utils.ai_utils import call_gemini_sync, generate_price_analysis, ge
 from pricing.utils.competitor_utils import get_competitor_data
 from pricing.utils.analysis_utils import process_item_analysis, save_analysis_to_db
 
-@csrf_exempt
-def generate_search_term(request):
-    """
-    Generate a concise, high-performing search term for an item.
-    """
-    try:
-        data = json.loads(request.body)
-        name = (data.get("name") or "").strip()
-        description = (data.get("description") or "").strip()
-        specifications = data.get("specifications") or {}  # <-- new
-
-        if not name:
-            return JsonResponse({"success": False, "error": "Missing item name."})
-
-        print("Received specifications:", specifications)
-
-        # ✨ Build the Gemini prompt
-        prompt = f"""
-        You are a retail data intelligence assistant.
-
-        Based on the following product details, generate a concise, optimized
-        search query that would return the most relevant marketplace listings
-        for price comparison and analysis.
-
-        - Product Name: {name}
-        - Description: {description}
-        - Specifications: {json.dumps(specifications)}
-
-        Output only the ideal search term (2–8 words). 
-        For Phones: MODEL NAME STORAGE_CAPACITY is the output format. 
-        Ignore any quantities mentioned in the product details; only generate the search term for a single unit.
-        Do not include numbers that indicate multiple items (e.g., 'x2', '2 units').
-        Do not be specific, be general. Don't include details that filter our searches too much. DO NOT INCLUDE COLOUR INFORMATION.  
-        Do not include commentary or punctuation.
-        """
-
-        # 🔮 Call Gemini synchronously
-        search_term = call_gemini_sync(prompt)
-        return JsonResponse({
-            "success": True,
-            "search_term": search_term,
-        })
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return JsonResponse({"success": False, "error": str(e)}, status=500)
-
 
 def get_prefilled_data(request):
     return {
@@ -400,13 +352,28 @@ def save_scraped_data(request):
         data = json.loads(request.body.decode('utf-8'))
         item_name = data.get('item_name')
         results = data.get('results', [])
+        category_id = data.get('category')  
+        model_id = data.get('item_model')   
+        attributes = data.get('attributes', {})  
+
         if not results:
             return JsonResponse({'success': False, 'error': 'No results to process'})
 
         now = timezone.now()
         market_item = MarketItem.objects.filter(title__iexact=item_name.strip()).first()
         if not market_item:
-            market_item = MarketItem.objects.create(title=item_name.strip())
+            market_item = MarketItem.objects.create(
+                title=item_name.strip(),
+                category_id=category_id,
+                item_model_id=model_id
+            )
+        else:
+            # Update category/model if provided
+            if category_id:
+                market_item.category_id = category_id
+            if model_id:
+                market_item.item_model_id = model_id
+            market_item.save()
 
 
         # Load existing listings for this market item
@@ -666,6 +633,42 @@ def add_attribute_option(request):
         return JsonResponse({'error': 'Attribute not found'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+from pricing.utils.search_term import build_search_term
+@csrf_exempt
+def generate_search_term(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            category = data.get("category")
+            model = data.get("model")
+            attributes = data.get("attributes", {})
+
+            if not category or not model:
+                return JsonResponse({"success": False, "error": "Category and model are required."}, status=400)
+
+            # Build the search term - FIXED: model is the item_name
+            search_term = build_search_term(model, category, attributes)  # ← CHANGED ORDER
+            
+            print("Model (item_name):", model)
+            print("Category:", category)
+            print("Attributes:", attributes)
+            print("Search term:", search_term)
+            
+            return JsonResponse({
+                "success": True,
+                "data": {
+                    "category": category,
+                    "model": model,
+                    "attributes": attributes,
+                    "generated_search_term": search_term
+                }
+            })
+
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 
 @csrf_exempt

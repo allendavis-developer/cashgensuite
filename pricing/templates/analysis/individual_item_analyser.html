@@ -54,7 +54,7 @@
         class="input-field"
         value="{{ prefilled_data.name|default:'' }}"
         placeholder="iPhone 14"
-        required
+        readonly
       >
     </div>
   </div>
@@ -492,8 +492,74 @@ modalSubmitBtn.addEventListener('click', async function() {
 // -------------------------------
 // 🧱 SCRAPING PHASE
 // -------------------------------
+async function fetchGeneratedSearchTerm() {
+    const categorySelect = document.getElementById('category');
+    const modelSelect = document.getElementById('model');
+    const category = categorySelect.value;
+    const model = modelSelect.value;
+
+    // Collect all attribute values with proper attribute names (not IDs)
+    const attributeInputs = document.querySelectorAll('#attributes-container .input-field');
+    const attributes = {};
+    attributeInputs.forEach(input => {
+        // Navigate to the parent input-group, then find the label
+        const inputGroup = input.closest('.input-group');
+        const label = inputGroup?.querySelector('label');
+        const labelText = label?.textContent?.trim() || '';
+        
+        if (!labelText) {
+            console.warn('Could not find label for input:', input);
+            return;
+        }
+        
+        const attributeKey = labelText.toLowerCase().replace(/\s+/g, '_');
+        const value = input.value.trim();
+        
+        console.log('Attribute found:', labelText, '->', attributeKey, '=', value);
+        
+        if (value) {  // Only include non-empty values
+            attributes[attributeKey] = value;
+        }
+    });
+
+    if (!category || !model) {
+        console.warn("Category or model not selected yet.");
+        return;
+    }
+
+    const categoryName = categorySelect.options[categorySelect.selectedIndex].text;
+    const modelName = modelSelect.options[modelSelect.selectedIndex].text;
+
+    try {
+        const response = await fetch('/api/generate_search_term/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                category: categoryName,
+                model: modelName,
+                attributes: attributes
+            })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            console.log("Generated Search Term:", result.data.generated_search_term);
+            document.getElementById('item-name').value = result.data.generated_search_term;
+        } else {
+            console.error("Error generating search term:", result.error);
+        }
+    } catch (err) {
+        console.error("Network error:", err);
+    }
+}
+
+
 async function scrapePrices() {
-  const itemName = document.getElementById('item-name').value.trim();
+    await fetchGeneratedSearchTerm();
+    const itemName = document.getElementById('item-name').value.trim();
     if (!itemName) {
         alert('Please enter an item name first.');
         return;
@@ -514,12 +580,31 @@ async function scrapePrices() {
     }
 
     try {
-        // Send message to Chrome extension via bridge
         const response = await sendExtensionMessage({
             action: "scrape",
             data: {
                 query: itemName,
                 competitors: selectedCompetitors
+            }
+        });
+
+        // Collect category, model, and attributes
+        const categorySelect = document.getElementById('category');
+        const modelSelect = document.getElementById('model');
+        const categoryId = categorySelect.value;
+        const categoryName = categorySelect.options[categorySelect.selectedIndex]?.text || '';
+        const modelId = modelSelect.value;
+        const modelName = modelSelect.options[modelSelect.selectedIndex]?.text || '';
+
+        const attributeInputs = document.querySelectorAll('#attributes-container .input-field');
+        const attributes = {};
+        attributeInputs.forEach(input => {
+            const inputGroup = input.closest('.input-group');
+            const label = inputGroup?.querySelector('label');
+            const labelText = label?.textContent?.trim() || '';
+            if (labelText) {
+                const key = labelText.toLowerCase().replace(/\s+/g, '_');
+                if (input.value) attributes[key] = input.value.trim();
             }
         });
 
@@ -531,6 +616,9 @@ async function scrapePrices() {
             },
             body: JSON.stringify({
                 item_name: itemName,
+                category: categoryId,
+                item_model: modelId,
+                attributes: attributes,
                 competitors: selectedCompetitors,
                 results: response.results,
                 timestamp: new Date().toISOString(),
@@ -538,13 +626,9 @@ async function scrapePrices() {
         });
 
         if (response.success) {
-            // Convert extension response to the format your updateCompetitorData expects
             const formattedData = response.results.map(item => {
-                // competitor | title | price | store | url
                 return `${item.competitor} | ${item.title || ""} | £${item.price} | ${item.store || ""} | ${item.url || ""}`;
             });
-
-            console.log("Scraped data:", response.results);
             updateCompetitorData(formattedData, formattedData.length);
             if (response.partial) {
                 alert("Scraping partially completed. Some sites may have timed out.");
@@ -555,18 +639,12 @@ async function scrapePrices() {
 
     } catch (error) {
         console.error('Scraping error:', error);
-        
-        if (error.message.includes('timeout')) {
-            alert('Extension communication timeout. Make sure the extension is installed and enabled.');
-        } else {
-            alert('Error running scraper: ' + error.message + '\n\nMake sure the Chrome extension is installed and enabled.');
-        }
+        alert('Error running scraper: ' + error.message);
     } finally {
         scrapeBtn.disabled = false;
         scrapeBtn.textContent = 'Scrape Prices';
     }
 }
-
 
 // -------------------------------
 // 🧩 ANALYSIS PHASE (Two-step: CashConverters → CashGenerator)
@@ -575,11 +653,6 @@ async function analyzeTable() {
     const itemName = document.getElementById('item-name').value.trim();
     const description = document.getElementById('description').value.trim();
     const costPrice = parseFloat(document.getElementById('cost-price').value) || 0;
-
-    if (!itemName || !description) {
-        alert("Please fill in the item name and description.");
-        return;
-    }
 
     let competitorData = extractCompetitorTableData();
 
@@ -769,6 +842,8 @@ function displayDualAnalysis(reasoning, suggestedPrice, source) {
     // Update analysis timestamp
     analysisTime.textContent = 'just now';
 }
+
+
 
 
 function collectListingData() {
@@ -1071,7 +1146,6 @@ async function saveNewItem() {
 }
 
 
-
 async function loadModels() {
   const categoryId = document.getElementById('category').value;
   const manufacturerId = document.getElementById('manufacturer').value;
@@ -1121,7 +1195,7 @@ function renderAttributes(attributes) {
       select.id = `attr_${attr.id}`;
       select.classList.add('input-field');
       select.style.flex = '1';
-      select.innerHTML = `<option value="" selected disabled>-- Select ${attr.label} --</option>`;
+      select.innerHTML = `<option value="" selected>-- Select ${attr.label} (optional) --</option>`;
       (attr.options || []).forEach(opt => {
         const o = document.createElement('option');
         o.value = opt;

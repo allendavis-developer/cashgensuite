@@ -29,10 +29,11 @@ urlpatterns = [
 
     # ----------------------------- API -----------------------------
     path("bulk-analysis", v.bulk_analysis, name='bulk_analysis'),
-    path("generate-search-term/", v.generate_search_term, name="generate_search_term"),
     path('save_listing/', v.save_listing, name='save_listing'),
     path("save_scraped_data/", v.save_scraped_data, name="save_scraped_data"),
     path('admin/get-models/', v.get_models, name='get_models'),
+
+    path("api/generate_search_term/", v.generate_search_term, name="generate_search_term"),
 
     path("api/price-analysis/<int:analysis_id>/", v.price_analysis_detail, name="price_analysis_detail"),
     path("api/buying-range-analysis/", v.buying_range_analysis, name="buying_range_analysis"),
