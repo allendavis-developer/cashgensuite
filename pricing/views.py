@@ -630,6 +630,45 @@ def add_model(request):
         return JsonResponse({'id': model.id, 'name': model.name})
 
 @csrf_exempt
+def add_attribute_option(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        attribute_id = data.get('attribute_id')
+        new_option = (data.get('option') or '').strip()
+
+        if not attribute_id or not new_option:
+            return JsonResponse({'error': 'attribute_id and option required'}, status=400)
+
+        attr = CategoryAttribute.objects.get(id=attribute_id)
+
+        # Ensure field type supports options
+        if attr.field_type != 'select':
+            return JsonResponse({'error': 'This attribute does not support options'}, status=400)
+
+        # Initialize options list if empty
+        current_options = attr.options or []
+
+        # Avoid duplicates (case-insensitive)
+        if any(o.lower() == new_option.lower() for o in current_options):
+            return JsonResponse({'message': 'Option already exists', 'options': current_options})
+
+        # Add new option
+        current_options.append(new_option)
+        attr.options = current_options
+        attr.save()
+
+        return JsonResponse({'message': 'Option added', 'options': current_options})
+
+    except CategoryAttribute.DoesNotExist:
+        return JsonResponse({'error': 'Attribute not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
 @require_POST
 def negotiation_step(request):
     """

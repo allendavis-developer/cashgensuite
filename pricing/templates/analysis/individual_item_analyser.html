@@ -9,6 +9,42 @@
 {% block panel_title %}INPUT PANEL{% endblock %}
 
 {% block search_term %}
+
+<div class="input-group">
+    <label for="category">Category</label>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+      <select id="category" class="input-field" style="flex: 1;">
+        <option value="" selected disabled>-- Select Category --</option>
+        {% for cat in categories %}
+        <option value="{{ cat.id }}">{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="button" class="add-btn" onclick="openAddModal('category')">+</button>
+    </div>
+  </div>
+
+  <div class="input-group">
+    <label for="manufacturer">Manufacturer</label>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+      <select id="manufacturer" class="input-field" disabled style="flex: 1;">
+        <option value="" selected disabled>-- Select Manufacturer --</option>
+      </select>
+      <button type="button" class="add-btn" onclick="openAddModal('manufacturer')" disabled>+</button>
+    </div>
+  </div>
+
+  <div class="input-group">
+    <label for="model">Model</label>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+      <select id="model" class="input-field" disabled style="flex: 1;">
+        <option value="" selected disabled>-- Select Model --</option>
+      </select>
+      <button type="button" class="add-btn" onclick="openAddModal('model')" disabled>+</button>
+    </div>
+  </div>
+
+    <div id="attributes-container" style="margin-top: 10px;"></div>
+
   <div class="input-row">
     <div class="input-group" style="flex: 2;">
       <label class="input-label">Search Term</label>
@@ -747,6 +783,7 @@ function collectListingData() {
     const serialNumber = document.getElementById('barserial').value;
 
     const reasoning = document.getElementById('reasoning-text').innerText;
+    const costPrice = parseFloat(document.getElementById('cost-price').value) || 0;
 
     const analysisTds = document.querySelectorAll('#analysis-tbody tr td');
     
@@ -829,6 +866,344 @@ window.addEventListener('message', async (event) => {
     }
 });
 
+let currentAddType = null;
+let currentSelectElement = null;
+
+function openAddModal(type, extraData = null) {
+   currentAddType = type;
+
+  if (type === 'attribute_option') {
+    currentAttributeId = extraData.attributeId;
+    currentSelectElement = extraData.selectElement;
+  }
+
+  document.getElementById('add-modal-title').textContent =
+    'Add new ' +
+    (type === 'attribute_option'
+      ? 'option'
+      : type.charAt(0).toUpperCase() + type.slice(1));
+
+  document.getElementById('new-item-name').value = '';
+  document.getElementById('add-modal').classList.remove('hidden');
+}
+
+function closeAddModal() {
+  document.getElementById('add-modal').classList.add('hidden');
+  currentAttributeId = null;
+}
+
+// Load ALL manufacturers (no category filtering)
+async function loadManufacturers(preselectId = null) {
+  try {
+    const response = await fetch(`/api/manufacturers/`);
+    if (!response.ok) {
+      console.warn('Failed to load manufacturers:', response.statusText);
+      return [];
+    }
+
+    const manufacturers = await response.json();
+
+    const manufacturerSelect = document.getElementById('manufacturer');
+    manufacturerSelect.innerHTML = `<option value="" selected disabled>-- Select Manufacturer --</option>`;
+
+    manufacturers.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = String(m.id);
+      opt.textContent = m.name;
+      manufacturerSelect.appendChild(opt);
+    });
+
+    manufacturerSelect.disabled = false;
+    const addNewBtn = manufacturerSelect.nextElementSibling;
+    if (addNewBtn) addNewBtn.disabled = false;
+
+    if (preselectId !== null && preselectId !== undefined) {
+      manufacturerSelect.value = String(preselectId);
+      manufacturerSelect.dispatchEvent(new Event('change'));
+    }
+
+    return manufacturers;
+  } catch (err) {
+    console.error('Error loading manufacturers:', err);
+    return [];
+  }
+}
+
+// Save a new category/manufacturer/model/attribute_option
+async function saveNewItem() {
+  const name = document.getElementById('new-item-name').value.trim();
+  if (!name) return alert('Please enter a name.');
+
+  const csrftoken = getCookie('csrftoken');
+  const data = { name };
+  let url = `/api/add_${currentAddType}/`;
+
+  // Handle model dependencies
+  if (currentAddType === 'model') {
+    const categoryId = document.getElementById('category').value;
+    const manufacturerId = document.getElementById('manufacturer').value;
+
+    if (!categoryId || !manufacturerId) {
+      alert('Please select both a category and manufacturer first.');
+      return;
+    }
+
+    data.category = categoryId;
+    data.manufacturer = manufacturerId;
+  }
+
+  // Handle attribute option creation
+  if (currentAddType === 'attribute_option') {
+    if (!currentAttributeId || !currentSelectElement) {
+      alert('Internal error: missing attribute info.');
+      return;
+    }
+    url = '/api/add_attribute_option/';
+    data.attribute_id = currentAttributeId;
+    data.option = name;
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrftoken
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      console.error('Add API error:', response.status, await response.text());
+      return alert('Error adding item.');
+    }
+
+    const result = await response.json();
+    if (result.error) {
+      alert(`Error: ${result.error}`);
+      return;
+    }
+
+    alert(`${currentAddType.replace('_', ' ')} added successfully.`);
+    closeAddModal();
+    console.log(currentAddType);
+
+    // Handle Category refresh
+    if (currentAddType === 'category') {
+      if (typeof loadCategories === 'function') {
+        await loadCategories();
+      }
+      const catSelect = document.getElementById('category');
+      const newIdStr = String(result.id);
+      if (![...catSelect.options].some(o => o.value === newIdStr)) {
+        const opt = document.createElement('option');
+        opt.value = newIdStr;
+        opt.textContent = result.name;
+        catSelect.appendChild(opt);
+      }
+      catSelect.value = newIdStr;
+      catSelect.dispatchEvent(new Event('change'));
+    }
+
+    // Handle Manufacturer refresh
+    else if (currentAddType === 'manufacturer') {
+      const manufacturerSelect = document.getElementById('manufacturer');
+      manufacturerSelect.disabled = false;
+
+      const newIdStr = String(result.id);
+      if (![...manufacturerSelect.options].some(o => o.value === newIdStr)) {
+        const opt = document.createElement('option');
+        opt.value = newIdStr;
+        opt.textContent = result.name;
+        manufacturerSelect.appendChild(opt);
+      }
+
+      manufacturerSelect.value = newIdStr;
+      manufacturerSelect.dispatchEvent(new Event('change'));
+
+      // Optional background reload
+      loadManufacturers(result.id).catch(err => {
+        console.warn('Background reload of manufacturers failed:', err);
+      });
+    }
+
+    // Handle Model refresh
+    else if (currentAddType === 'model') {
+      const modelSelect = document.getElementById('model');
+      modelSelect.disabled = false;
+
+      const newIdStr = String(result.id);
+      if (![...modelSelect.options].some(o => o.value === newIdStr)) {
+        const opt = document.createElement('option');
+        opt.value = newIdStr;
+        opt.textContent = result.name;
+        modelSelect.appendChild(opt);
+      }
+      modelSelect.value = newIdStr;
+      modelSelect.dispatchEvent(new Event('change'));
+    }
+
+    // Handle Attribute Option refresh
+    else if (currentAddType === 'attribute_option') {
+        const options = result.options || [];  // Get full list of options from backend
+        const select = currentSelectElement;
+        select.disabled = false;
+
+        // Clear and repopulate the select with all options
+        select.innerHTML = `<option value="" selected disabled>-- Select ${select.previousElementSibling?.textContent || 'Option'} --</option>`;
+        
+        options.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt;
+            option.textContent = opt;
+            select.appendChild(option);
+        });
+
+        // Select the newly added option
+        select.value = name;  // 'name' is the new option we just added
+        select.dispatchEvent(new Event('change'));
+    }
+
+  } catch (err) {
+    console.error('Error in saveNewItem:', err);
+    alert('Network error while adding item.');
+  }
+}
+
+
+
+async function loadModels() {
+  const categoryId = document.getElementById('category').value;
+  const manufacturerId = document.getElementById('manufacturer').value;
+  const response = await fetch(`/api/models/?category=${categoryId}&manufacturer=${manufacturerId}`);
+  const models = await response.json();
+  
+  const modelSelect = document.getElementById('model');
+  modelSelect.innerHTML = `<option value="" selected disabled>-- Select Model --</option>`;
+  models.forEach(m => {
+    modelSelect.innerHTML += `<option value="${m.id}">${m.name}</option>`;
+  });
+}
+
+// ✅ Add this:
+async function loadCategoryAttributes(categoryId) {
+  try {
+    const res = await fetch(`/api/category_attributes/?category=${categoryId}`);
+    const data = await res.json();
+    renderAttributes(data);
+  } catch (err) {
+    console.error("Error loading category attributes:", err);
+  }
+}
+
+// ------------------------------------------
+// Render attributes (your provided function)
+// ------------------------------------------
+
+function renderAttributes(attributes) {
+  const container = document.getElementById('attributes-container');
+  container.innerHTML = '';
+
+  attributes.forEach(attr => {
+    const inputGroup = document.createElement('div');
+    inputGroup.classList.add('input-group');
+
+    const label = document.createElement('label');
+    label.textContent = attr.label || attr.name;
+
+    if (attr.field_type === 'select') {
+      const wrapper = document.createElement('div');
+      wrapper.style.display = 'flex';
+      wrapper.style.gap = '0.5rem';
+      wrapper.style.alignItems = 'center';
+
+      const select = document.createElement('select');
+      select.id = `attr_${attr.id}`;
+      select.classList.add('input-field');
+      select.style.flex = '1';
+      select.innerHTML = `<option value="" selected disabled>-- Select ${attr.label} --</option>`;
+      (attr.options || []).forEach(opt => {
+        const o = document.createElement('option');
+        o.value = opt;
+        o.textContent = opt;
+        select.appendChild(o);
+      });
+
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button';
+      addBtn.classList.add('add-btn');
+      addBtn.textContent = '+';
+      addBtn.onclick = () =>
+        openAddModal('attribute_option', {
+          attributeId: attr.id,
+          selectElement: select
+        });
+
+      wrapper.appendChild(select);
+      wrapper.appendChild(addBtn);
+      inputGroup.appendChild(label);
+      inputGroup.appendChild(wrapper);
+    } else {
+      const input = document.createElement('input');
+      input.type = attr.field_type === 'number' ? 'number' : 'text';
+      input.id = `attr_${attr.id}`;
+      input.classList.add('input-field');
+      inputGroup.appendChild(label);
+      inputGroup.appendChild(input);
+    }
+
+    container.appendChild(inputGroup);
+  });
+}
+
+
+document.getElementById('category').addEventListener('change', async (e) => {
+    const categoryId = e.target.value;
+    document.getElementById('manufacturer').disabled = true;
+    document.getElementById('model').disabled = true;
+    document.getElementById('attributes-container').innerHTML = '';
+
+    // Fetch manufacturers for this category
+    const response = await fetch(`/api/manufacturers/?category=${categoryId}`);
+    const manufacturers = await response.json();
+
+    const manufacturerSelect = document.getElementById('manufacturer');
+    manufacturerSelect.innerHTML = `<option value="" selected disabled>-- Select Manufacturer --</option>`;
+    manufacturers.forEach(m => {
+        manufacturerSelect.innerHTML += `<option value="${m.id}">${m.name}</option>`;
+    });
+    manufacturerSelect.disabled = false;
+
+    const addNewBtn = manufacturerSelect.nextElementSibling;
+    addNewBtn.disabled = false
+
+});
+
+document.getElementById('manufacturer').addEventListener('change', async (e) => {
+    const categoryId = document.getElementById('category').value;
+    const manufacturerId = e.target.value;
+
+    const modelSelect = document.getElementById('model');
+    modelSelect.disabled = true;
+    modelSelect.innerHTML = `<option value="" selected disabled>-- Select Model --</option>`;
+
+    // Fetch models for category + manufacturer
+    const response = await fetch(`/api/models/?category=${categoryId}&manufacturer=${manufacturerId}`);
+    const models = await response.json();
+
+    models.forEach(m => {
+        modelSelect.innerHTML += `<option value="${m.id}">${m.name}</option>`;
+    });
+    modelSelect.disabled = false;
+
+    const addNewBtn = modelSelect.nextElementSibling;
+    addNewBtn.disabled = false
+});
+
+document.getElementById('model').addEventListener('change', async (e) => {
+    const categoryId = document.getElementById('category').value;
+    loadCategoryAttributes(categoryId);
+});
 
 
 

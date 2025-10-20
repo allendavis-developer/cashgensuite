@@ -45,4 +45,5 @@ urlpatterns = [
     path('api/add_category/', v.add_category, name='api-add-category'),
     path('api/add_manufacturer/', v.add_manufacturer, name='api-add-manufacturer'),
     path('api/add_model/', v.add_model, name='api-add-model'),
+    path('api/add_attribute_option/', v.add_attribute_option, name='api-add-attribute-option'),
 ]
