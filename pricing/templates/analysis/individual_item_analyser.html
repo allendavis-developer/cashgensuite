@@ -569,7 +569,10 @@ async function scrapePrices() {
             action: "scrape",
             data: {
                 query: itemName,
-                competitors: selectedCompetitors
+                competitors: selectedCompetitors,
+                category: attributeData.categoryName,
+                model: attributeData.modelName,
+                attributes: attributeData.attributes
             }
         });
 
@@ -863,15 +866,6 @@ function collectListingData() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Existing prefilled item/description logic
-    const prefilledItem = "{{ prefilled_item|escapejs }}";
-    const prefilledDescription = "{{ prefilled_description|escapejs }}";
-
-    if (prefilledItem && prefilledDescription) {
-        document.getElementById('item-name').value = prefilledItem;
-        document.getElementById('description').value = prefilledDescription;
-    }
-
     const costInput = document.getElementById('cost-price');
     if (costInput && costInput.value) {
         setRRPAfterTable(costInput.value);
@@ -1327,7 +1321,7 @@ document.getElementById('manufacturer').addEventListener('change', async (e) => 
     // Fetch models for category + manufacturer
     const response = await fetch(`/api/models/?category=${categoryId}&manufacturer=${manufacturerId}`);
     const models = await response.json();
-    
+
     // Sort models alphabetically by name
     models.sort((a, b) => a.name.localeCompare(b.name));
 
