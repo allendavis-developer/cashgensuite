@@ -11,6 +11,13 @@
 {% block search_term %}
 
 <div class="input-group">
+    <!-- Display original prefilled data as a heading -->
+{% if prefilled_data.name %}
+  <h3 id="original-search-term" style="margin-bottom: 10px; color: white; display: flex; gap: 0.5rem; align-items: center">
+    {{ prefilled_data.name }}
+  </h3>
+{% endif %}
+
     <label for="category">Category</label>
     <div style="display: flex; gap: 0.5rem; align-items: center;">
       <select id="category" class="input-field" style="flex: 1;">
@@ -43,7 +50,9 @@
     </div>
   </div>
 
-    <div id="attributes-container" style="margin-top: 10px;"></div>
+  <div id="attributes-container" style="margin-top: 10px;"></div>
+
+
 
   <div class="input-row">
     <div class="input-group" style="flex: 2;">
