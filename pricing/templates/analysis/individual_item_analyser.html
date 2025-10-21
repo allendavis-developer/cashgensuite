@@ -1138,17 +1138,6 @@ async function loadCategoryAttributes(categoryId) {
   }
 }
 
-function checkAllAttributesFilled() {
-    const attributeInputs = document.querySelectorAll('#attributes-container .input-field');
-    const allFilled = Array.from(attributeInputs).every(input => input.value.trim() !== '');
-    
-    if (allFilled && attributeInputs.length > 0) {
-        console.log("yes!");
-        checkExistingItems();
-        // Call any function here if needed
-    }
-}
-
 // Called when model changes or attribute values change
 async function maybeCheckExistingItems() {
     const data = collectAttributeData();
@@ -1309,11 +1298,6 @@ function renderAttributes(attributes) {
     container.appendChild(inputGroup);
   });
 
-  // Add attribute listeners
-  const acontainer = document.getElementById('attributes-container');
-    acontainer.querySelectorAll('.input-field').forEach(input => {
-        input.addEventListener('input', checkAllAttributesFilled);
-    });
 }
 
 

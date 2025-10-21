@@ -9,7 +9,7 @@ def get_competitor_data(item_title: str, include_url: bool = True) -> str:
     if not item_title:
         return ""
 
-    listings = CompetitorListing.objects.filter(market_item__title__icontains=item_title)
+    listings = CompetitorListing.objects.filter(market_item__title__iexact=item_title)
     lines = []
     for l in listings:
         price_str = f"£{l.price:.2f}" if l.price is not None else "N/A"

@@ -670,7 +670,7 @@
       <label for="sort-price">Sort by:</label>
       <select id="sort-price">
         <option value="none">None</option>
-        <option value="asc">Lowest → Highest</option>
+        <option value="asc" selected>Lowest → Highest</option>
         <option value="desc">Highest → Lowest</option>
       </select>
 
@@ -1013,8 +1013,9 @@ function computeSourceAverages() {
     const sourceData = {};       // Prices actually included per source
     const sourceModeData = {};   // All prices per source for mode calculation
     const relevantPrices = [];   // All prices included for market stats
+    const relevantVisiblePrices = [];   // All prices included for market stats
 
-    // 1️⃣ Determine if any checkboxes are checked per source
+    // Determine if any checkboxes are checked per source
     const sourceCheckedState = {};
     rows.forEach(row => {
         if (row.cells.length < 5) return;
@@ -1024,7 +1025,8 @@ function computeSourceAverages() {
         if (checkbox && checkbox.checked) sourceCheckedState[source] = true;
     });
 
-    // 2️⃣ Collect prices based on selection logic
+
+    // Collect prices based on selection logic
     rows.forEach(row => {
         if (row.cells.length < 5) return;
 
@@ -1037,17 +1039,25 @@ function computeSourceAverages() {
         sourceModeData[source].push(price);
 
         const checkbox = row.querySelector('.range-checkbox');
+        // Is this row currently in the visible tbody?
+        const isVisible = row.closest('#competitor-tbody') !== null;
+
         let includeRow = false;
+        let includeInVisibleSet = false;
 
         if (source === "CEX") {
-            // ✅ Always include CEX
+            //  Always include CEX
             includeRow = true;
+            includeInVisibleSet = isVisible;
         } else if (sourceCheckedState[source]) {
-            // ✅ Some rows checked → include only checked
+            // Some rows checked → include only checked
             includeRow = checkbox && checkbox.checked;
+            includeInVisibleSet = includeRow && isVisible;
+
         } else {
-            // ✅ No rows checked → include all
+            //  No rows checked → include all
             includeRow = true;
+            includeInVisibleSet = isVisible;
         }
 
         if (includeRow) {
@@ -1055,11 +1065,14 @@ function computeSourceAverages() {
             sourceData[source].push(price);
             relevantPrices.push(price);
         }
+
+        if (includeInVisibleSet) {
+            relevantVisiblePrices.push(price);
+        }
     });
 
 
-
-    // 3️⃣ Compute averages, min, max, mode
+    // Compute averages, min, max, mode
     const sourceAverages = {};
     Object.keys(sourceData).forEach(source => {
         const prices = sourceData[source];
@@ -1092,12 +1105,12 @@ function computeSourceAverages() {
     });
 
 
-    // 4️⃣ Update market stats
+    // Update market stats based only on the visible prices
     const marketStats = document.getElementById('market-stats');
-    if (relevantPrices.length > 0) {
-        const minPrice = Math.min(...relevantPrices);
-        const maxPrice = Math.max(...relevantPrices);
-        const avgPrice = relevantPrices.reduce((a, b) => a + b, 0) / relevantPrices.length;
+    if (relevantVisiblePrices.length > 0) {
+        const minPrice = Math.min(...relevantVisiblePrices);
+        const maxPrice = Math.max(...relevantVisiblePrices);
+        const avgPrice = relevantVisiblePrices.reduce((a, b) => a + b, 0) / relevantVisiblePrices.length;
 
         document.getElementById('price-range').textContent = `£${minPrice} - £${maxPrice}`;
         document.getElementById('price-average').textContent = `£${avgPrice.toFixed(0)}`;
@@ -1107,7 +1120,7 @@ function computeSourceAverages() {
         document.getElementById('price-average').textContent = '-';
     }
 
-    // 5️⃣ Populate analysis table
+    // Populate analysis table
     const tbody = document.getElementById('analysis-tbody');
     if (!tbody) return;
 
@@ -1145,7 +1158,7 @@ function setRRPAfterTable(costPrice) {
         currentCostPrice = null;
         return;
     }
-    console.log('✅ Cost price stored:', currentCostPrice);
+    console.log('Cost price stored:', currentCostPrice);
 }
 
 function updateRRPCell() {
