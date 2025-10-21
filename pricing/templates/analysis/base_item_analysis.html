@@ -587,6 +587,30 @@
         </div>
     {% endblock search_term %}
 
+    
+  {% block slider %}
+  <div class="input-group">
+    <label class="input-label" for="custom-slider">CEX Discount Percent (0–30)</label>
+    <input
+      type="range"
+      id="custom-slider"
+      class="input-field"
+      min="0"
+      max="30"
+      step="1"
+      value="20"
+      oninput="document.getElementById('slider-value').textContent = this.value"
+    >
+    <span id="slider-value">20</span>
+  </div>
+  {% endblock slider %}
+ 
+  {% block margin %}
+    <div class="input-group">
+      <label class="input-label">Minimum Margin (%)</label>
+      <input type="number" id="minimum-margin" class="input-field" placeholder="37.5" value="37.5" step="0.1" min="0" max="100">
+    </div>
+  {% endblock margin %}
 
   {% block description %}
     <div class="input-group">
@@ -596,6 +620,7 @@
   {% endblock description %}
 
   {% block after_description %}{% endblock after_description %}
+
 
   {% block urgency %}
     <div class="input-group">
@@ -610,12 +635,7 @@
     </div>
   {% endblock urgency %}
 
-  {% block margin %}
-    <div class="input-group">
-      <label class="input-label">Minimum Margin (%)</label>
-      <input type="number" id="minimum-margin" class="input-field" placeholder="37.5" value="37.5" step="0.1" min="0" max="100">
-    </div>
-  {% endblock margin %}
+ 
 
   {% block analyze_button %}
     <button type="button" id="analyze-btn" class="analyze-button" onclick="analyzeItem()">
@@ -638,7 +658,7 @@
       <thead>
         <tr>
           <th>CEX Mode</th>
-          <th>CEX - Discount % (20% for now)</th>
+          <th>CEX - Discount</th>
           <th>Cost Price + Minimum Margin</th>
           <th>Cash Converters Lowest</th>
           <th>Cash Converters Mode</th>
@@ -1006,6 +1026,8 @@ function applySortAndFilter() {
 document.getElementById('sort-price').addEventListener('change', applySortAndFilter);
 document.getElementById('filter-source').addEventListener('change', applySortAndFilter);
 
+let currentCexMode = null;
+
 
 function computeSourceAverages() {
     const rows = allCompetitorRows;
@@ -1130,14 +1152,16 @@ function computeSourceAverages() {
     const cex = normalized['CEX'] || {};
     const cc = normalized['CASHCONVERTERS'] || {};
     const cg = normalized['CASHGENERATOR'] || {};
+    currentCexMode = cex.mode || null; // store globally for use by the event listener
 
-    const cexMinus20 = cex.mode ? `£${(cex.mode * 0.8).toFixed(0)}` : '-';
+    cexMinusDiscount = 0.8 * cex.mode;
+
     const suggestedRRP = '';
 
     tbody.innerHTML = `
         <tr>
-            <td>${cex.mode ? `£${cex.mode.toFixed(0)}` : '-'}</td>
-            <td>${cexMinus20}</td>
+            <td id="cex-mode">${cex.mode ? `£${cex.mode.toFixed(0)}` : '-'}</td>
+            <td id="cex-discount-cell">${cexMinusDiscount}</td>
             <td id="rrp-cell">${suggestedRRP}</td>
             <td>${cc.min ? `£${cc.min.toFixed(0)}` : '-'}</td>
             <td>${cc.mode ? `£${cc.mode.toFixed(0)}` : '-'}</td>
@@ -1147,8 +1171,27 @@ function computeSourceAverages() {
     `;
 
     updateRRPCell();
+    updateCEXDiscountCell(cex.mode);
 }
 
+function updateCEXDiscountCell(cexMode) {
+  const discountSlider = document.getElementById('custom-slider');
+  const discountPercent = discountSlider ? parseFloat(discountSlider.value) : 0;
+
+  const discountMultiplier = (100 - discountPercent) / 100;
+
+  const cexMinusDiscount = cexMode
+    ? `£${(cexMode * discountMultiplier).toFixed(0)}`
+    : '-';
+
+  const cexDiscountCell = document.getElementById('cex-discount-cell');
+    if (!cexDiscountCell) {
+        console.warn("CEX Discount cell not found in table");
+        return;
+    }
+    
+  cexDiscountCell.textContent = cexMinusDiscount;
+}
 
 // Store cost price
 function setRRPAfterTable(costPrice) {
@@ -1181,13 +1224,20 @@ function updateRRPCell() {
     rrpCell.textContent = `£${rrp}`;
 }
 
-// Auto-update when margin field changes
 document.addEventListener('DOMContentLoaded', () => {
+// Auto-update when margin field changes
     const marginInput = document.getElementById('minimum-margin');
     if (marginInput) {
         marginInput.addEventListener('input', () => {
             updateRRPCell();
         });
+    }
+
+    const discountSlider = document.getElementById('custom-slider');
+    if (discountSlider) {
+      discountSlider.addEventListener('input', () => {
+        updateCEXDiscountCell(currentCexMode);
+      });
     }
 });
 
