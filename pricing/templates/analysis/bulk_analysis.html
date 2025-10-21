@@ -320,7 +320,15 @@ async function startScraping() {
           product.branch = branchName;
 
           row.cells[2].textContent = product.barserial || '-';
-          row.cells[3].textContent = product.name || '-';
+
+          // Make name a clickable link if URL exists
+          if (product.url) {
+              row.cells[3].innerHTML = `<a href="${product.url}" target="_blank" style="color:#88f; text-decoration:underline;">${product.name || '-'}</a>`;
+          } else {
+              row.cells[3].textContent = product.name || '-';
+              row.cells[3].style.color = '';
+          }
+          
           row.cells[4].textContent = product.description || '-';
           row.cells[5].textContent = product.cost_price || '-';
           row.cells[6].textContent = product.retail_price || '-';
