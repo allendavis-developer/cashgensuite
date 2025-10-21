@@ -556,6 +556,7 @@ async function scrapePrices() {
         return;
     }
 
+    // YOU GOTTA CLEAN THIS UP THIS IS DISGUSTING DUPLICATE CODE
     const attributeData = collectAttributeData();
     if (!attributeData) {
         alert('Please select both category and model before scraping.');
@@ -576,6 +577,27 @@ async function scrapePrices() {
             }
         });
 
+
+        // Collect category, model, and attributes
+        const categorySelect = document.getElementById('category');
+        const modelSelect = document.getElementById('model');
+        const categoryId = categorySelect.value;
+        const categoryName = categorySelect.options[categorySelect.selectedIndex]?.text || '';
+        const modelId = modelSelect.value;
+        const modelName = modelSelect.options[modelSelect.selectedIndex]?.text || '';
+
+        const attributeInputs = document.querySelectorAll('#attributes-container .input-field');
+        const attributes = {};
+        attributeInputs.forEach(input => {
+            const inputGroup = input.closest('.input-group');
+            const label = inputGroup?.querySelector('label');
+            const labelText = label?.textContent?.trim() || '';
+            if (labelText) {
+                const key = labelText.toLowerCase().replace(/\s+/g, '_');
+                if (input.value) attributes[key] = input.value.trim();
+            }
+        });
+
         await fetch("/save_scraped_data/", {
             method: "POST",
             headers: {
@@ -584,9 +606,9 @@ async function scrapePrices() {
             },
             body: JSON.stringify({
                 item_name: itemName,
-                category: attributeData.categoryName,
-                item_model: attributeData.modelName,
-                attributes: attributeData.attributes, // all attributes collected
+                category: categoryId,
+                item_model: modelId,
+                attributes: attributes,
                 competitors: selectedCompetitors,
                 results: response.results,
                 timestamp: new Date().toISOString(),
@@ -613,6 +635,7 @@ async function scrapePrices() {
         scrapeBtn.textContent = 'Scrape Prices';
     }
 }
+
 
 // -------------------------------
 // 🧩 ANALYSIS PHASE (Two-step: CashConverters → CashGenerator)
