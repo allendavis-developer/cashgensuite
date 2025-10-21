@@ -556,32 +556,20 @@ async function scrapePrices() {
         return;
     }
 
+    const attributeData = collectAttributeData();
+    if (!attributeData) {
+        alert('Please select both category and model before scraping.');
+        scrapeBtn.disabled = false;
+        scrapeBtn.textContent = 'Scrape Prices';
+        return;
+    }
+
     try {
         const response = await sendExtensionMessage({
             action: "scrape",
             data: {
                 query: itemName,
                 competitors: selectedCompetitors
-            }
-        });
-
-        // Collect category, model, and attributes
-        const categorySelect = document.getElementById('category');
-        const modelSelect = document.getElementById('model');
-        const categoryId = categorySelect.value;
-        const categoryName = categorySelect.options[categorySelect.selectedIndex]?.text || '';
-        const modelId = modelSelect.value;
-        const modelName = modelSelect.options[modelSelect.selectedIndex]?.text || '';
-
-        const attributeInputs = document.querySelectorAll('#attributes-container .input-field');
-        const attributes = {};
-        attributeInputs.forEach(input => {
-            const inputGroup = input.closest('.input-group');
-            const label = inputGroup?.querySelector('label');
-            const labelText = label?.textContent?.trim() || '';
-            if (labelText) {
-                const key = labelText.toLowerCase().replace(/\s+/g, '_');
-                if (input.value) attributes[key] = input.value.trim();
             }
         });
 
@@ -593,9 +581,9 @@ async function scrapePrices() {
             },
             body: JSON.stringify({
                 item_name: itemName,
-                category: categoryId,
-                item_model: modelId,
-                attributes: attributes,
+                category: attributeData.categoryName,
+                item_model: attributeData.modelName,
+                attributes: attributeData.attributes, // all attributes collected
                 competitors: selectedCompetitors,
                 results: response.results,
                 timestamp: new Date().toISOString(),
@@ -1123,19 +1111,6 @@ async function saveNewItem() {
 }
 
 
-async function loadModels() {
-  const categoryId = document.getElementById('category').value;
-  const manufacturerId = document.getElementById('manufacturer').value;
-  const response = await fetch(`/api/models/?category=${categoryId}&manufacturer=${manufacturerId}`);
-  const models = await response.json();
-  
-  const modelSelect = document.getElementById('model');
-  modelSelect.innerHTML = `<option value="" selected disabled>-- Select Model --</option>`;
-  models.forEach(m => {
-    modelSelect.innerHTML += `<option value="${m.id}">${m.name}</option>`;
-  });
-}
-
 // ✅ Add this:
 async function loadCategoryAttributes(categoryId) {
   try {
@@ -1352,6 +1327,9 @@ document.getElementById('manufacturer').addEventListener('change', async (e) => 
     // Fetch models for category + manufacturer
     const response = await fetch(`/api/models/?category=${categoryId}&manufacturer=${manufacturerId}`);
     const models = await response.json();
+    
+    // Sort models alphabetically by name
+    models.sort((a, b) => a.name.localeCompare(b.name));
 
     models.forEach(m => {
         modelSelect.innerHTML += `<option value="${m.id}">${m.name}</option>`;
