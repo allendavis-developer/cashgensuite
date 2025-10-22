@@ -3,18 +3,777 @@
 {% block title %}Buyer{% endblock %}
 {% block header_title %}BUYING ANALYSIS{% endblock %}
 {% block panel_title %}INPUT PANEL{% endblock %}
+{% block analyze_range_button %}
+    <button type="button" id="analyze-btn" class="analyze-button" onclick="analyzeTableBuying()">
+      <span id="button-text">ANALYZE SELECTED RANGE</span>
+      <span id="button-spinner" class="loading-spinner hidden"></span>
+    </button>
+{% endblock analyze_range_button %}
 
 {% block analysis_section %}
-  {{ block.super }}
+<div class="analysis-section analysis-scroll-container" id="analysis-section" style="display: none;">
 
+    <div class="analysis-content-wrapper">
+        <div class="analysis-header">
+            <div class="analysis-status">⚡ ANALYSIS COMPLETE</div>
+            <div class="analysis-time" id="analysis-time">just now</div>
+        </div>
+
+        <!-- Price Panels -->
+        <div class="price-panels-container">
+            <div class="price-panel">
+                <div class="price-panel-label">Recommended Selling Price</div>
+                <div class="price-panel-value" id="recommended-price-display">£0.00</div>
+            </div>
+
+            <!-- Competitor Price Comparison -->
+          <div class="competitor-price-container">
+            <div class="competitor-price-panel">
+              <div class="competitor-label">Cash Converters Price</div>
+              <div class="competitor-value" id="cc-price-display">£0.00</div>
+            </div>
+            <div class="competitor-price-panel">
+              <div class="competitor-label">Cash Generator Price</div>
+              <div class="competitor-value" id="cg-price-display">£0.00</div>
+            </div>
+          </div>
+
+            <div class="price-panel">
+                <div class="price-panel-label">Recommended Buying Range</div>
+                <div class="buying-range-display">
+                    <div class="buying-price-item">
+                        <div class="buying-price-value" id="buying-price-min">£0.00</div>
+                        <div class="buying-price-sublabel">Min</div>
+                    </div>
+                    <div class="buying-price-separator">—</div>
+                    <div class="buying-price-item">
+                        <div class="buying-price-value" id="buying-price-max">£0.00</div>
+                        <div class="buying-price-sublabel">Max</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reasoning Panels -->
+        <div class="reasoning-panels-container">
+            <div class="reasoning-panel">
+                <div class="reasoning-panel-label">Reasoning - Selling Price</div>
+                <div class="reasoning-panel-text" id="reasoning-text-content">
+                    Analysis will appear here...
+                </div>
+            </div>
+            <div class="reasoning-separator"></div>
+            <div class="reasoning-panel">
+                <div class="reasoning-panel-label">Reasoning - Buying Price</div>
+                <div class="reasoning-panel-text" id="reasoning-buying-text">
+                    Buying analysis will appear here...
+                </div>
+            </div>
+        </div>
+
+        <!-- Negotiation Console -->
+        <div class="negotiation-console">
+            <h2 class="negotiation-title">Negotiation Console</h2>
+
+            <div class="customer-target-section">
+                <label for="customer-target" class="customer-target-label">
+                    What price is the customer looking for today?
+                </label>
+                <div class="customer-input-row">
+                    <input
+                        type="number"
+                        id="customer-target"
+                        class="customer-target-input"
+                        placeholder="Enter amount (e.g. 90)"
+                        min="0"
+                    />
+                    <button id="start-negotiation" class="start-negotiation-btn">Start Negotiation</button>
+                </div>
+            </div>
+
+            <div id="negotiation-engine" class="negotiation-engine">
+                <hr class="negotiation-divider"/>
+
+                <div class="negotiation-response">
+                    <h3 class="negotiation-subtitle">YOUR RESPONSE</h3>
+                    <p class="negotiation-offer">
+                        Offer <span id="next-offer" class="offer-amount">£70</span> and say —
+                    </p>
+                    <p class="negotiation-line" id="response-line">
+                        "We can pay you cash right now — no waiting, no fees."
+                    </p>
+                </div>
+
+                <hr class="negotiation-divider"/>
+
+                <div class="negotiation-customer">
+                    <h3 class="negotiation-subtitle">CUSTOMER SAID</h3>
+                    <p class="negotiation-hint">(select what the customer just said)</p>
+                    <div class="negotiation-options">
+                        <button class="negotiation-option">"No, that's too low."</button>
+                        <button class="negotiation-option">"CEX offered me £100."</button>
+                        <button class="negotiation-option">"Another shop offered more for this model."</button>
+                        <button class="negotiation-option">"I was expecting at least £90."</button>
+                        <button class="negotiation-option custom">➕ Add Custom Line…</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_style %}
-  {{ block.super }}
+{{ block.super }}
+
+.analysis-content-wrapper {
+  padding: 20px;
+}
+
+.price-panels-container {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+  margin-bottom: 20px;
+}
+
+.price-panel {
+  flex: 1;
+  background-color: #111111;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.competitor-price-container {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+  margin-bottom: 20px;
+}
+
+.competitor-price-panel {
+  flex: 1;
+  background-color: #111111;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+
+.competitor-label {
+  font-size: 14px;
+  color: #aaa;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.competitor-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #4a9eff;
+}
+
+
+.price-panel-label {
+  font-size: 16px;
+  color: #888;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.price-panel-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+}
+
+.buying-range-display {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.buying-price-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.buying-price-separator {
+  font-size: 24px;
+  color: #666;
+}
+
+.buying-price-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #4ade80;
+}
+
+.buying-price-sublabel {
+  font-size: 10px;
+  color: #666;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.reasoning-panels-container {
+  display: flex;
+  gap: 0;
+  align-items: stretch;
+  margin-bottom: 20px;
+}
+
+.reasoning-panel {
+  flex: 1;
+  background-color: #111111;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.reasoning-panels-container .reasoning-panel:first-child {
+  border-right: none;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.reasoning-panels-container .reasoning-panel:last-child {
+  border-left: none;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.reasoning-separator {
+  width: 1px;
+  background-color: #333;
+  align-self: stretch;
+}
+
+.reasoning-panel-label {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.reasoning-panel-text {
+  color: #ccc;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+/* ==============================
+   NEGOTIATION CONSOLE
+============================== */
+.negotiation-console {
+  margin-top: 2rem;
+  background: rgba(20, 20, 22, 0.95);
+  border: 1px solid #333;
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  color: #f5f5f7;
+  font-family: "Inter", system-ui, sans-serif;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.negotiation-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: #ccc;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.customer-target-section {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.customer-target-label {
+  display: block;
+  font-weight: 800;
+  font-size: 1.6rem;
+  text-transform: uppercase;
+  color: #ffffff;
+  letter-spacing: 1px;
+  margin-bottom: 1rem;
+}
+
+.customer-target-input {
+  width: 160px;
+  background: #0f0f0f;
+  border: 1px solid #444;
+  border-radius: 10px;
+  padding: 0.75rem;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.customer-target-input:focus {
+  border-color: #4a9eff;
+  outline: none;
+  background: #111820;
+  box-shadow: 0 0 6px rgba(74, 158, 255, 0.4);
+}
+
+.customer-input-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.start-negotiation-btn {
+  background: #4ade80;
+  color: #fff;
+  font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  padding: 0.9rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: fit-content;
+}
+
+.start-negotiation-btn:hover {
+  background: #3acb70;
+  transform: translateY(-1px);
+}
+
+.start-negotiation-btn:active {
+  background: #34b364;
+  transform: translateY(0);
+}
+
+.negotiation-engine {
+  display: none;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.4s ease;
+}
+
+.negotiation-engine.visible {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.negotiation-divider {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 1.5rem 0;
+}
+
+.negotiation-subtitle {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #ccc;
+  margin-bottom: 0.75rem;
+}
+
+.negotiation-offer {
+  font-size: 1.1rem;
+  color: #ddd;
+  margin-bottom: 0.5rem;
+}
+
+.offer-amount {
+  color: #4ade80;
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+.negotiation-line {
+  font-size: 1rem;
+  color: #f5f5f7;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  display: inline-block;
+  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.03);
+}
+
+.negotiation-hint {
+  color: #888;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.negotiation-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.negotiation-option {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  color: #f5f5f7;
+  width: 70%;
+  max-width: 420px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.negotiation-option:hover {
+  background: rgba(74, 158, 255, 0.15);
+  border-color: rgba(74, 158, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.negotiation-option.custom {
+  color: #ccc;
+  font-style: italic;
+}
+
+.negotiation-option.custom:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
 {% endblock %}
 
 {% block extra_script %}
-  {{ block.super }}
-  <script>
-  </script>
+{{ block.super }}
+<script>
+// ==============================
+// BUYING RANGE CALCULATION
+// ==============================
+function calculateBuyingRange(sellingPrice, marginPercent) {
+    const numPrice = parseFloat(sellingPrice.replace(/[^0-9.]/g, ''));
+    const margin = parseFloat(marginPercent) / 100;
+    
+    // Calculate max buying price based on margin
+    // If margin is 37.5%, then buying price = selling price / (1 + 0.375)
+    const maxBuying = numPrice / (1 + margin);
+    
+    // Min is 10% less than max
+    const minBuying = maxBuying * 0.9;
+    
+    return {
+        min: `£${minBuying.toFixed(2)}`,
+        max: `£${maxBuying.toFixed(2)}`
+    };
+}
+
+// ==============================
+// DISPLAY ANALYSIS WITH BUYING RANGE
+// ==============================
+function displayBuyingAnalysis(reasoning, suggestedPrice, buyingRange, buyingReasoning) {
+    const analysisSection = document.getElementById('analysis-section');
+    const recommendedPriceDisplay = document.getElementById('recommended-price-display');
+    const buyingPriceMin = document.getElementById('buying-price-min');
+    const buyingPriceMax = document.getElementById('buying-price-max');
+    const reasoningTextContent = document.getElementById('reasoning-text-content');
+    const buyingReasoningText = document.getElementById('reasoning-buying-text');
+    const analysisTime = document.getElementById('analysis-time');
+
+    // Show the analysis section
+    analysisSection.style.display = 'block';
+    
+    // Update price displays
+    recommendedPriceDisplay.textContent = suggestedPrice;
+    
+    // Update reasoning displays
+    if (reasoningTextContent) reasoningTextContent.innerHTML = reasoning;
+    if (buyingReasoningText) buyingReasoningText.innerHTML = buyingReasoning;
+
+    // Update buying range
+    if (buyingRange) {
+        buyingPriceMin.textContent = buyingRange.min;
+        buyingPriceMax.textContent = buyingRange.max;
+    }
+
+    analysisTime.textContent = 'just now';
+    analysisSection.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ==============================
+// OVERRIDE analyzeTable FOR BUYING
+// ==============================
+async function analyzeTableBuying() {
+    const itemName = document.getElementById('item-name').value.trim();
+    const description = document.getElementById('description').value.trim();
+    const costPrice = parseFloat(document.getElementById('cost-price').value) || 0;
+
+    let competitorData = extractCompetitorTableData();
+
+    const cashConvertersData = competitorData.filter(
+        item => item.competitor.toLowerCase() === 'cashconverters'
+    );
+    const cashGeneratorData = competitorData.filter(
+        item => item.competitor.toLowerCase() === 'cashgenerator'
+    );
+
+    if (cashConvertersData.length === 0 && cashGeneratorData.length === 0) {
+        alert("Please scrape and mark relevant rows for Cash Converters or Cash Generators first.");
+        return;
+    }
+
+    const anyRanges =
+        cashConvertersData.some(d => d.range) ||
+        cashGeneratorData.some(d => d.range);
+
+    if (!anyRanges) {
+        alert("No items selected for range. Please select at least one item before analyzing.");
+        return;
+    }
+
+    const ccPriceEl = document.getElementById("cc-price-display");
+    const cgPriceEl = document.getElementById("cg-price-display");
+
+    const analysisSection = document.getElementById('analysis-section');
+    const reasoningText = document.getElementById('reasoning-text-content');
+    ccPriceEl.innerHTML = '-';
+    ccPriceEl.innerHTML = '-';
+    reasoningText.innerHTML = '';
+    analysisSection.style.display = 'none';
+
+    // Compute both CC and CG prices separately
+    const ccResult = cashConvertersData.length > 0
+        ? getSuggestedPrice(cashConvertersData)
+        : null;
+
+    const cgResult = cashGeneratorData.length > 0
+        ? getSuggestedPrice(cashGeneratorData)
+        : null;
+
+
+    // Get selling price from CC or CG data
+    let sellingPriceResult = null;
+    let sellingReasoning = '';
+
+
+    if (ccResult && ccResult.suggested) {
+        ccPriceEl.textContent = `£${ccResult.suggested.toFixed(2)}`;
+    } else {
+        ccPriceEl.textContent = "—";
+    }
+
+    if (cgResult && cgResult.suggested) {
+        cgPriceEl.textContent = `£${cgResult.suggested.toFixed(2)}`;
+    } else {
+        cgPriceEl.textContent = "—";
+    }
+
+    // Choose one as the recommended selling price (average or CC if both)
+    if (ccResult && cgResult && ccResult.suggested && cgResult.suggested) {
+        sellingPriceResult = (ccResult.suggested + cgResult.suggested) / 2;
+        sellingReasoning = `
+            <strong>Combined Reasoning:</strong><br>
+            CashConverters suggested £${ccResult.suggested.toFixed(2)}<br>
+            CashConverters Reasoning: ${ccResult.reasoning}<br>
+            CashGenerator suggested £${cgResult.suggested.toFixed(2)}<br>
+            CashGenerator Reasoning: ${cgResult.reasoning}<br>
+            Averaged for balance: £${sellingPriceResult.toFixed(2)}.
+        `;
+    } else if (ccResult && ccResult.suggested) {
+        sellingPriceResult = ccResult.suggested;
+        sellingReasoning = `[CashConverters]<br>${ccResult.reasoning}`;
+    } else if (cgResult && cgResult.suggested) {
+        sellingPriceResult = cgResult.suggested;
+        sellingReasoning = `[CashGenerator]<br>${cgResult.reasoning}`;
+    }
+
+    if (!sellingPriceResult) {
+        alert("Could not determine a selling price from selected ranges.");
+        analysisSection.style.display = 'none';
+        return;
+    }
+
+    // Round to nearest £2
+    const roundedSellingPrice = Math.round(sellingPriceResult / 2) * 2;
+    const sellingPriceFormatted = `£${roundedSellingPrice.toFixed(2)}`;
+
+    // Call AI for buying range analysis
+    try {
+        const buyingResponse = await fetch("/api/buying-range-analysis/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken")
+            },
+            body: JSON.stringify({
+                item_name: itemName,
+                description: description,
+                suggested_price: sellingPriceFormatted,
+            })
+        });
+
+        const buyingData = await buyingResponse.json();
+        console.log("Buying range AI response:", buyingData);
+
+        let minPrice = "£0.00";
+        let maxPrice = "£0.00";
+        let buyingReasoning = "Calculating buying range...";
+
+        if (buyingData.success && buyingData.ai_response) {
+            buyingReasoning = buyingData.ai_response;
+            const match = buyingData.ai_response.match(/FINAL:(\d+)%\s*[-–]\s*(\d+)%/i);
+            if (match) {
+                const minPct = parseFloat(match[1]);
+                const maxPct = parseFloat(match[2]);
+                const basePrice = roundedSellingPrice;
+                minPrice = `£${(basePrice * (minPct / 100)).toFixed(2)}`;
+                maxPrice = `£${(basePrice * (maxPct / 100)).toFixed(2)}`;
+            }
+        }
+
+        displayBuyingAnalysis(
+            sellingReasoning,
+            sellingPriceFormatted,
+            { min: minPrice, max: maxPrice },
+            buyingReasoning
+        );
+    } catch (error) {
+        console.error('Error calling buying range API:', error);
+        alert('Error calculating buying range. Please try again.');
+    }
+}
+
+// ==============================
+// NEGOTIATION CONSOLE
+// ==============================
+document.addEventListener("DOMContentLoaded", function() {
+    const targetInput = document.getElementById("customer-target");
+    const startBtn = document.getElementById("start-negotiation");
+    const negotiationEngine = document.getElementById("negotiation-engine");
+
+    if (!targetInput || !startBtn || !negotiationEngine) return;
+
+    async function startNegotiation() {
+        const value = targetInput.value.trim();
+        if (value && !isNaN(value)) {
+            negotiationEngine.classList.add("visible");
+            startBtn.disabled = true;
+            targetInput.disabled = true;
+            startBtn.textContent = "Generating offer…";
+            await fetchNegotiationStep();
+            startBtn.textContent = "Negotiation Active";
+        }
+    }
+
+    async function fetchNegotiationStep(conversationHistory = []) {
+        const itemName = document.getElementById("item-name").value;
+        const description = document.getElementById("description").value;
+        const suggestedPrice = document.getElementById("recommended-price-display").textContent.replace('£','');
+        const buyingMin = parseFloat(document.getElementById("buying-price-min").textContent.replace('£',''));
+        const buyingMax = parseFloat(document.getElementById("buying-price-max").textContent.replace('£',''));
+        const customerInput = document.getElementById("customer-target").value;
+
+        if (!customerInput) return;
+
+        const payload = {
+            item_name: itemName,
+            description: description,
+            suggested_price: suggestedPrice,
+            buying_range: { min: buyingMin, max: buyingMax },
+            selling_reasoning: document.getElementById("reasoning-text-content").textContent,
+            buying_reasoning: document.getElementById("reasoning-buying-text").textContent,
+            customer_input: customerInput,
+            conversation_history: conversationHistory
+        };
+
+        try {
+            const response = await fetch("/api/negotiation-step/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (!data.success) {
+                console.error(data.error);
+                return;
+            }
+
+            const ai = data.ai_response;
+
+            // Display AI's suggested offer and response
+            document.getElementById("next-offer").textContent = ai.suggested_offer || "£??";
+            document.getElementById("response-line").textContent = ai.your_response || "We can pay you cash right now...";
+
+            // Populate customer reply buttons
+            const optionsContainer = document.querySelector(".negotiation-options");
+            if (ai.customer_reply_options && optionsContainer) {
+                optionsContainer.innerHTML = "";
+                ai.customer_reply_options.forEach(reply => {
+                    const btn = document.createElement("button");
+                    btn.className = "negotiation-option";
+                    btn.textContent = reply;
+                    btn.addEventListener("click", () => {
+                        conversationHistory.push({
+                            customer: reply,
+                            assistant: ai.your_response,
+                            assistant_offer: parseFloat(ai.suggested_offer.replace('£',''))
+                        });
+                        fetchNegotiationStep(conversationHistory);
+                    });
+                    optionsContainer.appendChild(btn);
+                });
+
+                // Add custom line button
+                const customBtn = document.createElement("button");
+                customBtn.className = "negotiation-option custom";
+                customBtn.textContent = "➕ Add Custom Line…";
+                customBtn.addEventListener("click", () => {
+                    const customReply = prompt("Enter custom customer line:");
+                    if (customReply) {
+                        conversationHistory.push({
+                            customer: customReply,
+                            assistant: ai.your_response,
+                            assistant_offer: parseFloat(ai.suggested_offer.replace('£',''))
+                        });
+                        fetchNegotiationStep(conversationHistory);
+                    }
+                });
+                optionsContainer.appendChild(customBtn);
+            }
+
+        } catch (error) {
+            console.error("Error in fetchNegotiationStep:", error);
+        }
+    }
+
+    // Press Enter to start
+    targetInput.addEventListener("keypress", function(e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            startNegotiation();
+        }
+    });
+
+    // Or click the button
+    startBtn.addEventListener("click", startNegotiation);
+});
+
+</script>
 {% endblock %}

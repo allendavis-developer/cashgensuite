@@ -134,12 +134,13 @@ from .forms import CategoryForm, MarginRuleForm, GlobalMarginRuleForm
 def item_buying_analyser_view(request):
     # Handle prefilled data from URL parameters
     prefilled_data = get_prefilled_data(request)
+    categories = Category.objects.all()
 
     if request.method == "POST" and request.headers.get("Content-Type") == "application/json":
         return handle_item_analysis_request(request)
 
     # GET (render page)
-    return render(request, "analysis/item_buying_analyser.html", {"prefilled_data": prefilled_data})
+    return render(request, "analysis/item_buying_analyser.html", {"prefilled_data": prefilled_data, "categories": categories})
 
 def repricer_view(request):
     return render(request, "analysis/repricer.html")
@@ -328,9 +329,8 @@ def buying_range_analysis(request):
         item_name = (data.get("item_name") or "").strip()
         description = (data.get("description") or "").strip()
         suggested_price = (data.get("suggested_price") or "").strip()
-        profit_margin = (data.get("margin") or "").strip()
 
-        if not (item_name and description and suggested_price and profit_margin):
+        if not (item_name and description and suggested_price):
             return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
         # Format margins nicely for Gemini
@@ -349,7 +349,6 @@ def buying_range_analysis(request):
             "considering the item name, description, and the price we will sell it for.\n"
             "- We are a pawn shop in a similar mold to CashConverters and CashGenerators.\n"
             "- Factor in resale value & current market demand based on the suggested selling price, liquidity/turnover speed (how quickly we can realistically sell), authentication/theft risk, storage/display costs, current inventory levels, and any taxes/fees.\n"
-            "- The buying price must allow achieving at least the given profit margin: {profit_margin} on the expected selling price. Use the formula: buying_price ≤ suggested_price × (1 - {profit_margin}/100). If {profit_margin} is not provided, assume 40%.\n"
             "- Suggest BOTH a MIN and MAX %: MIN = first % of selling price we will offer the customer; MAX = the maximum % of the selling price we will pay for this product.\n"
             f"NOTE: As of NOW, the current generation models are:\n"
             f"- iPhone: {CURRENT_GEN_MODELS['iPhone']}\n"

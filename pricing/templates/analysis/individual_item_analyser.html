@@ -143,11 +143,12 @@
       <span id="button-text">SCRAPE PRICES</span>
       <span id="button-spinner" class="loading-spinner hidden"></span>
     </button>
-    <button type="button" id="analyze-btn" class="analyze-button" onclick="analyzeTable()">
-      <span id="button-text">ANALYZE SELECTED RANGE</span>
-      <span id="button-spinner" class="loading-spinner hidden"></span>
-    </button>
-
+    {% block analyze_range_button %}
+      <button type="button" id="analyze-btn" class="analyze-button" onclick="analyzeTable()">
+        <span id="button-text">ANALYZE SELECTED RANGE</span>
+        <span id="button-spinner" class="loading-spinner hidden"></span>
+      </button>
+    {% endblock analyze_range_button %}
     {% block analysis_actions %}
   <button id="confirm-list-btn" class="analyze-button" style="margin-bottom:20px;">
     CONFIRM & LIST
@@ -414,6 +415,17 @@
 
 {% block extra_script %}
 <script>
+
+function toggleModal(modal, show = true) {
+    modal.style.display = show ? 'flex' : 'none';
+    modal.classList.toggle('hidden', !show);
+}
+
+function roundToNearest2(value) {
+    return Math.round(value / 2) * 2;
+}
+
+
 const modal = document.getElementById('list-modal');
 const modalClose = document.getElementById('modal-close');
 const modalItemName = document.getElementById('modal-item-name');
@@ -423,29 +435,24 @@ const confirmListBtn = document.getElementById('confirm-list-btn');
 const modalSubmitBtn = document.getElementById('modal-submit');
 const priceSourceSelect = document.getElementById('price-source-select');
 
-modal.classList.add('hidden');
-modal.style.display = 'none';
+toggleModal(modal, false);
 
 confirmListBtn.addEventListener('click', () => {
-    modal.style.display = 'flex';
-    modal.classList.remove('hidden');
+    toggleModal(modal, true);
 
     modalItemName.value = document.getElementById('item-name').value;
     modalDescription.value = document.getElementById('description').value;
-{#    modalPrice.value = document.getElementById('recommended-price').textContent.replace(/[^0-9.]+/g, '');#}
     document.getElementById('modal-serial-number').value = document.getElementById('barserial').value;
     document.getElementById('modal-branch').value = document.getElementById('branch').value;
 });
 
 modalClose.addEventListener('click', () => {
-    modal.style.display = 'none';
-    modal.classList.add('hidden');
+    toggleModal(modal, false);
 });
 
 window.addEventListener('click', (e) => {
     if (e.target === modal) {
-        modal.style.display = 'none';
-        modal.classList.add('hidden');
+        toggleModal(modal, false);
     }
 });
 
@@ -469,8 +476,7 @@ priceSourceSelect.addEventListener('change', () => {
     // Clean up the price string (remove £ if present)
     priceValue = parseFloat(priceValue.replace(/[^0-9.]/g, ''));
     // Round to nearest multiple of 2 before fixing decimals
-    priceValue = Math.round(priceValue / 2) * 2;
-
+    priceValue = roundToNearest2(priceValue)
 
     modalPrice.value = priceValue.toFixed(2);
 });
@@ -480,8 +486,7 @@ modalSubmitBtn.addEventListener('click', async function() {
     let price = modalPrice.value.trim();
 
     // Close and reset modal immediately
-    modal.style.display = 'none';
-    modal.classList.add('hidden');
+    toggleModal(modal, false);
     modalSubmitBtn.disabled = false;
     modalSubmitBtn.textContent = 'List Item';
 
@@ -489,8 +494,7 @@ modalSubmitBtn.addEventListener('click', async function() {
     if (!price) {
         alert("Please specify a price either by selecting a recommended price or entering one manually.");
         // Reset the modal state and close
-        modal.style.display = 'none';
-        modal.classList.add('hidden');
+        toggleModal(modal, false);;
         modalSubmitBtn.disabled = false;
         modalSubmitBtn.textContent = 'List Item';
         return;
@@ -524,8 +528,7 @@ modalSubmitBtn.addEventListener('click', async function() {
         modalSubmitBtn.disabled = false;
         modalSubmitBtn.textContent = 'List Item';
         // Close modal after attempt
-        modal.style.display = 'none';
-        modal.classList.add('hidden');
+        toggleModal(modal, false);
     }
 });
 
@@ -637,9 +640,79 @@ async function scrapePrices() {
 }
 
 
-// -------------------------------
-// 🧩 ANALYSIS PHASE (Two-step: CashConverters → CashGenerator)
-// -------------------------------
+// Utility function: Calculate suggested price and reasoning
+function getSuggestedPrice(data) {
+    if (!data || data.length === 0) {
+        return { suggested: null, reasoning: "No data available." };
+    }
+
+    const sortedData = [...data].sort((a, b) => a.price - b.price);
+    const rangeRows = sortedData.filter(d => d.range === true);
+
+    let suggested;
+    let reasoning;
+
+    // Returns the largest multiple of 2 that is STRICTLY less than value.
+    function nextLowerMultipleOf2Strict(value) {
+        let m = Math.floor(value / 2) * 2;
+        if (Math.abs(m - value) < 0.01) m -= 2; // step down if already a multiple of 2
+        if (m < 0) m = 0;
+        return m;
+    }
+
+    if (rangeRows.length > 0) {
+        if (rangeRows.length === 1) {
+            const rangePrice = rangeRows[0].price;
+            const rangeIndex = sortedData.findIndex(d => d.range === true);
+
+            // Find the next *distinct* lower price
+            let lowerPrice = null;
+            for (let i = rangeIndex - 1; i >= 0; i--) {
+                const candidate = sortedData[i].price;
+                if (candidate < rangePrice - 0.01) {
+                    lowerPrice = candidate;
+                    break;
+                }
+            }
+
+            if (!lowerPrice) {
+                suggested = nextLowerMultipleOf2Strict(rangePrice);
+                reasoning = `Range selected at £${rangePrice.toFixed(2)} (no distinct lower price). Suggested next lower multiple of £2: £${suggested.toFixed(2)}.`;
+            } else {
+                const gap = rangePrice - lowerPrice;
+                suggested = lowerPrice + (gap * 0.5);
+                reasoning = `Range selected at £${rangePrice.toFixed(2)}. Next distinct lower price: £${lowerPrice.toFixed(2)}. Suggested midpoint: £${suggested.toFixed(2)}.`;
+            }
+        } else {
+            const prices = rangeRows.map(r => r.price);
+            const max = Math.max(...prices);
+            const min = Math.min(...prices);
+
+            if (Math.abs(max - min) < 0.01) {
+                suggested = nextLowerMultipleOf2Strict(max);
+                reasoning = `Multiple listings selected but all prices equal at £${max.toFixed(2)}. Suggested next lower multiple of £2: £${suggested.toFixed(2)}.`;
+            } else {
+                const avgPrice = prices.reduce((sum, p) => sum + p, 0) / prices.length;
+                suggested = avgPrice;
+                const formattedPrices = prices.map(p => `£${p.toFixed(2)}`).join(" + ");
+                reasoning = `
+                    Multiple listings selected from £${min.toFixed(2)} 
+                    to £${max.toFixed(2)}.<br>
+                    Average calculation: (${formattedPrices}) ÷ ${prices.length} =
+                    <strong>£${avgPrice.toFixed(2)}</strong>.
+                `;
+            }
+        }
+    } else {
+        suggested = null;
+        reasoning = `No range selected. Cannot suggest a price.`;
+    }
+
+    return { suggested, reasoning };
+}
+
+
+
 async function analyzeTable() {
     const itemName = document.getElementById('item-name').value.trim();
     const description = document.getElementById('description').value.trim();
@@ -659,16 +732,14 @@ async function analyzeTable() {
         return;
     }
 
-    // 🧩 Check if any ranges were selected at all
-    const anyranges =
+    const anyRanges =
         cashConvertersData.some(d => d.range) ||
         cashGeneratorData.some(d => d.range);
 
-    if (!anyranges) {
-        alert("No items selected for range. Please select at least one items before analyzing.");
+    if (!anyRanges) {
+        alert("No items selected for range. Please select at least one item before analyzing.");
         return;
     }
-
 
     const analysisSection = document.getElementById('analysis-section');
     const reasoningText = document.getElementById('reasoning-text');
@@ -677,87 +748,20 @@ async function analyzeTable() {
     reasoningText.innerHTML = '';
     analysisSection.style.display = 'none';
 
-    function getSuggestedPrice(data, source) {
-        if (data.length === 0) return null;
-
-        const sortedData = [...data].sort((a, b) => a.price - b.price);
-        const rangeRows = sortedData.filter(d => d.range === true);
-
-        let suggested;
-        let reasoning;
-
-        // Returns the largest multiple of 2 that is STRICTLY less than value.
-        function nextLowerMultipleOf2Strict(value) {
-            let m = Math.floor(value / 2) * 2;
-            // if value is already exactly a multiple of 2, step down one multiple
-            if (Math.abs(m - value) < 0.01) m -= 2;
-            if (m < 0) m = 0;
-            return m;
-        }
-
-        if (rangeRows.length > 0) {
-            if (rangeRows.length === 1) {
-                const rangePrice = rangeRows[0].price;
-                const rangeIndex = sortedData.findIndex(d => d.range === true);
-
-                // Find the next *distinct* lower price
-                let lowerPrice = null;
-                for (let i = rangeIndex - 1; i >= 0; i--) {
-                    const candidate = sortedData[i].price;
-                    if (candidate < rangePrice - 0.01) { // ensure it's meaningfully lower
-                        lowerPrice = candidate;
-                        break;
-                    }
-                }
-
-                if (!lowerPrice) {
-                    // No distinct lower price found — pick the next strictly lower multiple of £2
-                    suggested = nextLowerMultipleOf2Strict(rangePrice);
-                    reasoning = `range selected at £${rangePrice.toFixed(2)} (no distinct lower price). Suggested next lower multiple of £2: £${suggested.toFixed(2)}.`;
-                } else {
-                    // midpoint between the range price and next distinct lower price
-                    const gap = rangePrice - lowerPrice;
-                    suggested = lowerPrice + (gap * 0.5);
-                    reasoning = `range selected at £${rangePrice.toFixed(2)}. Next distinct lower price: £${lowerPrice.toFixed(2)}. Suggested midpoint: £${suggested.toFixed(2)}.`;
-                }
-            } else {
-                // multiple range rows selected
-                const inBetweenRows = sortedData.filter(r => r.range);
-                const prices = inBetweenRows.map(r => r.price);
-                const max = Math.max(...prices);
-                const min = Math.min(...prices);
-
-                if (Math.abs(max - min) < 0.01) {
-                    // All selected prices are effectively equal → use next strictly lower multiple of £2
-                    suggested = nextLowerMultipleOf2Strict(max);
-                    reasoning = `Multiple listings selected but all prices equal at £${max.toFixed(2)}. Suggested next lower multiple of £2: £${suggested.toFixed(2)}.`;
-                } else {
-                    // normal average behaviour
-                    const sum = prices.reduce((sum, p) => sum + p, 0);
-                    const avgPrice = sum / prices.length;
-                    suggested = avgPrice;
-                    const formattedPrices = prices.map(p => `£${p.toFixed(2)}`).join(" + ");
-                    reasoning = `
-                        Multiple listings selected from £${inBetweenRows[0].price.toFixed(2)}
-                        to £${inBetweenRows[inBetweenRows.length - 1].price.toFixed(2)}.<br>
-                        Average calculation: (${formattedPrices}) ÷ ${prices.length} =
-                        <strong>£${avgPrice.toFixed(2)}</strong>.
-                    `;
-                }
-            }
-        } else {
-            suggested = null;
-            reasoning = `No range selected. Cannot suggest a price.`;
-        }
-
-        displayDualAnalysis(reasoning, suggested, source);
+    // 🔹 Run analyses and display results
+    if (cashConvertersData.length > 0) {
+        const { suggested, reasoning } = getSuggestedPrice(cashConvertersData);
+        displayDualAnalysis(reasoning, suggested, 'CashConverters');
     }
 
-    if (cashConvertersData.length > 0) getSuggestedPrice(cashConvertersData, 'CashConverters');
-    if (cashGeneratorData.length > 0) getSuggestedPrice(cashGeneratorData, 'CashGenerator');
+    if (cashGeneratorData.length > 0) {
+        const { suggested, reasoning } = getSuggestedPrice(cashGeneratorData);
+        displayDualAnalysis(reasoning, suggested, 'CashGenerator');
+    }
 
     analysisSection.style.display = 'block';
 }
+
 
 // Extract table data for analysis
 function extractCompetitorTableData() {
@@ -808,10 +812,6 @@ function displayDualAnalysis(reasoning, suggestedPrice, source) {
         marginText = ` (<span style="color:#888;">n/a</span>)`;
     }
 
-    // Helper function to round to nearest multiple of 2
-    function roundToNearest2(value) {
-        return Math.round(value / 2) * 2;
-    }
 
     // In displayDualAnalysis, update priceValue
     const roundedPrice = roundToNearest2(priceValue);
@@ -1378,4 +1378,6 @@ document.getElementById('attributes-container').addEventListener('input', fetchG
 
 
 </script>
+
+{% block buying_logic %} {% endblock %}
 {% endblock %}
