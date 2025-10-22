@@ -657,7 +657,7 @@
     <table class="competitor-table" id="analysis-table">
       <thead>
         <tr>
-          <th>CEX Mode</th>
+          <th>CEX Result</th>
           <th>CEX - Discount</th>
           <th>Cost Price + Minimum Margin</th>
           <th>Cash Converters Lowest</th>
@@ -1102,17 +1102,23 @@ function computeSourceAverages() {
         const min = Math.min(...prices);
         const max = Math.max(...prices);
 
-          // Compute mode from the currently included prices (respecting selected range)
-        const freq = {};
-        prices.forEach(p => { freq[p] = (freq[p] || 0) + 1; });
-        let mode;
-        let highest = 0;
-        Object.keys(freq).forEach(k => {
-            if (freq[k] > highest) {
-                highest = freq[k];
-                mode = parseFloat(k);
-            }
-        });
+        // For CEX, just use the first price (most relevant listing)
+        if (source === "CEX") {
+            // TODO: Since we're no longer using mode, we should rename this later
+            mode = prices[0];
+        } else {
+            // For other sources, compute mode
+            const freq = {};
+            prices.forEach(p => { freq[p] = (freq[p] || 0) + 1; });
+            let highest = 0;
+            Object.keys(freq).forEach(k => {
+                if (freq[k] > highest) {
+                    highest = freq[k];
+                    mode = parseFloat(k);
+                }
+            });
+        }
+
         sourceAverages[source] = { average: avg, min, max, count: prices.length, mode };
 
         //  Compute average of all values UNDER the mode

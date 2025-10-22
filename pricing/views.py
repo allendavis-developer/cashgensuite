@@ -317,7 +317,6 @@ def delete_global_rule(request, pk):
     return render(request, "rules/delete_global_rule_confirm.html", {"rule": rule})
 
 
-from ai_context import MARGINS
 @csrf_exempt
 @require_POST
 def buying_range_analysis(request):
@@ -333,40 +332,10 @@ def buying_range_analysis(request):
         if not (item_name and description and suggested_price):
             return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
-        # Format margins nicely for Gemini
-        lines = []
-        for category, subcat, min_offer, max_offer, notes in MARGINS:
-            lines.append(f"- {category} → {subcat}: {min_offer}–{max_offer}% ({notes})")
-        margins_context = "\n".join(lines)
-
-        prompt = (
-            f"Item: {item_name}\n"
-            f"Description: {description}\n"
-            f"Selling Price: {suggested_price}\n"
-            "Company Buying Margin Rules (for context):\n"
-            f"{margins_context}\n\n"
-            "Task: Calculate an appropriate buying-in % of the selling price to offer the customer for this product, "
-            "considering the item name, description, and the price we will sell it for.\n"
-            "- We are a pawn shop in a similar mold to CashConverters and CashGenerators.\n"
-            "- Factor in resale value & current market demand based on the suggested selling price, liquidity/turnover speed (how quickly we can realistically sell), authentication/theft risk, storage/display costs, current inventory levels, and any taxes/fees.\n"
-            "- Suggest BOTH a MIN and MAX %: MIN = first % of selling price we will offer the customer; MAX = the maximum % of the selling price we will pay for this product.\n"
-            f"NOTE: As of NOW, the current generation models are:\n"
-            f"- iPhone: {CURRENT_GEN_MODELS['iPhone']}\n"
-            f"- Samsung Galaxy: {CURRENT_GEN_MODELS['Samsung Galaxy']}\n"
-            f"- Google Pixel: {CURRENT_GEN_MODELS['Google Pixel']}\n"
-            "\nUse this when deciding whether a device is 'current gen', '1–2 years old', etc.\n\n"
-            "You may deviate from the percentage provided depending on the item's desirability and sellability, but ONLY the higher end."
-            "- OUTPUT FORMAT:"
-            "your reasoning (within 100 words)"
-            "FINAL:MIN%–MAX% (for example: FINAL:35%-45%).\n"
-        )
-
-        ai_response = call_gemini_sync(prompt)
+        print("Received request with ", data)
 
         return JsonResponse({
             "success": True,
-            "ai_response": ai_response,
-            "prompt": prompt
         })
 
     except Exception as e:
