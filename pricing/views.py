@@ -208,7 +208,6 @@ def edit_category(request, pk):
 
 def manage_category(request, pk):
     category = get_object_or_404(Category, pk=pk)
-    # Here you could list/edit rules later
     return render(request, "rules/manage_category.html", {"category": category})
 
 
@@ -225,6 +224,7 @@ def delete_category(request, pk):
 
 def add_rule(request, category_pk):
     category = get_object_or_404(Category, pk=category_pk)
+    manufacturers = Manufacturer.objects.all().order_by("name")
 
     if request.method == "POST":
         form = MarginRuleForm(request.POST)
@@ -240,11 +240,13 @@ def add_rule(request, category_pk):
         "form": form,
         "category": category,
         "is_edit": False,
+        "manufacturers": manufacturers,  
     })
 
 def edit_rule(request, pk):
     rule = get_object_or_404(MarginRule, pk=pk)
     category = rule.category
+    manufacturers = Manufacturer.objects.all().order_by("name")
 
     if request.method == "POST":
         form = MarginRuleForm(request.POST, instance=rule)
@@ -258,7 +260,19 @@ def edit_rule(request, pk):
         "form": form,
         "category": category,
         "is_edit": True,
+        "manufacturers": manufacturers,  
     })
+
+def get_match_value_choices(request):
+    rule_type = request.GET.get("rule_type")
+    data = []
+
+    if rule_type == "manufacturer":
+        data = list(Manufacturer.objects.values_list("name", flat=True))
+    elif rule_type == "model":
+        data = list(ItemModel.objects.values_list("name", flat=True))
+
+    return JsonResponse({"choices": data})
 
 
 def delete_rule(request, pk):
@@ -326,10 +340,11 @@ def buying_range_analysis(request):
     try:
         data = json.loads(request.body)
         item_name = (data.get("item_name") or "").strip()
-        description = (data.get("description") or "").strip()
-        suggested_price = (data.get("suggested_price") or "").strip()
+        attributes = data.get("attributes", {})
+        category_id = data.get('category')  
+        manufacturer_id = data.get('manufacturer')  
 
-        if not (item_name and description and suggested_price):
+        if not (item_name and category_id):
             return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
         print("Received request with ", data)

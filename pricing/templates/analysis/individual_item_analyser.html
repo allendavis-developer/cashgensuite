@@ -559,7 +559,6 @@ async function scrapePrices() {
         return;
     }
 
-    // ✅ Use new collectAttributeData
     const data = collectAttributeData();
     if (!data) {
         alert('Please select both category and model before scraping.');
@@ -1158,16 +1157,19 @@ async function maybeCheckExistingItems() {
 // -------------------------------
 function collectAttributeData() {
     const categorySelect = document.getElementById('category');
+    const manufacturerSelect = document.getElementById('manufacturer');
     const modelSelect = document.getElementById('model');
 
-    if (!categorySelect?.value || !modelSelect?.value) {
-        console.warn("Category or model not selected yet.");
+    if (!categorySelect?.value || !manufacturerSelect?.value || !modelSelect?.value) {
+        console.warn("Category, manufacturer, or model not selected yet.");
         return null;
     }
 
-    // Add both IDs and names
+    // Add IDs and names for all three
     const categoryId = categorySelect.value;
     const categoryName = categorySelect.options[categorySelect.selectedIndex]?.text.trim() || '';
+    const manufacturerId = manufacturerSelect.value;
+    const manufacturerName = manufacturerSelect.options[manufacturerSelect.selectedIndex]?.text.trim() || '';
     const modelId = modelSelect.value;
     const modelName = modelSelect.options[modelSelect.selectedIndex]?.text.trim() || '';
 
@@ -1190,12 +1192,13 @@ function collectAttributeData() {
     return {
         categoryId,
         categoryName,
+        manufacturerId,
+        manufacturerName,
         modelId,
         modelName,
         attributes
     };
 }
-
 
 // -------------------------------
 // 🧱 FETCH GENERATED SEARCH TERM

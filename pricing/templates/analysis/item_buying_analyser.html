@@ -609,6 +609,14 @@ async function analyzeTableBuying() {
     const roundedSellingPrice = Math.round(sellingPriceResult / 2) * 2;
     const sellingPriceFormatted = `£${roundedSellingPrice.toFixed(2)}`;
 
+    const data = collectAttributeData();
+    if (!data) {
+        alert('Please select both category and model before scraping.');
+        scrapeBtn.disabled = false;
+        scrapeBtn.textContent = 'Scrape Prices';
+        return;
+    }
+
     // Call AI for buying range analysis
     try {
         const buyingResponse = await fetch("/api/buying-range-analysis/", {
@@ -621,6 +629,9 @@ async function analyzeTableBuying() {
                 item_name: itemName,
                 description: description,
                 suggested_price: sellingPriceFormatted,
+                category: data.categoryId,
+                attributes: data.attributes,
+                manufacturer: data.manufacturerId,
             })
         });
 

@@ -26,6 +26,7 @@ urlpatterns = [
     path("rules/add/<int:category_pk>/", v.add_rule, name="add_rule"),
     path("rules/<int:pk>/edit/", v.edit_rule, name="edit_rule"),
     path("rules/<int:pk>/delete/", v.delete_rule, name="delete_rule"),
+    path("api/get-match-values/", v.get_match_value_choices, name="get_match_values"),
 
     # ----------------------------- API -----------------------------
     path("bulk-analysis", v.bulk_analysis, name='bulk_analysis'),
