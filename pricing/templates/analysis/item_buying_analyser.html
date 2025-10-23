@@ -650,14 +650,48 @@ async function analyzeTableBuying() {
 
           minPrice = `£${startBuyingPrice.toFixed(2)}`;
           maxPrice = `£${endBuyingPrice.toFixed(2)}`;
+
+          // --- Build reasoning text ---
+          let reasoningParts = [];
+
+          // Base margin
+          reasoningParts.push(
+            `Starting from a base buying percentage of <b>${(buyingData.base_margin * 100).toFixed(1)}%</b> for the <b>${buyingData.category}</b> category.`
+          );
+
+          // Rules applied (if any)
+          if (buyingData.rules_applied && buyingData.rules_applied.length > 0) {
+            const ruleDescriptions = buyingData.rules_applied.map(rule => {
+              const adj = rule.adjustment >= 0
+                ? `+${(rule.adjustment * 100).toFixed(1)}%`
+                : `${(rule.adjustment * 100).toFixed(1)}%`;
+              return `${rule.type === "manufacturer" ? "Manufacturer" : "Model"} match (<b>${rule.match}</b>, ${adj})`;
+            });
+            reasoningParts.push(`Adjustments applied: ${ruleDescriptions.join(", ")}.`);
+          }
+
+          // Effective margin
+          reasoningParts.push(
+            `Final effective buying percentage: <b>${(buyingData.effective_margin * 100).toFixed(1)}%</b>.`
+          );
+
+          // Buying range
+          reasoningParts.push(
+            `Recommended buying range: <b>${minPrice}</b> – <b>${maxPrice}</b> based on your suggested selling price of <b>${sellingPriceFormatted}</b>.`
+          );
+
+          // Combine
+          const buyingReasoning = reasoningParts.join(" ");
+
+          displayBuyingAnalysis(
+              sellingReasoning,
+              sellingPriceFormatted,
+              { min: minPrice, max: maxPrice },
+              buyingReasoning
+          );
       }
 
-      displayBuyingAnalysis(
-          sellingReasoning,
-          sellingPriceFormatted,
-          { min: minPrice, max: maxPrice },
-          "" // no buying reasoning
-      );
+      
   } catch (error) {
       console.error("Error calling buying range API:", error);
       alert("Error calculating buying range. Please try again.");
