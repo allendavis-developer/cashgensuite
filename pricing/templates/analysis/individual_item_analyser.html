@@ -691,14 +691,8 @@ function getSuggestedPrice(data) {
     return { suggested, reasoning };
 }
 
-
-
-async function analyzeTable() {
-    const itemName = document.getElementById('item-name').value.trim();
-    const description = document.getElementById('description').value.trim();
-    const costPrice = parseFloat(document.getElementById('cost-price').value) || 0;
-
-    let competitorData = extractCompetitorTableData();
+function getCCAndCGData() {
+    const competitorData = extractCheckedCompetitorTableData();
 
     const cashConvertersData = competitorData.filter(
         item => item.competitor.toLowerCase() === 'cashconverters'
@@ -709,7 +703,7 @@ async function analyzeTable() {
 
     if (cashConvertersData.length === 0 && cashGeneratorData.length === 0) {
         alert("Please scrape and mark relevant rows for Cash Converters or Cash Generators first.");
-        return;
+        return null;
     }
 
     const anyRanges =
@@ -718,8 +712,21 @@ async function analyzeTable() {
 
     if (!anyRanges) {
         alert("No items selected for range. Please select at least one item before analyzing.");
-        return;
+        return null;
     }
+
+    return { cashConvertersData, cashGeneratorData };
+}
+
+async function analyzeTable() {
+    const itemName = document.getElementById('item-name').value.trim();
+    const description = document.getElementById('description').value.trim();
+    const costPrice = parseFloat(document.getElementById('cost-price').value) || 0;
+
+    const competitorDataSets = getCCAndCGData();
+    if (!competitorDataSets) return;
+
+    const { cashConvertersData, cashGeneratorData } = competitorDataSets;
 
     const analysisSection = document.getElementById('analysis-section');
     const reasoningText = document.getElementById('reasoning-text');
@@ -744,7 +751,7 @@ async function analyzeTable() {
 
 
 // Extract table data for analysis
-function extractCompetitorTableData() {
+function extractCheckedCompetitorTableData() {
     const rows = allCompetitorRows;
     return Array.from(rows)
         .map(row => {
@@ -758,7 +765,7 @@ function extractCompetitorTableData() {
                 range: rangeCheckbox ? rangeCheckbox.checked : false
             };
         })
-        // 🧩 only include rows that have a range checkbox checked
+        // only include rows that have a range checkbox checked
         .filter(item => item.range && item.competitor);
 }
 

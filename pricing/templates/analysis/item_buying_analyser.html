@@ -520,28 +520,10 @@ async function analyzeTableBuying() {
     const description = document.getElementById('description').value.trim();
     const costPrice = parseFloat(document.getElementById('cost-price').value) || 0;
 
-    let competitorData = extractCompetitorTableData();
+    const competitorDataSets = getCCAndCGData();
+    if (!competitorDataSets) return;
 
-    const cashConvertersData = competitorData.filter(
-        item => item.competitor.toLowerCase() === 'cashconverters'
-    );
-    const cashGeneratorData = competitorData.filter(
-        item => item.competitor.toLowerCase() === 'cashgenerator'
-    );
-
-    if (cashConvertersData.length === 0 && cashGeneratorData.length === 0) {
-        alert("Please scrape and mark relevant rows for Cash Converters or Cash Generators first.");
-        return;
-    }
-
-    const anyRanges =
-        cashConvertersData.some(d => d.range) ||
-        cashGeneratorData.some(d => d.range);
-
-    if (!anyRanges) {
-        alert("No items selected for range. Please select at least one item before analyzing.");
-        return;
-    }
+    const { cashConvertersData, cashGeneratorData } = competitorDataSets;
 
     const ccPriceEl = document.getElementById("cc-price-display");
     const cgPriceEl = document.getElementById("cg-price-display");
