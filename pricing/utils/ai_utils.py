@@ -5,6 +5,12 @@ from google.generativeai import GenerationConfig
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 GEMINI_MODEL = "gemini-2.5-flash-lite"
 
+from openai import OpenAI
+import os
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+
 def call_gemini_sync(prompt: str) -> str:
     """
     Call Google Gemini 2.5 Flash Lite (synchronous) with a simple prompt string.

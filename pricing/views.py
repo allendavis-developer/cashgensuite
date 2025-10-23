@@ -25,6 +25,7 @@ from pricing.models import (
 import json, traceback, re
 from decimal import Decimal, InvalidOperation
 
+from pricing.utils.ai_utils import client
 from pricing.utils.ai_utils import call_gemini_sync, generate_price_analysis, generate_bulk_price_analysis
 from pricing.utils.competitor_utils import get_competitor_data
 from pricing.utils.analysis_utils import process_item_analysis, save_analysis_to_db
@@ -732,13 +733,98 @@ def generate_search_term(request):
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 
+class NegotiationTemplates:
+    """Strategic negotiation response templates"""
+    
+    @staticmethod
+    def get_opening_response(item_name, next_offer, customer_price, competitors, selling_reasoning, buying_reasoning):
+        """First offer in negotiation"""
+        comp_reference = NegotiationTemplates._format_competitor_reference(competitors, limit=2)
+        
+        responses = [
+            f"• Thanks for bringing in the {item_name}",
+            comp_reference,
+            f"• Based on current market conditions, I can offer **£{next_offer:.2f}**",
+            f"• This accounts for reconditioning costs and {selling_reasoning.lower()}",
+            "• Happy to discuss if you have questions about the valuation"
+        ]
+        
+        return [r for r in responses if r]  # Filter empty strings
+    
+    @staticmethod
+    def get_mid_negotiation_response(item_name, next_offer, last_offer, customer_price, competitors, buying_reasoning, progress):
+        """Moving up from previous offer"""
+        comp_reference = NegotiationTemplates._format_competitor_reference(competitors, limit=2)
+        increase = next_offer - last_offer if last_offer else 0
+        
+        responses = [
+            f"• I can see you're firm on the value of this {item_name}",
+            comp_reference,
+            f"• I can move to **£{next_offer:.2f}** (up £{increase:.2f} from my previous offer)",
+            "• This is a competitive offer given our overhead and resale timeline",
+            "• Let me know if this works for you"
+        ]
+        
+        return [r for r in responses if r]
+    
+    @staticmethod
+    def get_maximum_response(item_name, next_offer, customer_price, competitors, buying_reasoning):
+        """Final offer - at budget maximum"""
+        comp_reference = NegotiationTemplates._format_competitor_reference(competitors, limit=3)
+        
+        responses = [
+            f"• I appreciate you working with me on the {item_name}",
+            comp_reference,
+            f"• My absolute maximum is **£{next_offer:.2f}** - I can't go higher than this",
+            "• At this price point, my margin is already very thin",
+            "• If this works, I can complete the transaction immediately. If not, I understand"
+        ]
+        
+        return [r for r in responses if r]
+    
+    @staticmethod
+    def _format_competitor_reference(competitors, limit=2):
+        """Format competitor data into natural references"""
+        if not competitors:
+            return "• Looking at similar items on the market, pricing is quite varied"
+        
+        # Take top N competitors by price (lowest first for buying justification)
+        sorted_comps = sorted(competitors, key=lambda x: x.get('price', 999999))[:limit]
+        
+        if len(sorted_comps) == 1:
+            c = sorted_comps[0]
+            return f"• {c['competitor']} lists similar items at £{c['price']:.2f} ({c['condition']})"
+        
+        references = []
+        for c in sorted_comps:
+            references.append(f"{c['competitor']} at £{c['price']:.2f} ({c['condition']})")
+        
+        return f"• Current market: {', '.join(references)}"
+    
+    @staticmethod
+    def get_customer_reply_options(at_maximum, next_offer, customer_price):
+        """Generate realistic customer response options"""
+        if at_maximum:
+            return [
+                f"• That's still below what I was hoping for, but I'll accept £{next_offer:.2f}",
+                f"• Can you do £{customer_price:.2f}? That's my bottom line",
+                "• I think I'll hold onto it for now and try elsewhere"
+            ]
+        
+        # Mid-negotiation
+        midpoint = (next_offer + customer_price) / 2
+        return [
+            f"• £{next_offer:.2f} is closer - let's do it",
+            f"• I was hoping for at least £{midpoint:.2f} - can you meet me there?",
+            "• Why is your offer lower than what I'm seeing online?"
+        ]
+
+
 @csrf_exempt
 @require_POST
 def negotiation_step(request):
     """
-    Professional AI-assisted negotiation step.
-    Starts near MIN buying price, increments dynamically toward MAX,
-    continues assisting even after reaching max. AI generates context-aware persuasive text.
+    Template-based negotiation - fast, predictable, no AI costs
     """
     try:
         data = json.loads(request.body)
@@ -746,11 +832,12 @@ def negotiation_step(request):
         item_name = (data.get("item_name") or "").strip()
         description = (data.get("description") or "").strip()
         suggested_price = (data.get("suggested_price") or "").strip()
-        buying_range = data.get("buying_range") or {}  # {"min": 30, "max": 40}
+        buying_range = data.get("buying_range") or {}
         selling_reasoning = (data.get("selling_reasoning") or "").strip()
         buying_reasoning = (data.get("buying_reasoning") or "").strip()
         customer_input = (data.get("customer_input") or "").strip()
         conversation_history = data.get("conversation_history") or []
+        selected_competitor_rows = data.get("selected_competitor_rows") or []
 
         if not item_name or not suggested_price or not buying_range:
             return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
@@ -759,140 +846,83 @@ def negotiation_step(request):
         max_price = float(buying_range.get("max", 0))
         customer_price = float(customer_input) if customer_input else max_price
 
-        # Determine last offer from conversation history
+        # Determine last offer
         last_offer = None
         if conversation_history:
             last_offer = conversation_history[-1].get("assistant_offer")
             last_offer = float(last_offer) if last_offer else None
 
-        # Determine next numeric offer
+        # Calculate next offer (same logic as before)
         at_maximum = False
         if not conversation_history:
-            # First offer → slightly above MIN for a professional feel
             next_offer = min(min_price + (max_price - min_price) * 0.1, customer_price)
         elif last_offer and last_offer >= max_price:
-            # Already at max - hold the line but continue assisting
             next_offer = max_price
             at_maximum = True
         else:
-            # Dynamic increment toward customer target
             last_offer = last_offer if last_offer else min_price
             distance_to_target = min(customer_price, max_price) - last_offer
-            
+
             if distance_to_target <= 0:
                 next_offer = max_price
                 at_maximum = True
             else:
-                increment = max(distance_to_target * 0.4, 2)  # move 40% of remaining distance, at least £2
-                max_step = (max_price - min_price) * 0.3       # cap at 30% of full range
+                increment = max(distance_to_target * 0.4, 2)
+                max_step = (max_price - min_price) * 0.3
                 increment = min(increment, max_step)
                 next_offer = min(last_offer + increment, max_price, customer_price)
-                
-                # Check if we've reached maximum
+
                 if next_offer >= max_price:
                     next_offer = max_price
                     at_maximum = True
 
-        # Flatten conversation context for AI prompt
-        dialogue_context = "\n".join([
-            f"Customer: {turn.get('customer','')}\nYou: {turn.get('assistant','')} (offered: {turn.get('assistant_offer','')})"
-            for turn in conversation_history
-        ]) if conversation_history else "This is the opening of the negotiation."
+        # Calculate progress
+        progress = (
+            round((next_offer - min_price) / (max_price - min_price) * 100, 1)
+            if max_price > min_price else 100
+        )
 
-        # Build context-aware prompt
-        negotiation_stage = ""
+        # Generate response using templates
         if not conversation_history:
-            negotiation_stage = "This is your OPENING offer. Be friendly, acknowledge the item, and make a reasonable starting offer."
+            your_response = NegotiationTemplates.get_opening_response(
+                item_name, next_offer, customer_price, 
+                selected_competitor_rows, selling_reasoning, buying_reasoning
+            )
         elif at_maximum:
-            negotiation_stage = f"You are at your MAXIMUM offer of £{max_price}. You CANNOT go higher. Be firm but empathetic. Explain why this is your best offer using the buying reasoning. Consider offering to finalize the deal or politely declining if the customer won't accept."
+            your_response = NegotiationTemplates.get_maximum_response(
+                item_name, next_offer, customer_price,
+                selected_competitor_rows, buying_reasoning
+            )
         else:
-            negotiation_stage = f"You are moving from £{last_offer} to £{next_offer}. This is a {((next_offer - last_offer) / (max_price - min_price) * 100):.0f}% move within your range. Show you're negotiating in good faith."
+            your_response = NegotiationTemplates.get_mid_negotiation_response(
+                item_name, next_offer, last_offer, customer_price,
+                selected_competitor_rows, buying_reasoning, progress
+            )
 
-        prompt = f"""
-You are a professional pawn shop buyer negotiating to buy a used item. Instead of writing full paragraphs, generate **clear, concise bullet-pointed talking points** for your next response.
+        customer_reply_options = NegotiationTemplates.get_customer_reply_options(
+            at_maximum, next_offer, customer_price
+        )
 
-ITEM DETAILS:
-- Item: {item_name}
-- Description: {description}
-- Intended resale price: £{suggested_price}
-- Buying range: £{min_price} - £{max_price}
-- Customer requested price: £{customer_price}
-
-CONTEXT:
-- Selling reasoning: {selling_reasoning}
-- Buying reasoning: {buying_reasoning}
-- Conversation history:
-{dialogue_context}
-
-NEGOTIATION STAGE:
-{negotiation_stage}
-- Last assistant offer: £{last_offer if last_offer else 'N/A'}
-- Next offer: £{next_offer}
-- At maximum offer? {at_maximum}
-
-INSTRUCTIONS:
-1. Write your response as **bullet points**, covering:
-   - Acknowledging the customer and their offer
-   - Your numeric offer (next_offer)
-   - Specific reasoning from selling/buying context
-   - Progress toward final agreement
-2. Suggest 3 realistic **customer reply options**, also in bullet points.
-3. Avoid paragraphs, generic phrases, or vague reasoning. Be precise, professional, and persuasive.
-4. Include your numeric offer clearly as a bullet point.
-
-OUTPUT FORMAT (JSON only):
-{{
-  "your_response": [
-      "Bullet point 1",
-      "Bullet point 2",
-      "Bullet point 3"
-  ],
-  "customer_reply_options": [
-      "Option 1",
-      "Option 2",
-      "Option 3"
-  ]
-}}
-"""
-
-        try:
-            ai_response = call_gemini_sync(prompt)
-        except Exception as e:
-            traceback.print_exc()
-            return JsonResponse({"success": False, "error": f"AI call failed: {str(e)}"}, status=500)
-
-        # Safely parse AI JSON
-        parsed = None
-        try:
-            parsed = json.loads(ai_response)
-        except Exception:
-            json_match = re.search(r'\{.*\}', ai_response, re.DOTALL)
-            if json_match:
-                try:
-                    parsed = json.loads(json_match.group())
-                except Exception:
-                    parsed = None
-
-        if not parsed:
-            parsed = {
-                "your_response": ai_response.strip(),
-                "customer_reply_options": []
-            }
-
-        # Attach numeric offer and status for frontend
-        parsed["suggested_offer"] = f"£{next_offer:.2f}"
-        parsed["at_maximum"] = at_maximum
-        parsed["negotiation_progress"] = round((next_offer - min_price) / (max_price - min_price) * 100, 1) if max_price > min_price else 100
+        # Build response - convert list to HTML for better formatting
+        formatted_response = "<br>".join(your_response)
+        
+        response_data = {
+            "your_response": formatted_response,  # HTML formatted
+            "your_response_bullets": your_response,  # Original list
+            "customer_reply_options": customer_reply_options,
+            "suggested_offer": f"£{next_offer:.2f}",
+            "at_maximum": at_maximum,
+            "negotiation_progress": progress
+        }
 
         return JsonResponse({
             "success": True,
-            "ai_response": parsed,
-            "raw_ai_response": ai_response,
-            "prompt": prompt,
-            "at_maximum": at_maximum
+            "ai_response": response_data,  # Keep same key for frontend compatibility
+            "at_maximum": at_maximum,
         })
 
     except Exception as e:
+        import traceback
         traceback.print_exc()
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 

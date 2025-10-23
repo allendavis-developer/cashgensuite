@@ -94,15 +94,17 @@
             <div id="negotiation-engine" class="negotiation-engine">
                 <hr class="negotiation-divider"/>
 
-                <div class="negotiation-response">
-                    <h3 class="negotiation-subtitle">YOUR RESPONSE</h3>
-                    <p class="negotiation-offer">
-                        Offer <span id="next-offer" class="offer-amount">£70</span> and say —
-                    </p>
-                    <p class="negotiation-line" id="response-line">
-                        "We can pay you cash right now — no waiting, no fees."
-                    </p>
+            <div class="negotiation-response">
+                <h3 class="negotiation-subtitle">YOUR RESPONSE</h3>
+                <p class="negotiation-offer">
+                    Offer <span id="next-offer" class="offer-amount">£70</span>
+                </p>
+                <!-- Changed from single <p> to <div> for better formatting -->
+                <div class="negotiation-message" id="response-line">
+                    • We can pay you cash right now — no waiting, no fees.
                 </div>
+            </div>
+
 
                 <hr class="negotiation-divider"/>
 
@@ -402,14 +404,38 @@
   font-size: 1.3rem;
 }
 
-.negotiation-line {
-  font-size: 1rem;
-  color: #f5f5f7;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 0.75rem 1rem;
-  border-radius: 10px;
-  display: inline-block;
-  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.03);
+.negotiation-message {
+    font-size: 0.95rem;
+    color: #f5f5f7;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    text-align: left;
+    line-height: 1.8;
+    max-width: 700px;
+    margin: 0 auto;
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.02);
+}
+
+/* Style bullet points within the message */
+.negotiation-message strong {
+    color: #4ade80;
+    font-weight: 700;
+}
+
+/* Add spacing between lines */
+.negotiation-message br {
+    display: block;
+    content: "";
+    margin-top: 0.5rem;
+}
+
+/* Optional: Style for when message contains multiple bullets */
+.negotiation-message::before {
+    content: "";
+    display: block;
+    margin-bottom: 0.5rem;
 }
 
 .negotiation-hint {
@@ -720,7 +746,8 @@ document.addEventListener("DOMContentLoaded", function() {
             selling_reasoning: document.getElementById("reasoning-text-content").textContent,
             buying_reasoning: document.getElementById("reasoning-buying-text").textContent,
             customer_input: customerInput,
-            conversation_history: conversationHistory
+            conversation_history: conversationHistory,
+            selected_competitor_rows: extractCheckedCompetitorTableData() // 👈 include here too
         };
 
         try {
@@ -744,7 +771,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
             // Display AI's suggested offer and response
             document.getElementById("next-offer").textContent = ai.suggested_offer || "£??";
-            document.getElementById("response-line").textContent = ai.your_response || "We can pay you cash right now...";
+            document.getElementById("response-line").innerHTML = ai.your_response || "We can pay you cash right now...";
 
             // Populate customer reply buttons
             const optionsContainer = document.querySelector(".negotiation-options");
