@@ -303,10 +303,6 @@ class MarginRule(models.Model):
     rule_type = models.CharField(max_length=20, choices=RULE_TYPES)
     match_value = models.CharField(max_length=100)
 
-    match_value_manufacturer = models.ForeignKey(
-        "Manufacturer", blank=True, null=True, on_delete=models.SET_NULL
-    )
-
     adjustment = models.FloatField()
     description = models.CharField(max_length=200, blank=True)
     order = models.IntegerField(default=0)

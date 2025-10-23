@@ -587,6 +587,7 @@ async function analyzeTableBuying() {
             <strong>Combined Reasoning:</strong><br>
             CashConverters suggested £${ccResult.suggested.toFixed(2)}<br>
             CashConverters Reasoning: ${ccResult.reasoning}<br>
+            <br>
             CashGenerator suggested £${cgResult.suggested.toFixed(2)}<br>
             CashGenerator Reasoning: ${cgResult.reasoning}<br>
             Averaged for balance: £${sellingPriceResult.toFixed(2)}.
@@ -617,53 +618,50 @@ async function analyzeTableBuying() {
         return;
     }
 
-    // Call AI for buying range analysis
-    try {
-        const buyingResponse = await fetch("/api/buying-range-analysis/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": getCookie("csrftoken")
-            },
-            body: JSON.stringify({
-                item_name: itemName,
-                description: description,
-                suggested_price: sellingPriceFormatted,
-                category: data.categoryId,
-                attributes: data.attributes,
-                manufacturer: data.manufacturerId,
-            })
-        });
+  // Call API for buying range analysis
+  try {
+      const buyingResponse = await fetch("/api/buying-range-analysis/", {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": getCookie("csrftoken"),
+          },
+          body: JSON.stringify({
+              item_name: itemName,
+              category: data.categoryId,
+              attributes: data.attributes,
+              manufacturer: data.manufacturerId,
+          }),
+      });
 
-        const buyingData = await buyingResponse.json();
-        console.log("Buying range AI response:", buyingData);
+      const buyingData = await buyingResponse.json();
+      console.log("Buying range API response:", buyingData);
 
-        let minPrice = "£0.00";
-        let maxPrice = "£0.00";
-        let buyingReasoning = "Calculating buying range...";
+      let minPrice = "£0.00";
+      let maxPrice = "£0.00";
 
-        if (buyingData.success && buyingData.ai_response) {
-            buyingReasoning = buyingData.ai_response;
-            const match = buyingData.ai_response.match(/FINAL:(\d+)%\s*[-–]\s*(\d+)%/i);
-            if (match) {
-                const minPct = parseFloat(match[1]);
-                const maxPct = parseFloat(match[2]);
-                const basePrice = roundedSellingPrice;
-                minPrice = `£${(basePrice * (minPct / 100)).toFixed(2)}`;
-                maxPrice = `£${(basePrice * (maxPct / 100)).toFixed(2)}`;
-            }
-        }
+      if (buyingData.success && buyingData.effective_margin !== undefined) {
+          const basePrice = roundedSellingPrice; // your recommended selling price
+          const buyingPct = buyingData.effective_margin;
 
-        displayBuyingAnalysis(
-            sellingReasoning,
-            sellingPriceFormatted,
-            { min: minPrice, max: maxPrice },
-            buyingReasoning
-        );
-    } catch (error) {
-        console.error('Error calling buying range API:', error);
-        alert('Error calculating buying range. Please try again.');
-    }
+          // Starting (ideal) and max (negotiated) buying range
+          const startBuyingPrice = basePrice * buyingPct;
+          const endBuyingPrice = startBuyingPrice * 1.10; // 10% higher max
+
+          minPrice = `£${startBuyingPrice.toFixed(2)}`;
+          maxPrice = `£${endBuyingPrice.toFixed(2)}`;
+      }
+
+      displayBuyingAnalysis(
+          sellingReasoning,
+          sellingPriceFormatted,
+          { min: minPrice, max: maxPrice },
+          "" // no buying reasoning
+      );
+  } catch (error) {
+      console.error("Error calling buying range API:", error);
+      alert("Error calculating buying range. Please try again.");
+  }
 }
 
 // ==============================

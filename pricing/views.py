@@ -330,7 +330,6 @@ def delete_global_rule(request, pk):
 
     return render(request, "rules/delete_global_rule_confirm.html", {"rule": rule})
 
-
 @csrf_exempt
 @require_POST
 def buying_range_analysis(request):
@@ -341,22 +340,71 @@ def buying_range_analysis(request):
         data = json.loads(request.body)
         item_name = (data.get("item_name") or "").strip()
         attributes = data.get("attributes", {})
-        category_id = data.get('category')  
-        manufacturer_id = data.get('manufacturer')  
+        category_id = data.get('category')
+        manufacturer_id = data.get('manufacturer')
 
         if not (item_name and category_id):
             return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
         print("Received request with ", data)
 
+        # Find Category and Manufacturer
+        try:
+            category = Category.objects.get(id=category_id)
+        except Category.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Invalid category"}, status=404)
+
+        manufacturer = None
+        if manufacturer_id:
+            try:
+                manufacturer = Manufacturer.objects.get(id=manufacturer_id)
+            except Manufacturer.DoesNotExist:
+                return JsonResponse({"success": False, "error": "Invalid manufacturer"}, status=404)
+
+        # Find applicable MarginRule(s)
+        rules = MarginRule.objects.filter(category=category, is_active=True)
+
+        # Manufacturer-based rule
+        manufacturer_rule = None
+        if manufacturer:
+            manufacturer_rule = rules.filter(rule_type='manufacturer', match_value__iexact=manufacturer.name).first()
+
+        # Model-based rule (match item_name)
+        model_rule = rules.filter(rule_type='model', match_value__iexact=item_name).first()
+
+        # Calculate effective margin (category base + adjustments)
+        effective_margin = category.base_margin
+        rule_matches = []
+
+        if manufacturer_rule:
+            effective_margin += manufacturer_rule.adjustment
+            rule_matches.append({
+                "type": "manufacturer",
+                "match": manufacturer_rule.match_value,
+                "adjustment": manufacturer_rule.adjustment,
+            })
+
+        if model_rule:
+            effective_margin += model_rule.adjustment
+            rule_matches.append({
+                "type": "model",
+                "match": model_rule.match_value,
+                "adjustment": model_rule.adjustment,
+            })
+
+        #  Return analysis summary
         return JsonResponse({
             "success": True,
+            "category": category.name,
+            "manufacturer": manufacturer.name if manufacturer else None,
+            "base_margin": category.base_margin,
+            "effective_margin": effective_margin,
+            "rules_applied": rule_matches,
         })
 
     except Exception as e:
         import traceback; traceback.print_exc()
         return JsonResponse({"success": False, "error": str(e)}, status=500)
-
 
 
 @csrf_exempt
