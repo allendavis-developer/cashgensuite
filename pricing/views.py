@@ -743,7 +743,11 @@ class NegotiationTemplates:
         lines = [f"• Cheers for bringing in the {item_name}. Always a popular item."]
 
         if scenario == "too_high":
-            lines.append("• That number is well above typical market levels; I’ll explain how we price items shortly.")
+            lines.append(
+                "• That number is well above typical market levels; here’s the reality: "
+                "items have a market value, and we base offers on a fair fraction. "
+                "To make it work for both sides, we usually meet at a quarter of the brand new price."
+            )
 
         lines.append(f"• Looking at condition and the resale market, my opening offer is **£{next_offer:.2f}**.")
         lines.append("• That gives us room to move — I’ll do my best to make this work for you.")
@@ -1039,10 +1043,6 @@ def negotiation_step(request):
         # If this is the first step (no conversation history), use opening templates tuned by scenario
         if not conversation_history:
             response_lines = NegotiationTemplates.get_opening_response(item_name, next_offer, customer_price, competitors, scenario)
-            # If customer already gave a textual initial request that indicates an intent like "too high", adapt explanation too:
-            if intent in ("ask_reason", "reject_low", "counter_higher") and scenario == "too_high":
-                # append a short explanatory line
-                response_lines.append("• Let me explain briefly how we price items so it's clear.")
         else:
             # If customer just accepted, return acceptance lines
             if intent == "accept":
