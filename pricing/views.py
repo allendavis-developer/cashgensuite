@@ -854,9 +854,9 @@ class NegotiationTemplates:
             comp_ref,
             "• Explain you base offers on roughly a quarter of brand new value",
             "• Mention the costs: refurb, testing, storage time",
-            "• Be transparent: explain you typically sell at about double what you pay",
+            "• Be transparent: explain you typically sell at about slightly less than   double what you pay",
             f"• Reiterate the current offer is **£{current_offer:.2f}**",
-            "• Emphasize you're giving cash today while being realistic"
+            "• Emphasise you're giving cash today while being realistic"
         ]
         
         return lines
@@ -979,6 +979,8 @@ def negotiation_step(request):
         buying_range = data.get("buying_range") or {}
         competitors = data.get("selected_competitor_rows") or []
         conversation_history = data.get("conversation_history") or []
+
+        print(competitors)
 
         if not item_name or not buying_range:
             return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)

@@ -630,7 +630,7 @@ async function analyzeTableBuying() {
           // --- Determine clean, realistic rounded buying range ---
           function roundToBracket(value) {
             if (value < 20) return Math.round(value); // £1 steps
-            if (value < 100) return Math.round(value / 5) * 5; // £5 steps
+            if (value < 300) return Math.round(value / 5) * 5; // £5 steps
             if (value < 500) return Math.round(value / 10) * 10; // £10 steps
             if (value < 1000) return Math.round(value / 25) * 25; // £25 steps
             return Math.round(value / 50) * 50; // £50 steps for high-end
