@@ -1189,7 +1189,6 @@ def save_listing(request):
 
 
 def repricer_view(request):
-    # Find listings that have had more than one price history entry
     listings = (
         CompetitorListing.objects
         .annotate(history_count=Count('history'))
@@ -1197,10 +1196,18 @@ def repricer_view(request):
         .select_related('market_item')
     )
 
-    # Prepare structured data for the template
+    # Custom competitor order
+    competitor_order = ["CashGenerator", "CashConverters", "CEX", "eBay"]
+
+    # Sort listings according to competitor order
+    listings = sorted(
+        listings,
+        key=lambda l: competitor_order.index(l.competitor)
+        if l.competitor in competitor_order else len(competitor_order)
+    )
+
     repricer_data = []
     for listing in listings:
-        # Get all historical prices in order (oldest → newest)
         price_history = (
             listing.history.order_by('timestamp')
             .values_list('price', flat=True)
@@ -1216,3 +1223,4 @@ def repricer_view(request):
         })
 
     return render(request, 'analysis/repricer.html', {'repricer_data': repricer_data})
+
