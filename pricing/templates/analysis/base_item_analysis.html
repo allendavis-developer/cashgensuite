@@ -155,6 +155,20 @@
     margin-bottom: 1rem;
   }
 
+  .table-container {
+    max-height: 400px;       /* adjust height as desired */
+    overflow-y: auto;        /* enables scrolling */
+  }
+
+
+.competitor-table thead th {
+  position: sticky;
+  top: 0;
+  background-color: #1a1a1a;  /* same as table header bg */
+  z-index: 2;                /* ensures header stays on top */
+}
+
+
   .competitor-table {
     border: 1px solid #333333;
     width: 100%;
@@ -710,24 +724,27 @@
       SOURCES FOUND: <span id="competitor-number">0</span>
     </div>
 
-    <table class="competitor-table" id="competitor-table">
-      <thead>
-        <tr>
-          <th>SOURCE</th>
-          <th>ITEM</th>
-          <th>PRICE</th>
-          <th>STORE</th>
-          <th>RANGE</th>
-        </tr>
-      </thead>
-      <tbody id="competitor-tbody">
-        <tr>
-          <td colspan="4" style="text-align: center; color: #666666; font-style: italic;">
-            {% block competitor_empty_state %}No competitor data available{% endblock %}
-          </td>
-        </tr>
-      </tbody>
-    </table>
+   <div class="table-container">
+      <table class="competitor-table" id="competitor-table">
+        <thead>
+          <tr>
+            <th>SOURCE</th>
+            <th>ITEM</th>
+            <th>PRICE</th>
+            <th>STORE</th>
+            <th>RANGE</th>
+          </tr>
+        </thead>
+        <tbody id="competitor-tbody">
+          <tr>
+            <td colspan="4" style="text-align: center; color: #666666; font-style: italic;">
+              {% block competitor_empty_state %}No competitor data available{% endblock %}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
 
     <div class="warning" id="data-warning" style="display: none;">
       ⚠ LIMITED DATA<br>
