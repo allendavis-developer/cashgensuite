@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.db import transaction
-from django.db.models import Q, Prefetch
+from django.db.models import Q, Prefetch, Count
 from django.utils import timezone
 
 from django.views.decorators.csrf import csrf_exempt
@@ -142,9 +142,6 @@ def item_buying_analyser_view(request):
 
     # GET (render page)
     return render(request, "analysis/item_buying_analyser.html", {"prefilled_data": prefilled_data, "categories": categories})
-
-def repricer_view(request):
-    return render(request, "analysis/repricer.html")
 
 
 # Note: This is technically not in the home page right now
@@ -1189,3 +1186,33 @@ def save_listing(request):
         import traceback
         print(traceback.format_exc())  # For debugging
         return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+
+def repricer_view(request):
+    # Find listings that have had more than one price history entry
+    listings = (
+        CompetitorListing.objects
+        .annotate(history_count=Count('history'))
+        .filter(history_count__gt=1)
+        .select_related('market_item')
+    )
+
+    # Prepare structured data for the template
+    repricer_data = []
+    for listing in listings:
+        # Get all historical prices in order (oldest → newest)
+        price_history = (
+            listing.history.order_by('timestamp')
+            .values_list('price', flat=True)
+        )
+        price_chain = " → ".join([f"£{p:.2f}" for p in price_history])
+
+        repricer_data.append({
+            'competitor': listing.competitor,
+            'title': listing.title,
+            'url': listing.url,
+            'price_chain': price_chain,
+            'current_price': listing.price,
+        })
+
+    return render(request, 'analysis/repricer.html', {'repricer_data': repricer_data})

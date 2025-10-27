@@ -1,10 +1,33 @@
 {% extends "base.html" %}
 
-{% block title %}Minimal Page{% endblock %}
-{% block header_title %}MINIMAL EXAMPLE{% endblock %}
+{% block title %}Repricer{% endblock %}
+{% block header_title %}REPRICER DASHBOARD{% endblock %}
 
 {% block content %}
-  <div class="main-content" style="justify-content:center; align-items:center; flex-direction:column; text-align:center;">
-    <button class="btn btn--primary" onclick="alert('Button works!')">Click Me</button>
+  <div class="main-content" style="flex-direction:column; padding:2rem;">
+    <h2 style="margin-bottom:1rem; font-size:1rem; text-align:left;">Competitor Listings with Price Changes</h2>
+
+    <table class="competitor-table">
+      <thead>
+        <tr>
+          <th>Competitor</th>
+          <th>Listing</th>
+          <th>Price Changes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in repricer_data %}
+          <tr>
+            <td>{{ item.competitor }}</td>
+            <td><a href="{{ item.url }}" target="_blank">{{ item.title }}</a></td>
+            <td>{{ item.price_chain }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="3" style="text-align:center; color:#777;">No price changes detected.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 {% endblock %}
