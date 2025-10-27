@@ -177,7 +177,7 @@ def category_detail(request, pk):
     })
 
 
-def add_category(request):
+def add_category_view(request):
     if request.method == "POST":
         form = CategoryForm(request.POST)
         if form.is_valid():

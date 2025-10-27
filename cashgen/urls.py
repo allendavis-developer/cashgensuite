@@ -13,7 +13,7 @@ urlpatterns = [
 
     # ------------------ CATEGORY AND GLOBAL RULES --------------------------------
     path("categories/", v.category_list, name="category_list"),
-    path("categories/add/", v.add_category, name="add_category"),
+    path("categories/add/", v.add_category_view, name="add_category"),
     path("categories/<int:pk>/", v.category_detail, name="category_detail"),
     path("categories/<int:pk>/edit/", v.edit_category, name="edit_category"),
     path("categories/<int:pk>/delete/", v.delete_category, name="delete_category"),
