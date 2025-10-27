@@ -734,206 +734,217 @@ def generate_search_term(request):
 
 
 
-class NegotiationTemplates:
-    """Pawn-style negotiation templates with realistic market framing"""
 
+class CompetitorAnalyzer:
+    """Analyzes competitor data to generate strategic references"""
+    
     @staticmethod
-    def get_opening_response(item_name, next_offer, customer_price, competitors, scenario):
-        comp_ref = NegotiationTemplates._format_competitor_reference(competitors, context="opening")
-        lines = [f"• Cheers for bringing in the {item_name}. Always a popular item."]
-
-        if scenario == "too_high":
-            lines.append(
-                "• That number is well above typical market levels; here’s the reality: "
-                "items have a market value, and we base offers on a fair fraction. "
-                "To make it work for both sides, we usually meet at a quarter of the brand new price."
-            )
-
-        lines.append(f"• Looking at condition and the resale market, my opening offer is **£{next_offer:.2f}**.")
-        lines.append("• That gives us room to move — I’ll do my best to make this work for you.")
-
-        return lines
-
-    @staticmethod
-    def get_mid_negotiation_response(item_name, next_offer, last_offer, competitors, scenario):
-        comp_ref = NegotiationTemplates._format_competitor_reference(competitors, context="mid")
-        increase = (next_offer - last_offer) if last_offer is not None else next_offer
-        lines = [f"• I’ve checked again on the {item_name}."]
-
-        if scenario == "reasonable":
-            lines.append(f"• I can move to **£{next_offer:.2f}** (up £{increase:.2f}).")
-            lines.append("• This is close to what we can pay given refurb and market demand — aiming for a fair deal.")
-        elif scenario == "slightly_high":
-            lines.append(f"• I can move to **£{next_offer:.2f}** (up £{increase:.2f}).")
-            lines.append("• That’s slightly below what you suggested, but I’m trying to bridge the gap. What number would feel fair to you?")
-        else:  # too_high
-            lines.append(f"• I can stretch to **£{next_offer:.2f}** (up £{increase:.2f}).")
-            lines.append("• I want to be transparent — we price based on refurb, testing, and competitor markets.")
-            lines.append("• If that’s still short, let me know a number you’d feel comfortable with.")
-
-        lines.append(comp_ref)
-        return lines
-
-    @staticmethod
-    def get_maximum_response(item_name, next_offer, competitors, scenario="reasonable"):
-        comp_ref = NegotiationTemplates._format_competitor_reference(competitors, context="maximum")
-        lines = [f"• I really appreciate you working with me on the {item_name}.", comp_ref]
-        lines.append(f"• I’ve stretched as far as I can — my final offer is **£{next_offer:.2f}**.")
-
-        if scenario == "too_high":
-            lines.append("• This is the highest realistic cash offer given market conditions and refurb costs.")
-        else:
-            lines.append("• That’s a strong cash price for today. If that works, we can do the deal now.")
-
-        return lines
-
-    @staticmethod
-    def _format_competitor_reference(competitors, context="opening"):
-        """Context-sensitive competitor reference"""
+    def analyze(competitors):
+        """
+        Extract useful statistics from competitor data.
+        Returns dict with highest, lowest, median, average, range_str, etc.
+        """
         if not competitors:
-            return "• We have to compete with Cash Generator and Cash Converters, so prices vary depending on condition and demand."
-
-        prices = [c.get("price", 0) for c in competitors if "price" in c]
+            return None
+        
+        prices = [c.get("price", 0) for c in competitors if c.get("price", 0) > 0]
         if not prices:
-            return "• Competitor prices vary, so we’ve priced this fairly based on market conditions."
-
-        if context in ("opening", "ask_reason"):
-            ref_price = max(prices)
-        elif context in ("mid", "counter"):
-            sorted_prices = sorted(prices)
-            mid_index = len(sorted_prices) // 2
-            ref_price = sorted_prices[mid_index]
+            return None
+        
+        sorted_prices = sorted(prices)
+        shops = [c.get("competitor", "Competitor") for c in competitors]
+        
+        return {
+            'highest': max(prices),
+            'lowest': min(prices),
+            'average': sum(prices) / len(prices),
+            'median': sorted_prices[len(sorted_prices) // 2],
+            'second_highest': sorted_prices[-2] if len(sorted_prices) > 1 else sorted_prices[-1],
+            'range_str': f"£{min(prices):.2f}-£{max(prices):.2f}",
+            'highest_shop': shops[prices.index(max(prices))] if shops else "Competitor",
+            'count': len(prices),
+            'all_prices': sorted_prices
+        }
+    
+    @staticmethod
+    def format_reference(competitors, context="opening"):
+        """Generate context-appropriate competitor reference with specific shop names and prices"""
+        stats = CompetitorAnalyzer.analyze(competitors)
+        
+        if not stats:
+            return "• Mention that Cash Generator and Cash Converters sell similar items and you need to compete with them."
+        
+        # Get individual shop prices for specific callouts
+        shop_prices = {}
+        for comp in competitors:
+            shop = comp.get("competitor", "")
+            price = comp.get("price", 0)
+            if shop and price > 0:
+                if shop not in shop_prices:
+                    shop_prices[shop] = []
+                shop_prices[shop].append(price)
+        
+        # Average prices per shop if multiple listings
+        shop_averages = {shop: sum(prices)/len(prices) for shop, prices in shop_prices.items()}
+        
+        if context == "opening":
+            # Use highest as strong anchor with specific shop
+            return f"• Reference that {stats['highest_shop']} sells similar items at around £{stats['highest']:.2f}."
+        
+        elif context == "explanation":
+            # List specific competitors and their prices
+            if len(shop_averages) == 1:
+                shop, price = list(shop_averages.items())[0]
+                return f"• Show them that {shop} sells similar items at £{price:.2f}, and explain you need to compete with them."
+            elif len(shop_averages) >= 2:
+                shop_list = ", ".join([f"{shop} at £{price:.2f}" for shop, price in sorted(shop_averages.items(), key=lambda x: x[1], reverse=True)])
+                return f"• Show them specific competitor prices: {shop_list}. Explain you need to compete with these shops."
+            else:
+                return f"• Explain competitor pricing ranges from {stats['range_str']} and you need to stay competitive."
+        
+        elif context == "mid":
+            # Show 1-2 specific competitors
+            if len(shop_averages) >= 2:
+                sorted_shops = sorted(shop_averages.items(), key=lambda x: x[1], reverse=True)
+                top_two = sorted_shops[:2]
+                shop_refs = " and ".join([f"{shop} at £{price:.2f}" for shop, price in top_two])
+                return f"• Reference that {shop_refs}. Remind them you need to compete with these prices."
+            elif len(shop_averages) == 1:
+                shop, price = list(shop_averages.items())[0]
+                return f"• Mention that {shop} sells similar items at £{price:.2f} and you're pricing to compete."
+            else:
+                return f"• Reference competitor pricing at {stats['range_str']}."
+        
         elif context == "maximum":
-            sorted_prices = sorted(prices, reverse=True)
-            ref_price = sorted_prices[1] if len(sorted_prices) > 1 else sorted_prices[0]
-        else:
-            ref_price = prices[0]
+            # Show top competitor pricing
+            if len(shop_averages) >= 1:
+                highest_shop, highest_price = max(shop_averages.items(), key=lambda x: x[1])
+                return f"• Point out that top competitor pricing (like {highest_shop} at £{highest_price:.2f}) factors into your maximum."
+            else:
+                return f"• Reference top competitor pricing around £{stats['second_highest']:.2f}."
+        
+        return f"• Mention competitor pricing ranges from {stats['range_str']}."
 
-        return f"• Competitors like Cash Generator / Converters would likely sell this for around £{ref_price:.2f}. Taking refurb, testing, and the time to sell into account, we’ve priced it accordingly."
+
+class NegotiationTemplates:
+    """Enhanced negotiation templates with data-driven competitor references"""
 
     @staticmethod
-    def get_customer_reply_options(at_maximum, next_offer, customer_price):
+    def get_opening_response(item_name, next_offer, competitors):
+        """Opening response - always use highest competitor as anchor"""
+        comp_ref = CompetitorAnalyzer.format_reference(competitors, context="opening")
+        
+        lines = [
+            f"• Greet customer and acknowledge the {item_name}",
+            comp_ref,
+            "• Explain you offer around a quarter of brand new value for quick cash purchases",
+            f"• Present your opening offer of **£{next_offer:.2f}**",
+            "• Mention there's room to negotiate"
+        ]
+        
+        return lines
+
+    @staticmethod
+    def get_explanation_response(item_name, current_offer, competitors):
+        """Detailed explanation when customer asks 'why' - show full data"""
+        comp_ref = CompetitorAnalyzer.format_reference(competitors, context="explanation")
+        
+        lines = [
+            "• Acknowledge their question positively",
+            comp_ref,
+            "• Explain you base offers on roughly a quarter of brand new value",
+            "• Mention the costs: refurb, testing, storage time",
+            "• Be transparent: explain you typically sell at about double what you pay",
+            f"• Reiterate the current offer is **£{current_offer:.2f}**",
+            "• Emphasize you're giving cash today while being realistic"
+        ]
+        
+        return lines
+
+    @staticmethod
+    def get_mid_negotiation_response(item_name, next_offer, last_offer, competitors):
+        """Mid-negotiation response when customer rejects - use median pricing"""
+        comp_ref = CompetitorAnalyzer.format_reference(competitors, context="mid")
+        increase = next_offer - last_offer
+        
+        lines = [
+            "• Show empathy and willingness to work with them",
+            comp_ref,
+            "• Remind them about refurb, testing, and time to sell costs",
+            f"• Present your increased offer of **£{next_offer:.2f}** (up £{increase:.2f})",
+            "• Frame it as meeting them partway"
+        ]
+        
+        return lines
+
+    @staticmethod
+    def get_maximum_response(item_name, next_offer, competitors):
+        """Maximum offer response - use 2nd highest competitor, full transparency"""
+        comp_ref = CompetitorAnalyzer.format_reference(competitors, context="maximum")
+        
+        lines = [
+            f"• Thank them for working with you on the {item_name}",
+            comp_ref,
+            "• Be completely transparent: explain you'd sell at roughly double to cover overheads",
+            f"• Present your absolute maximum of **£{next_offer:.2f}**",
+            "• Emphasize this is as high as you can go, ask if they can agree"
+        ]
+        
+        return lines
+
+    @staticmethod
+    def get_accept_response(final_offer):
+        """Customer accepted the offer"""
         return [
-            f"Yes — I’ll take £{next_offer:.2f}",
-            "No — that’s too low",
+            f"• Express enthusiasm and confirm the deal at **£{final_offer:.2f}** cash",
+            "• Thank them for working with you and frame it as fair for both sides"
+        ]
+
+    @staticmethod
+    def get_decline_response():
+        """Customer declined at maximum - polite close"""
+        return [
+            "• Be understanding and non-pushy",
+            "• Let them know the offer stands if they change their mind",
+            "• Encourage them to shop around and return if interested"
+        ]
+
+    @staticmethod
+    def get_customer_reply_options(next_offer):
+        """Generate the 3 button options for customer"""
+        return [
+            f"Yes — I'll take £{next_offer:.2f}",
+            "No — that's too low",
             "Why — how did you price that?"
         ]
 
 
-class NegotiationDialogue:
-    """Structured response tree — scenario-aware, context-sensitive explanations"""
-
-    @staticmethod
-    def respond(context, intent):
-        item = context.get("item_name", "item")
-        next_offer = context.get("next_offer", 0.0)
-        last_offer = context.get("last_offer")
-        competitors = context.get("competitors", [])
-        scenario = context.get("scenario", "reasonable")
-
-        refurb_note = "We factor in refurb, testing, and the time it takes to sell it in-store."
-        cash_note = "This is cash today — no waiting for sale, no fees."
-
-        # Accept
-        if intent == "accept":
-            return [
-                f"• Brilliant — I’ll sort that now at **£{next_offer:.2f}** cash.",
-                "• Thanks for working with me — that’s a fair deal for both of us."
-            ]
-
-        # Ask Reason
-        if intent == "ask_reason":
-            comp_ref = NegotiationTemplates._format_competitor_reference(competitors, context="opening")
-            lines = ["• Fair question — here’s how we came to that price:"]
-            if scenario == "too_high":
-                lines.append("• That number is above typical market levels.")
-            lines.append(f"• {comp_ref}")
-            lines.append(f"• Considering refurb, testing, and time to sell, we price this at **£{next_offer:.2f}** today.")
-            lines.append("• We want to be fair but realistic.")
-            return lines
-
-        # Reject Low
-        if intent == "reject_low":
-            comp_ref = NegotiationTemplates._format_competitor_reference(competitors, context="mid")
-            lines = []
-            if scenario == "reasonable":
-                lines.append(f"• I understand, but for a quick cash sale, **£{next_offer:.2f}** is realistic.")
-                lines.append("• Online retail prices often include warranty, returns, or delayed payment.")
-            else:
-                lines.append("• I get that you expected more.")
-                lines.append(f"• {refurb_note}")
-                lines.append(f"• For today, the best we can do is **£{next_offer:.2f}** cash upfront.")
-            lines.append(f"• {comp_ref}")
-            return lines
-
-        # Counter Higher
-        if intent == "counter_higher":
-            comp_ref = NegotiationTemplates._format_competitor_reference(competitors, context="mid")
-            lines = []
-            if scenario == "reasonable":
-                lines.extend([
-                    "• I understand you were hoping for a bit more.",
-                    f"• {refurb_note}",
-                    f"• I’ve moved up to **£{next_offer:.2f}** to get closer.",
-                    "• What number would feel fair to you?"
-                ])
-            elif scenario == "slightly_high":
-                lines.extend([
-                    "• I see your point — that’s a bit above our usual range.",
-                    f"• {refurb_note}",
-                    f"• I can stretch to **£{next_offer:.2f}**, but let’s find a number that works for both of us."
-                ])
-            else:  # too_high
-                lines.extend([
-                    "• I want to be upfront — that number is above typical market levels.",
-                    f"• {refurb_note}",
-                    f"• I can offer **£{next_offer:.2f}**. If that’s still short, what number would you feel comfortable with?"
-                ])
-            lines.append(f"• {comp_ref}")
-            return lines
-
-        # Hold Item
-        if intent == "hold_item":
-            return [
-                "• No problem — if you want to hold onto it, that’s fine.",
-                "• If you change your mind, we’re here to give a straight cash offer anytime."
-            ]
-
-        # Default fallback
-        comp_ref = NegotiationTemplates._format_competitor_reference(competitors, context="mid")
-        return [
-            "• I’ve adjusted the offer and explained why we price like this.",
-            f"• {comp_ref}",
-            f"• Current suggested cash offer: **£{next_offer:.2f}**."
-        ]
-
-
-
-
 def detect_intent(customer_text):
-    """Detect intent based on simplified structured options."""
+    """Detect intent from button text only"""
     if not customer_text:
         return None
+    
     txt = customer_text.lower()
-    if "yes" in txt or "take" in txt or "accept" in txt:
+    
+    if "yes" in txt and "take" in txt:
         return "accept"
-    if "why" in txt or "how" in txt:
+    if "why" in txt and "how" in txt:
         return "ask_reason"
-    if "no" in txt or "low" in txt or "too low" in txt:
+    if "no" in txt and "too low" in txt:
         return "reject_low"
-    # fallback — treat as counter or pushback
-    return "counter_higher"
+    
+    # Default fallback
+    return "reject_low"
 
 
 def determine_increment(last_offer, max_price):
     """
-    Determine realistic pawn-style negotiation increments.
-    Increments scale with item value to feel natural.
+    Determine realistic negotiation increments based on item value.
+    Increments scale with price to feel natural.
     """
-
     price_range = max_price - last_offer
 
-    # For cheap items, small jumps; for high value, larger ones.
+    # Scale increments by item value
     if max_price < 30:
         base = 2
     elif max_price < 80:
@@ -947,10 +958,9 @@ def determine_increment(last_offer, max_price):
     else:
         base = 50
 
-    # Never exceed the remaining gap
+    # Never exceed remaining gap
     increment = min(base, price_range)
-
-    # Round to nearest sensible unit (no pennies)
+    
     return round(increment)
 
 
@@ -958,36 +968,32 @@ def determine_increment(last_offer, max_price):
 @require_POST
 def negotiation_step(request):
     """
-    Cash Generator Negotiation Engine (dialogue-tree + scenario detection).
-    Keeps JSON shape compatible with the frontend.
+    Enhanced Cash Generator Negotiation Engine
+    - Data-driven competitor references
+    - Transparent pricing explanation
+    - Simple 3-button interaction (Yes/No/Why)
     """
     try:
         data = json.loads(request.body)
         item_name = (data.get("item_name") or "").strip()
-        suggested_price = (data.get("suggested_price") or "").strip()
         buying_range = data.get("buying_range") or {}
-        customer_input = (data.get("customer_input") or "").strip()
         competitors = data.get("selected_competitor_rows") or []
         conversation_history = data.get("conversation_history") or []
 
-        if not item_name or not suggested_price or not buying_range:
+        if not item_name or not buying_range:
             return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
         min_price = float(buying_range.get("min", 0))
         max_price = float(buying_range.get("max", 0))
-        customer_price = float(customer_input) if customer_input else max_price
 
-        # --- Scenario detection ---
-        if customer_price <= max_price * 1.05:
-            scenario = "reasonable"
-        elif customer_price <= max_price * 1.25:
-            scenario = "slightly_high"
-        else:
-            scenario = "too_high"
+        if min_price <= 0 or max_price <= 0 or min_price > max_price:
+            return JsonResponse({"success": False, "error": "Invalid buying range"}, status=400)
 
         # --- Determine latest customer intent ---
-        latest_customer_text = conversation_history[-1].get("customer", "") if conversation_history else customer_input
-        intent = detect_intent(latest_customer_text)
+        intent = None
+        if conversation_history:
+            latest_customer_text = conversation_history[-1].get("customer", "")
+            intent = detect_intent(latest_customer_text)
 
         # --- Offer progression ---
         last_offer = None
@@ -998,70 +1004,63 @@ def negotiation_step(request):
             last_offer = conversation_history[-1].get("assistant_offer")
             last_offer = float(last_offer) if last_offer is not None else None
 
-        # Short-circuit if customer accepted: keep the last offer and stop progression
+        # Determine next offer based on intent
         if intent == "accept" and last_offer is not None:
+            # Customer accepted - freeze at last offer
             next_offer = last_offer
-            at_maximum = True  # mark as “finished” for UI
+            at_maximum = True
+        elif intent == "ask_reason" and last_offer is not None:
+            # Customer asking why - keep same offer
+            next_offer = last_offer
+        elif last_offer is None:
+            # First interaction - start at minimum
+            next_offer = float(min_price)
         else:
-            # Always start at minimum if no history
-            if last_offer is None:
-                next_offer = float(min_price)
+            # Customer rejected - increment offer
+            gap = max_price - last_offer
+            if gap > 0:
+                increment = determine_increment(last_offer, max_price)
+                increment = min(increment, gap)
+                next_offer = last_offer + increment
             else:
-                gap = max_price - last_offer
+                next_offer = last_offer
+            
+            # Check if we've reached maximum
+            at_maximum = (next_offer >= max_price)
+            next_offer = min(next_offer, max_price)
 
-                if intent == "ask_reason":
-                    # Do not move the price when explaining
-                    next_offer = last_offer
-                else:
-                    # Normal increment
-                    increment = determine_increment(last_offer, max_price)
-                    increment = min(increment, gap)
-                    next_offer = round(last_offer + increment)
-
-                # Never exceed max or customer's stated price
-                next_offer = min(next_offer, customer_price, max_price)
-                at_maximum = (next_offer >= max_price or next_offer >= customer_price)
-
-
-
-        # progress for UI
+        # Calculate progress for UI
         progress = round(((next_offer - min_price) / (max_price - min_price) * 100), 1) if max_price > min_price else 100.0
 
-
-        # Build context passed into dialogue responder
-        context = {
-            "item_name": item_name,
-            "next_offer": next_offer,
-            "last_offer": last_offer,
-            "customer_price": customer_price,
-            "competitors": competitors,
-            "progress": progress,
-            "scenario": scenario,
-        }
-
-        # --- Build response lines using dialogue tree ---
-        # If this is the first step (no conversation history), use opening templates tuned by scenario
+        # --- Build response lines based on state ---
         if not conversation_history:
-            response_lines = NegotiationTemplates.get_opening_response(item_name, next_offer, customer_price, competitors, scenario)
-        else:
-            # If customer just accepted, return acceptance lines
-            if intent == "accept":
-                response_lines = NegotiationDialogue.respond(context, "accept")
+            # Opening response
+            response_lines = NegotiationTemplates.get_opening_response(item_name, next_offer, competitors)
+        
+        elif intent == "accept":
+            # Customer accepted
+            response_lines = NegotiationTemplates.get_accept_response(next_offer)
+        
+        elif intent == "ask_reason":
+            # Customer asked why
+            response_lines = NegotiationTemplates.get_explanation_response(item_name, next_offer, competitors)
+        
+        elif intent == "reject_low":
+            if at_maximum:
+                # At maximum - final offer
+                response_lines = NegotiationTemplates.get_maximum_response(item_name, next_offer, competitors)
             else:
-                # Use dialogue responder to create explanatory lines and a bridging offer
-                response_lines = NegotiationDialogue.respond(context, intent)
-                # If the dialogue did not include the numeric next offer, append it consistently
-                if not any(str(next_offer) in line for line in response_lines):
-                    response_lines.append(f"• Current suggested cash offer: **£{next_offer:.2f}**.")
+                # Mid-negotiation - increment and explain
+                response_lines = NegotiationTemplates.get_mid_negotiation_response(item_name, next_offer, last_offer, competitors)
+        
+        else:
+            # Fallback (shouldn't happen)
+            response_lines = [f"• Current offer: **£{next_offer:.2f}**"]
 
-            if at_maximum and intent != "accept":
-                response_lines.append("• That’s me right at the top for it — can we shake on that?")
+        # Prepare customer reply options
+        customer_replies = NegotiationTemplates.get_customer_reply_options(next_offer)
 
-
-        # Prepare customer reply options (these are suggestions the agent shows as buttons)
-        customer_replies = NegotiationTemplates.get_customer_reply_options(at_maximum, next_offer, customer_price)
-
-        # Convert to HTML for frontend display
+        # Convert to HTML for frontend
         formatted_response_html = "<br>".join(response_lines)
 
         response_data = {
@@ -1071,11 +1070,14 @@ def negotiation_step(request):
             "suggested_offer": f"£{next_offer:.2f}",
             "at_maximum": at_maximum,
             "negotiation_progress": progress,
-            "scenario": scenario,
             "intent_detected": intent
         }
 
-        return JsonResponse({"success": True, "ai_response": response_data, "at_maximum": at_maximum})
+        return JsonResponse({
+            "success": True, 
+            "ai_response": response_data, 
+            "at_maximum": at_maximum
+        })
 
     except Exception as e:
         import traceback
