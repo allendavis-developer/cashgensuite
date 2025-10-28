@@ -5,55 +5,109 @@
 
 {% block extra_style %}
 .main-content {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 2rem;
 }
 
-/* Quantity buttons */
+/* Buttons */
 .qty-btn {
-    padding: 2px 6px;
-    margin: 0 2px;
-    cursor: pointer;
-    border: 1px solid #333;
-    background: #1a1a1a;
-    color: #fff;
-    border-radius: 3px;
-    font-size: 12px;
+  padding: 2px 6px;
+  margin: 0 2px;
+  cursor: pointer;
+  border: 1px solid #333;
+  background: #1a1a1a;
+  color: #fff;
+  border-radius: 3px;
+  font-size: 12px;
 }
 .qty-btn:hover {
-    background: #222;
+  background: #222;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 0.25rem;
+  text-transform: uppercase;
+}
+.btn-sm:hover:not(:disabled) {
+  background-color: #e6e6e6;
 }
 
 /* Quantity input */
 .qty-input {
-    padding: 2px 6px;
-    background: #1a1a1a;
-    border: 1px solid #333;
-    color: #fff;
-    border-radius: 3px;
-    font-size: 12px;
-    width: 50px;
-    text-align: center;
+  padding: 2px 6px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  color: #fff;
+  border-radius: 3px;
+  font-size: 12px;
+  width: 50px;
+  text-align: center;
 }
 .qty-input:focus {
-    outline: none;
-    border-color: #555;
-    background: #222;
+  outline: none;
+  border-color: #555;
+  background: #222;
 }
 
-.btn-sm {
-    padding: 6px 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: 0.25rem;
-    text-transform: uppercase;
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0,0,0,0.85);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
-.btn-sm:hover:not(:disabled) {
-    background-color: #e6e6e6;
+.modal.active { display: flex; }
+
+.modal-content {
+  background-color: #111;
+  border: 1px solid #333;
+  border-radius: 8px;
+  width: 400px;
+  max-width: 90%;
+  padding: 24px;
+  position: relative;
 }
 
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  cursor: pointer;
+  font-size: 24px;
+  color: #888;
+  transition: color 0.2s;
+}
+.modal-close:hover { color: #fff; }
+
+.modal h2 {
+  margin-bottom: 20px;
+  font-size: 16px;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.modal-btn {
+  width: 100%;
+  padding: 14px;
+  background-color: #fff;
+  color: #000;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  margin-top: 16px;
+}
+.modal-btn:hover { background-color: #e0e0e0; }
 {% endblock %}
 
 {% block content %}
@@ -88,117 +142,265 @@
 
 </div>
 
+<!-- Add Item Modal -->
+<div id="addItemModal" class="modal">
+  <div class="modal-content">
+    <span class="modal-close" id="closeAddItemModal">&times;</span>
+    <h2>Add New Item</h2>
+
+    <div class="input-group">
+      <label for="modalItemName">Item Name</label>
+      <input type="text" id="modalItemName" class="input-field" placeholder="Enter item name">
+    </div>
+
+    <div class="input-group">
+      <label for="modalItemCategory">Category</label>
+      <select id="modalItemCategory" class="input-field">
+        <option value="">Select category</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label for="modalItemManufacturer">Manufacturer</label>
+      <select id="modalItemManufacturer" class="input-field">
+        <option value="">Select manufacturer</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label for="modalItemModel">Model</label>
+      <select id="modalItemModel" class="input-field">
+        <option value="">Select model</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label>Attributes</label>
+      <div id="attributes-container"></div>
+    </div>
+
+    <button class="modal-btn" id="saveItemBtn">Save Item</button>
+  </div>
+</div>
+
 <script>
+/* ---------- Cached DOM Elements ---------- */
 const addItemBtn = document.getElementById('addItemBtn');
 const itemInput = document.getElementById('itemInput');
 const tableBody = document.getElementById('itemTableBody');
+const addItemModal = document.getElementById('addItemModal');
+const closeAddItemModal = document.getElementById('closeAddItemModal');
+const saveItemBtn = document.getElementById('saveItemBtn');
+const modalItemName = document.getElementById('modalItemName');
+const modalItemCategory = document.getElementById('modalItemCategory');
+const modalItemManufacturer = document.getElementById('modalItemManufacturer');
+const modalItemModel = document.getElementById('modalItemModel');
+const attributesContainer = document.getElementById('attributes-container');
 
-// Helper to check if placeholder is present
-function isPlaceholderPresent() {
-  return tableBody.querySelector('.placeholder') !== null;
+/* ---------- Data ---------- */
+const categories = {{ categories|safe }};
+let currentAttributes = [];
+
+/* ---------- Initialization ---------- */
+document.addEventListener('DOMContentLoaded', () => {
+  populateCategories();
+  fetchManufacturers();
+});
+
+/* ---------- Category / Manufacturer / Model ---------- */
+function populateCategories() {
+  modalItemCategory.innerHTML = '<option value="">Select category</option>';
+  categories.forEach(cat => {
+    modalItemCategory.insertAdjacentHTML('beforeend', `<option value="${cat.id}">${cat.name}</option>`);
+  });
 }
 
-// Helper to render placeholder row
-function renderPlaceholder() {
-  const placeholder = document.createElement('tr');
-  placeholder.className = 'placeholder';
-  placeholder.innerHTML = `<td colspan="6" style="text-align:center; color:#777;">No items added yet.</td>`;
-  tableBody.appendChild(placeholder);
+function fetchManufacturers() {
+  fetch("{% url 'api-manufacturers' %}")
+    .then(res => res.json())
+    .then(data => {
+      modalItemManufacturer.innerHTML = '<option value="">Select manufacturer</option>';
+      data.forEach(m => {
+        modalItemManufacturer.insertAdjacentHTML('beforeend', `<option value="${m.id}">${m.name}</option>`);
+      });
+    });
 }
 
-// Quantity cell with +/- buttons
+function fetchModels() {
+  const categoryId = modalItemCategory.value;
+  const manufacturerId = modalItemManufacturer.value;
+
+  if (!categoryId || !manufacturerId) {
+    modalItemModel.innerHTML = '<option value="">Select model</option>';
+    return;
+  }
+
+  fetch(`/api/models/?category=${categoryId}&manufacturer=${manufacturerId}`)
+    .then(res => res.json())
+    .then(data => {
+      modalItemModel.innerHTML = '<option value="">Select model</option>';
+      data.forEach(m => {
+        modalItemModel.insertAdjacentHTML('beforeend', `<option value="${m.id}">${m.name}</option>`);
+      });
+    });
+}
+
+/* ---------- Attributes ---------- */
+async function loadCategoryAttributes(categoryId) {
+  try {
+    const res = await fetch(`/api/category_attributes/?category=${categoryId}`);
+    const data = await res.json();
+    renderAttributes(data);
+    currentAttributes = data;
+    updateTableHeaders(currentAttributes);
+  } catch (err) {
+    console.error("Error loading attributes:", err);
+  }
+}
+
+function renderAttributes(attributes) {
+  attributesContainer.innerHTML = '';
+  attributes.forEach(attr => {
+    const field =
+      attr.field_type === 'select'
+        ? renderSelectAttribute(attr)
+        : `<input type="${attr.field_type === 'number' ? 'number' : 'text'}" id="attr_${attr.id}" class="input-field">`;
+    attributesContainer.insertAdjacentHTML('beforeend', `
+      <div class="input-group">
+        <label>${attr.label || attr.name}</label>
+        ${field}
+      </div>
+    `);
+  });
+}
+
+function renderSelectAttribute(attr) {
+  const options = (attr.options || [])
+    .map(opt => `<option value="${opt}">${opt}</option>`)
+    .join('');
+  return `
+    <select id="attr_${attr.id}" class="input-field">
+      <option value="">-- Select ${attr.label || attr.name} --</option>
+      ${options}
+    </select>`;
+}
+
+/* ---------- Event Listeners ---------- */
+modalItemCategory.addEventListener('change', () => {
+  fetchModels();
+  loadCategoryAttributes(modalItemCategory.value);
+});
+
+modalItemManufacturer.addEventListener('change', fetchModels);
+
+addItemBtn.addEventListener('click', () => {
+  const val = itemInput.value.trim();
+  if (!val) return alert("Enter item name or barcode first.");
+  modalItemName.value = val;
+  resetModal();
+  addItemModal.classList.add('active');
+});
+
+closeAddItemModal.addEventListener('click', () => addItemModal.classList.remove('active'));
+
+itemInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') addItemBtn.click();
+});
+
+saveItemBtn.addEventListener('click', addItemToTable);
+
+/* ---------- UI Helpers ---------- */
+function resetModal() {
+  modalItemCategory.value = '';
+  modalItemManufacturer.value = '';
+  modalItemModel.innerHTML = '<option value="">Select model</option>';
+  attributesContainer.innerHTML = '';
+}
+
+function addItemToTable() {
+  const name = modalItemName.value.trim();
+  if (!name) return alert("Please enter an item name.");
+
+  if (tableBody.querySelector('.placeholder')) tableBody.innerHTML = '';
+
+  const row = document.createElement('tr');
+  row.innerHTML = `
+    <td>${name}</td>
+    <td>—</td>
+    <td>—</td>
+    <td>—</td>
+    <td>${createQuantityCell().innerHTML}</td>
+  `;
+
+  // Dynamic attributes
+  currentAttributes.forEach(attr => {
+    const td = document.createElement('td');
+    td.textContent = document.getElementById(`attr_${attr.id}`)?.value || '—';
+    row.appendChild(td);
+  });
+
+  row.appendChild(createActionsCell(row));
+  tableBody.appendChild(row);
+  itemInput.value = '';
+  addItemModal.classList.remove('active');
+}
+
 function createQuantityCell() {
   const cell = document.createElement('td');
+  cell.innerHTML = `
+    <button class="qty-btn">-</button>
+    <input type="number" class="qty-input" min="1" value="1">
+    <button class="qty-btn">+</button>
+  `;
 
-  const minusBtn = document.createElement('button');
-  minusBtn.textContent = '-';
-  minusBtn.className = 'qty-btn';
-
-  const qtyInput = document.createElement('input');
-  qtyInput.type = 'number';
-  qtyInput.value = 1;
-  qtyInput.min = 1;
-  qtyInput.className = 'qty-input';
-
-  const plusBtn = document.createElement('button');
-  plusBtn.textContent = '+';
-  plusBtn.className = 'qty-btn';
-
-  minusBtn.addEventListener('click', () => {
-    qtyInput.value = Math.max(1, parseInt(qtyInput.value) - 1);
-  });
-  plusBtn.addEventListener('click', () => {
-    qtyInput.value = parseInt(qtyInput.value) + 1;
-  });
-
-  cell.appendChild(minusBtn);
-  cell.appendChild(qtyInput);
-  cell.appendChild(plusBtn);
-
+  const [minus, input, plus] = cell.children;
+  minus.addEventListener('click', () => input.value = Math.max(1, input.value - 1));
+  plus.addEventListener('click', () => input.value++);
   return cell;
 }
 
-// Actions cell with Analyse and Remove buttons
 function createActionsCell(row) {
   const cell = document.createElement('td');
   cell.style.display = 'flex';
   cell.style.gap = '8px';
-  cell.style.alignItems = 'center'; // <-- vertical centering
+  cell.style.alignItems = 'center';
 
-  const analyseBtn = document.createElement('button');
-  analyseBtn.textContent = 'Details';
-  analyseBtn.className = 'btn btn-sm';  // <-- small variant
-  analyseBtn.addEventListener('click', () => {
-    alert(`Analysing ${row.querySelector('td').textContent}`);
-  });
+  const detailsBtn = document.createElement('button');
+  detailsBtn.textContent = 'Details';
+  detailsBtn.className = 'btn btn-sm';
+  detailsBtn.addEventListener('click', () =>
+    alert(`Analysing ${row.querySelector('td').textContent}`)
+  );
 
   const removeBtn = document.createElement('button');
   removeBtn.textContent = 'Remove';
   removeBtn.className = 'btn btn-sm';
   removeBtn.style.backgroundColor = '#ff4444';
   removeBtn.style.color = '#fff';
-  removeBtn.addEventListener('mouseenter', () => removeBtn.style.backgroundColor = '#ff6666');
-  removeBtn.addEventListener('mouseleave', () => removeBtn.style.backgroundColor = '#ff4444');
   removeBtn.addEventListener('click', () => {
     row.remove();
-    if (tableBody.children.length === 0) renderPlaceholder();
+    if (!tableBody.children.length) renderPlaceholder();
   });
 
-  cell.appendChild(analyseBtn);
-  cell.appendChild(removeBtn);
+  cell.append(detailsBtn, removeBtn);
   return cell;
 }
 
-
-// Add item function
-function addItem() {
-  const itemName = itemInput.value.trim();
-  if (!itemName) {
-    alert("Please enter an item name or barcode.");
-    return;
-  }
-
-  if (isPlaceholderPresent()) tableBody.innerHTML = '';
-
-  const row = document.createElement('tr');
-  row.innerHTML = `
-    <td>${itemName}</td>
-    <td>—</td>
-    <td>—</td>
-    <td>—</td>
-  `;
-  row.appendChild(createQuantityCell());
-  row.appendChild(createActionsCell(row));
-
-  tableBody.appendChild(row);
-  itemInput.value = '';
-  itemInput.focus();
+function renderPlaceholder() {
+  tableBody.innerHTML = `
+    <tr class="placeholder">
+      <td colspan="6" style="text-align:center; color:#777;">No items added yet.</td>
+    </tr>`;
 }
 
-// Event listeners
-addItemBtn.addEventListener('click', addItem);
-itemInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') addItem();
-});
+function updateTableHeaders(attributes = []) {
+  const thead = document.querySelector('.data-table thead tr');
+  const baseCols = ['Item', 'Selling Price', 'Buying In Price', 'Margin', 'Quantity'];
+  thead.innerHTML = '';
+
+  baseCols.concat(attributes.map(a => a.name)).concat(['Actions']).forEach(col => {
+    thead.insertAdjacentHTML('beforeend', `<th>${col}</th>`);
+  });
+}
 </script>
 {% endblock %}

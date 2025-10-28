@@ -1227,7 +1227,14 @@ def scraper_view(request):
     """Render the scrape iPhones page."""
     return render(request, "scraper.html")
 
+from django.core.serializers.json import DjangoJSONEncoder
+import json
+
+
 def buyer_view(request):
     """Render the buyer page."""
-    return render(request, "analysis/buyer.html")
+    categories = Category.objects.all()
+    return render(request, "analysis/buyer.html", {
+            "categories": json.dumps(list(categories.values("id", "name")), cls=DjangoJSONEncoder)
+        })
 
