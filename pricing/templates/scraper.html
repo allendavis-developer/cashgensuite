@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Scrape iPhones{% endblock %}
+
+{% block header_title %}SCRAPE iPHONES{% endblock %}
+
+{% block content %}
+  <div style="
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: calc(100vh - 60px);
+      flex-direction: column;
+  ">
+      <button class="btn" id="scrapeBtn">Scrape iPhones</button>
+  </div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+  document.getElementById('scrapeBtn').addEventListener('click', function() {
+  });
+</script>
+{% endblock %}

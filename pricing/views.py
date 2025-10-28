@@ -730,8 +730,7 @@ def generate_search_term(request):
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 
-
-
+# TODO: Move this to somewhere else, shouldn't be in your view.
 class CompetitorAnalyzer:
     """Analyzes competitor data to generate strategic references"""
     
@@ -1224,3 +1223,6 @@ def repricer_view(request):
 
     return render(request, 'analysis/repricer.html', {'repricer_data': repricer_data})
 
+def scraper_view(request):
+    """Render the scrape iPhones page."""
+    return render(request, "scraper.html")
