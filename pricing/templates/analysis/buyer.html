@@ -156,9 +156,9 @@
     </div>
 
     <div class="input-group">
-      <label for="modalItemManufacturer">Manufacturer</label>
+      <label for="modalItemManufacturer">Subcategory</label>
       <select id="modalItemManufacturer" class="input-field">
-        <option value="">Select manufacturer</option>
+        <option value="">Select subcategory</option>
       </select>
     </div>
 
@@ -281,22 +281,6 @@ function renderSelectAttribute(attr) {
 modalItemCategory.addEventListener('change', () => {
   fetchModels();
   loadCategoryAttributes(modalItemCategory.value);
-
-  const selectedCategoryText = modalItemCategory.options[modalItemCategory.selectedIndex]?.text || '';
-  
-  const manufacturerLabel = document.querySelector('label[for="modalItemManufacturer"]');
-  const modelLabel = document.querySelector('label[for="modalItemModel"]');
-
-  if (selectedCategoryText.toLowerCase() === 'games') {
-    manufacturerLabel.textContent = 'Platform';
-    modelLabel.textContent = 'Name';
-  } else {
-    manufacturerLabel.textContent = 'Manufacturer';
-    modelLabel.textContent = 'Model';
-  }
-
-
-
 });
 
 modalItemManufacturer.addEventListener('change', fetchModels);
