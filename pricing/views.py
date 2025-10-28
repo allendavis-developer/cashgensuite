@@ -1226,3 +1226,8 @@ def repricer_view(request):
 def scraper_view(request):
     """Render the scrape iPhones page."""
     return render(request, "scraper.html")
+
+def buyer_view(request):
+    """Render the buyer page."""
+    return render(request, "analysis/buyer.html")
+

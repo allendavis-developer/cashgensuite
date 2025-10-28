@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Buyer{% endblock %}
+{% block header_title %}BUYER DASHBOARD{% endblock %}
+
+{% block extra_style %}
+.main-content {
+    display: flex;
+    flex-direction: column; /* vertical stacking */
+    gap: 20px;
+    padding: 2rem;
+}
+
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+
+  <h2>Add Items (by Name or Barcode)</h2>
+
+  <!-- Input row uses reusable CSS from base.html -->
+  <div class="input-row">
+    <input 
+      type="text" 
+      id="itemInput" 
+      placeholder="Enter item name or barcode"
+    >
+    <button id="addItemBtn">Add</button>
+  </div>
+
+  <!-- Table container with reusable table styling -->
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Sellling Price</th>
+          <th>Buying In Price</th>
+          <th>Margin</th>
+        </tr>
+      </thead>
+      <tbody id="itemTableBody">
+        <tr>
+          <td colspan="4" style="text-align:center; color:#777;">No items added yet.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+  const addItemBtn = document.getElementById('addItemBtn');
+  const itemInput = document.getElementById('itemInput');
+  const tableBody = document.getElementById('itemTableBody');
+
+  addItemBtn.addEventListener('click', () => {
+    const itemName = itemInput.value.trim();
+    if (!itemName) {
+      alert("Please enter an item name or barcode.");
+      return;
+    }
+
+    // Remove placeholder row if it's the only one
+    if (tableBody.children.length === 1 && tableBody.children[0].children[0].colSpan === 4) {
+      tableBody.innerHTML = '';
+    }
+
+    // Add new table row
+    const newRow = document.createElement('tr');
+    newRow.innerHTML = `
+      <td>${itemName}</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+    `;
+    tableBody.appendChild(newRow);
+
+    itemInput.value = '';
+    itemInput.focus();
+  });
+
+  // Allow pressing Enter to add item
+  itemInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') addItemBtn.click();
+  });
+</script>
+{% endblock %}

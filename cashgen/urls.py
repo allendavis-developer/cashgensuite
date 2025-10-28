@@ -11,6 +11,7 @@ urlpatterns = [
     path("inventory/free/", v.inventory_free_stock_view, name="inventory_free_stock"),
     path("repricer/", v.repricer_view, name="repricer"),
     path("scraper/", v.scraper_view, name="scraper"),
+    path("buyer/", v.buyer_view, name="buyer"),
 
 
     # ------------------ CATEGORY AND GLOBAL RULES --------------------------------
