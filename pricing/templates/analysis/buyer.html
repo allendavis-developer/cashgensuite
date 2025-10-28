@@ -6,9 +6,52 @@
 {% block extra_style %}
 .main-content {
     display: flex;
-    flex-direction: column; /* vertical stacking */
+    flex-direction: column;
     gap: 20px;
     padding: 2rem;
+}
+
+/* Quantity buttons */
+.qty-btn {
+    padding: 2px 6px;
+    margin: 0 2px;
+    cursor: pointer;
+    border: 1px solid #333;
+    background: #1a1a1a;
+    color: #fff;
+    border-radius: 3px;
+    font-size: 12px;
+}
+.qty-btn:hover {
+    background: #222;
+}
+
+/* Quantity input */
+.qty-input {
+    padding: 2px 6px;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: #fff;
+    border-radius: 3px;
+    font-size: 12px;
+    width: 50px;
+    text-align: center;
+}
+.qty-input:focus {
+    outline: none;
+    border-color: #555;
+    background: #222;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 0.25rem;
+    text-transform: uppercase;
+}
+.btn-sm:hover:not(:disabled) {
+    background-color: #e6e6e6;
 }
 
 {% endblock %}
@@ -18,30 +61,26 @@
 
   <h2>Add Items (by Name or Barcode)</h2>
 
-  <!-- Input row uses reusable CSS from base.html -->
   <div class="input-row">
-    <input 
-      type="text" 
-      id="itemInput" 
-      placeholder="Enter item name or barcode"
-    >
+    <input type="text" id="itemInput" placeholder="Enter item name or barcode">
     <button id="addItemBtn">Add</button>
   </div>
 
-  <!-- Table container with reusable table styling -->
   <div class="table-container">
     <table class="data-table">
       <thead>
         <tr>
           <th>Item</th>
-          <th>Sellling Price</th>
+          <th>Selling Price</th>
           <th>Buying In Price</th>
           <th>Margin</th>
+          <th>Quantity</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody id="itemTableBody">
-        <tr>
-          <td colspan="4" style="text-align:center; color:#777;">No items added yet.</td>
+        <tr class="placeholder">
+          <td colspan="6" style="text-align:center; color:#777;">No items added yet.</td>
         </tr>
       </tbody>
     </table>
@@ -50,39 +89,116 @@
 </div>
 
 <script>
-  const addItemBtn = document.getElementById('addItemBtn');
-  const itemInput = document.getElementById('itemInput');
-  const tableBody = document.getElementById('itemTableBody');
+const addItemBtn = document.getElementById('addItemBtn');
+const itemInput = document.getElementById('itemInput');
+const tableBody = document.getElementById('itemTableBody');
 
-  addItemBtn.addEventListener('click', () => {
-    const itemName = itemInput.value.trim();
-    if (!itemName) {
-      alert("Please enter an item name or barcode.");
-      return;
-    }
+// Helper to check if placeholder is present
+function isPlaceholderPresent() {
+  return tableBody.querySelector('.placeholder') !== null;
+}
 
-    // Remove placeholder row if it's the only one
-    if (tableBody.children.length === 1 && tableBody.children[0].children[0].colSpan === 4) {
-      tableBody.innerHTML = '';
-    }
+// Helper to render placeholder row
+function renderPlaceholder() {
+  const placeholder = document.createElement('tr');
+  placeholder.className = 'placeholder';
+  placeholder.innerHTML = `<td colspan="6" style="text-align:center; color:#777;">No items added yet.</td>`;
+  tableBody.appendChild(placeholder);
+}
 
-    // Add new table row
-    const newRow = document.createElement('tr');
-    newRow.innerHTML = `
-      <td>${itemName}</td>
-      <td>—</td>
-      <td>—</td>
-      <td>—</td>
-    `;
-    tableBody.appendChild(newRow);
+// Quantity cell with +/- buttons
+function createQuantityCell() {
+  const cell = document.createElement('td');
 
-    itemInput.value = '';
-    itemInput.focus();
+  const minusBtn = document.createElement('button');
+  minusBtn.textContent = '-';
+  minusBtn.className = 'qty-btn';
+
+  const qtyInput = document.createElement('input');
+  qtyInput.type = 'number';
+  qtyInput.value = 1;
+  qtyInput.min = 1;
+  qtyInput.className = 'qty-input';
+
+  const plusBtn = document.createElement('button');
+  plusBtn.textContent = '+';
+  plusBtn.className = 'qty-btn';
+
+  minusBtn.addEventListener('click', () => {
+    qtyInput.value = Math.max(1, parseInt(qtyInput.value) - 1);
+  });
+  plusBtn.addEventListener('click', () => {
+    qtyInput.value = parseInt(qtyInput.value) + 1;
   });
 
-  // Allow pressing Enter to add item
-  itemInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') addItemBtn.click();
+  cell.appendChild(minusBtn);
+  cell.appendChild(qtyInput);
+  cell.appendChild(plusBtn);
+
+  return cell;
+}
+
+// Actions cell with Analyse and Remove buttons
+function createActionsCell(row) {
+  const cell = document.createElement('td');
+  cell.style.display = 'flex';
+  cell.style.gap = '8px';
+  cell.style.alignItems = 'center'; // <-- vertical centering
+
+  const analyseBtn = document.createElement('button');
+  analyseBtn.textContent = 'Details';
+  analyseBtn.className = 'btn btn-sm';  // <-- small variant
+  analyseBtn.addEventListener('click', () => {
+    alert(`Analysing ${row.querySelector('td').textContent}`);
   });
+
+  const removeBtn = document.createElement('button');
+  removeBtn.textContent = 'Remove';
+  removeBtn.className = 'btn btn-sm';
+  removeBtn.style.backgroundColor = '#ff4444';
+  removeBtn.style.color = '#fff';
+  removeBtn.addEventListener('mouseenter', () => removeBtn.style.backgroundColor = '#ff6666');
+  removeBtn.addEventListener('mouseleave', () => removeBtn.style.backgroundColor = '#ff4444');
+  removeBtn.addEventListener('click', () => {
+    row.remove();
+    if (tableBody.children.length === 0) renderPlaceholder();
+  });
+
+  cell.appendChild(analyseBtn);
+  cell.appendChild(removeBtn);
+  return cell;
+}
+
+
+// Add item function
+function addItem() {
+  const itemName = itemInput.value.trim();
+  if (!itemName) {
+    alert("Please enter an item name or barcode.");
+    return;
+  }
+
+  if (isPlaceholderPresent()) tableBody.innerHTML = '';
+
+  const row = document.createElement('tr');
+  row.innerHTML = `
+    <td>${itemName}</td>
+    <td>—</td>
+    <td>—</td>
+    <td>—</td>
+  `;
+  row.appendChild(createQuantityCell());
+  row.appendChild(createActionsCell(row));
+
+  tableBody.appendChild(row);
+  itemInput.value = '';
+  itemInput.focus();
+}
+
+// Event listeners
+addItemBtn.addEventListener('click', addItem);
+itemInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') addItem();
+});
 </script>
 {% endblock %}

@@ -201,15 +201,6 @@
       max-width: 300px;
     }
 
-    .remove-btn {
-        color: #ff6666;
-        cursor: pointer;
-        font-size: 12px;
-    }
-    .remove-btn:hover {
-        text-decoration: underline;
-    }
-
     .view-btn {
         color: #8888ff;
         cursor: pointer;
@@ -255,6 +246,26 @@
 
   .input-row button:hover {
       background: #e6e6e6;
+  }
+
+
+  .input-field,
+  .input-row input,
+  .styled-input {
+      padding: 12px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: #fff;
+      border-radius: 4px;
+      font-size: 14px;
+  }
+
+  .input-field:focus,
+  .input-row input:focus,
+  .styled-input:focus {
+      outline: none;
+      border-color: #555;
+      background: #222;
   }
 
 
