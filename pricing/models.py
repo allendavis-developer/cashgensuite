@@ -6,6 +6,8 @@ from django.contrib.contenttypes.models import ContentType
 # SCRAPED MARKET DATA
 # -------------------------------
 
+# This field is sometimes overloaded.
+# For GAMES this refers to the platform.
 class Manufacturer(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
@@ -148,7 +150,6 @@ class CompetitorListingHistory(models.Model):
 
     def __str__(self):
         return f"{self.listing.competitor} ({self.timestamp:%Y-%m-%d %H:%M})"
-
 
 
 # -------------------------------

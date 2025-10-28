@@ -108,37 +108,37 @@
   margin-top: 16px;
 }
 .modal-btn:hover { background-color: #e0e0e0; }
+
+/* Table spacing */
+.table-container {
+  margin-top: 1rem;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th, .data-table td {
+  padding: 8px;
+  border: 1px solid #333;
+  text-align: left;
+  color: #fff;
+}
+.data-table th {
+  background: #222;
+}
 {% endblock %}
 
 {% block content %}
 <div class="main-content">
 
-  <h2>Add Items (by Name or Barcode)</h2>
-
-  <div class="input-row">
-    <input type="text" id="itemInput" placeholder="Enter item name or barcode">
-    <button id="addItemBtn">Add</button>
+  <div class="input-row" style="display: flex; justify-content: center; margin-bottom: 20px;">
+    <button id="addItemBtn" style="padding: 16px 32px; font-size: 20px; font-weight: bold;">Add</button>
   </div>
 
-  <div class="table-container">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Item</th>
-          <th>Selling Price</th>
-          <th>Buying In Price</th>
-          <th>Margin</th>
-          <th>Quantity</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="itemTableBody">
-        <tr class="placeholder">
-          <td colspan="6" style="text-align:center; color:#777;">No items added yet.</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <!-- Container for dynamic tables per category -->
+  <div id="tablesContainer" class="table-container"></div>
 
 </div>
 
@@ -147,11 +147,6 @@
   <div class="modal-content">
     <span class="modal-close" id="closeAddItemModal">&times;</span>
     <h2>Add New Item</h2>
-
-    <div class="input-group">
-      <label for="modalItemName">Item Name</label>
-      <input type="text" id="modalItemName" class="input-field" placeholder="Enter item name">
-    </div>
 
     <div class="input-group">
       <label for="modalItemCategory">Category</label>
@@ -186,8 +181,6 @@
 <script>
 /* ---------- Cached DOM Elements ---------- */
 const addItemBtn = document.getElementById('addItemBtn');
-const itemInput = document.getElementById('itemInput');
-const tableBody = document.getElementById('itemTableBody');
 const addItemModal = document.getElementById('addItemModal');
 const closeAddItemModal = document.getElementById('closeAddItemModal');
 const saveItemBtn = document.getElementById('saveItemBtn');
@@ -196,10 +189,12 @@ const modalItemCategory = document.getElementById('modalItemCategory');
 const modalItemManufacturer = document.getElementById('modalItemManufacturer');
 const modalItemModel = document.getElementById('modalItemModel');
 const attributesContainer = document.getElementById('attributes-container');
+const tablesContainer = document.getElementById('tablesContainer');
 
 /* ---------- Data ---------- */
 const categories = {{ categories|safe }};
 let currentAttributes = [];
+const categoryTables = {}; // Stores tbody per category ID
 
 /* ---------- Initialization ---------- */
 document.addEventListener('DOMContentLoaded', () => {
@@ -252,7 +247,6 @@ async function loadCategoryAttributes(categoryId) {
     const data = await res.json();
     renderAttributes(data);
     currentAttributes = data;
-    updateTableHeaders(currentAttributes);
   } catch (err) {
     console.error("Error loading attributes:", err);
   }
@@ -275,9 +269,7 @@ function renderAttributes(attributes) {
 }
 
 function renderSelectAttribute(attr) {
-  const options = (attr.options || [])
-    .map(opt => `<option value="${opt}">${opt}</option>`)
-    .join('');
+  const options = (attr.options || []).map(opt => `<option value="${opt}">${opt}</option>`).join('');
   return `
     <select id="attr_${attr.id}" class="input-field">
       <option value="">-- Select ${attr.label || attr.name} --</option>
@@ -289,24 +281,32 @@ function renderSelectAttribute(attr) {
 modalItemCategory.addEventListener('change', () => {
   fetchModels();
   loadCategoryAttributes(modalItemCategory.value);
+
+  const selectedCategoryText = modalItemCategory.options[modalItemCategory.selectedIndex]?.text || '';
+  
+  const manufacturerLabel = document.querySelector('label[for="modalItemManufacturer"]');
+  const modelLabel = document.querySelector('label[for="modalItemModel"]');
+
+  if (selectedCategoryText.toLowerCase() === 'games') {
+    manufacturerLabel.textContent = 'Platform';
+    modelLabel.textContent = 'Name';
+  } else {
+    manufacturerLabel.textContent = 'Manufacturer';
+    modelLabel.textContent = 'Model';
+  }
+
+
+
 });
 
 modalItemManufacturer.addEventListener('change', fetchModels);
 
 addItemBtn.addEventListener('click', () => {
-  const val = itemInput.value.trim();
-  if (!val) return alert("Enter item name or barcode first.");
-  modalItemName.value = val;
   resetModal();
   addItemModal.classList.add('active');
 });
 
 closeAddItemModal.addEventListener('click', () => addItemModal.classList.remove('active'));
-
-itemInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') addItemBtn.click();
-});
-
 saveItemBtn.addEventListener('click', addItemToTable);
 
 /* ---------- UI Helpers ---------- */
@@ -317,33 +317,81 @@ function resetModal() {
   attributesContainer.innerHTML = '';
 }
 
-function addItemToTable() {
-  const name = modalItemName.value.trim();
-  if (!name) return alert("Please enter an item name.");
+function createCategoryTable(categoryId, categoryName, attributes) {
+  if (categoryTables[categoryId]) return categoryTables[categoryId];
 
-  if (tableBody.querySelector('.placeholder')) tableBody.innerHTML = '';
+  const table = document.createElement('table');
+  table.className = 'data-table';
+  table.setAttribute('data-category', categoryId);
+
+  const thead = document.createElement('thead');
+  const tr = document.createElement('tr');
+
+  const columns = [
+    'Item',
+    categoryName.toLowerCase() === 'games' ? 'Platform' : 'Manufacturer',
+    categoryName.toLowerCase() === 'games' ? 'Name' : 'Model',
+    ...attributes.map(a => a.name),
+    'Selling Price',
+    'Buying In Price',
+    'Margin',
+    'Quantity',
+    'Actions'
+  ];
+
+  columns.forEach(col => tr.insertAdjacentHTML('beforeend', `<th>${col}</th>`));
+  thead.appendChild(tr);
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  tbody.innerHTML = `<tr class="placeholder"><td colspan="${columns.length}" style="text-align:center; color:#777;">No items added yet.</td></tr>`;
+  table.appendChild(tbody);
+
+  const title = document.createElement('h3');
+  title.textContent = categoryName;
+
+  tablesContainer.append(title, table);
+  categoryTables[categoryId] = tbody;
+  return tbody;
+}
+
+function addItemToTable() {
+  const categoryId = modalItemCategory.value;
+  const categoryName = modalItemCategory.options[modalItemCategory.selectedIndex]?.text;
+  const manufacturerText = modalItemManufacturer.options[modalItemManufacturer.selectedIndex]?.text || '—';
+  const modelText = modalItemModel.options[modalItemModel.selectedIndex]?.text || '—';
+
+  if (!categoryId) return alert("Please select a category.");
+
+  const tbody = createCategoryTable(categoryId, categoryName, currentAttributes);
+
+  if (tbody.querySelector('.placeholder')) tbody.innerHTML = '';
 
   const row = document.createElement('tr');
   row.innerHTML = `
-    <td>${name}</td>
-    <td>—</td>
-    <td>—</td>
-    <td>—</td>
-    <td>${createQuantityCell().innerHTML}</td>
+    <td>New Item</td>
+    <td>${manufacturerText}</td>
+    <td>${modelText}</td>
   `;
 
-  // Dynamic attributes
   currentAttributes.forEach(attr => {
     const td = document.createElement('td');
     td.textContent = document.getElementById(`attr_${attr.id}`)?.value || '—';
     row.appendChild(td);
   });
 
+  row.insertAdjacentHTML('beforeend', `
+    <td>—</td>
+    <td>—</td>
+    <td>—</td>
+    <td>${createQuantityCell().innerHTML}</td>
+  `);
+
   row.appendChild(createActionsCell(row));
-  tableBody.appendChild(row);
-  itemInput.value = '';
+  tbody.appendChild(row);
   addItemModal.classList.remove('active');
 }
+
 
 function createQuantityCell() {
   const cell = document.createElement('td');
@@ -352,7 +400,6 @@ function createQuantityCell() {
     <input type="number" class="qty-input" min="1" value="1">
     <button class="qty-btn">+</button>
   `;
-
   const [minus, input, plus] = cell.children;
   minus.addEventListener('click', () => input.value = Math.max(1, input.value - 1));
   plus.addEventListener('click', () => input.value++);
@@ -368,9 +415,7 @@ function createActionsCell(row) {
   const detailsBtn = document.createElement('button');
   detailsBtn.textContent = 'Details';
   detailsBtn.className = 'btn btn-sm';
-  detailsBtn.addEventListener('click', () =>
-    alert(`Analysing ${row.querySelector('td').textContent}`)
-  );
+  detailsBtn.addEventListener('click', () => alert(`Analysing ${row.querySelector('td').textContent}`));
 
   const removeBtn = document.createElement('button');
   removeBtn.textContent = 'Remove';
@@ -379,28 +424,11 @@ function createActionsCell(row) {
   removeBtn.style.color = '#fff';
   removeBtn.addEventListener('click', () => {
     row.remove();
-    if (!tableBody.children.length) renderPlaceholder();
+    if (!row.parentElement.children.length) row.parentElement.innerHTML = `<tr class="placeholder"><td colspan="${row.parentElement.parentElement.querySelectorAll('th').length}" style="text-align:center; color:#777;">No items added yet.</td></tr>`;
   });
 
   cell.append(detailsBtn, removeBtn);
   return cell;
-}
-
-function renderPlaceholder() {
-  tableBody.innerHTML = `
-    <tr class="placeholder">
-      <td colspan="6" style="text-align:center; color:#777;">No items added yet.</td>
-    </tr>`;
-}
-
-function updateTableHeaders(attributes = []) {
-  const thead = document.querySelector('.data-table thead tr');
-  const baseCols = ['Item', 'Selling Price', 'Buying In Price', 'Margin', 'Quantity'];
-  thead.innerHTML = '';
-
-  baseCols.concat(attributes.map(a => a.name)).concat(['Actions']).forEach(col => {
-    thead.insertAdjacentHTML('beforeend', `<th>${col}</th>`);
-  });
 }
 </script>
 {% endblock %}
