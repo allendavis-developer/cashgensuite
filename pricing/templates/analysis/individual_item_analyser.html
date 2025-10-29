@@ -695,12 +695,13 @@ function getSuggestedPrice(data) {
 }
 
 function getCCAndCGData() {
-    const competitorData = extractCheckedCompetitorTableData();
-
-    const cashConvertersData = competitorData.filter(
+    // Get ALL data first (not just checked)
+    const allCompetitorData = extractAllCompetitorTableData();
+    
+    const cashConvertersData = allCompetitorData.filter(
         item => item.competitor.toLowerCase() === 'cashconverters'
     );
-    const cashGeneratorData = competitorData.filter(
+    const cashGeneratorData = allCompetitorData.filter(
         item => item.competitor.toLowerCase() === 'cashgenerator'
     );
 
@@ -714,11 +715,40 @@ function getCCAndCGData() {
         cashGeneratorData.some(d => d.range);
 
     if (!anyRanges) {
-        alert("No items selected for range. Please select at least one item before analyzing.");
-        return null;
+        // 🔹 AUTO-SELECT 3RD LOWEST
+        
+        // Auto-select for CashConverters
+        if (cashConvertersData.length > 0) {
+            const sortedCC = [...cashConvertersData].sort((a, b) => a.price - b.price);
+            const targetIndex = Math.min(2, sortedCC.length - 1);
+            const targetItem = sortedCC[targetIndex];
+            
+            // Check the checkbox using the stored reference
+            if (targetItem.checkbox) {
+                targetItem.checkbox.checked = true;
+                targetItem.range = true;
+            }
+        }
+        
+        // Auto-select for CashGenerator
+        if (cashGeneratorData.length > 0) {
+            const sortedCG = [...cashGeneratorData].sort((a, b) => a.price - b.price);
+            const targetIndex = Math.min(2, sortedCG.length - 1);
+            const targetItem = sortedCG[targetIndex];
+            
+            // Check the checkbox using the stored reference
+            if (targetItem.checkbox) {
+                targetItem.checkbox.checked = true;
+                targetItem.range = true;
+            }
+        }
     }
 
-    return { cashConvertersData, cashGeneratorData };
+    // Now return only the checked items (after auto-selection if needed)
+    return {
+        cashConvertersData: cashConvertersData.filter(d => d.range),
+        cashGeneratorData: cashGeneratorData.filter(d => d.range)
+    };
 }
 
 async function analyzeTable() {
@@ -753,6 +783,26 @@ async function analyzeTable() {
 }
 
 
+// Extract ALL competitor data (regardless of checkbox state)
+function extractAllCompetitorTableData() {
+    const rows = allCompetitorRows;
+    return Array.from(rows)
+        .map(row => {
+            const cells = row.querySelectorAll('td');
+            const rangeCheckbox = cells[4]?.querySelector('.range-checkbox');
+            return {
+                competitor: cells[0]?.textContent.trim() || '',
+                price: parseFloat(cells[2]?.textContent.replace(/[^0-9.]/g, '')) || 0,
+                condition: cells[1]?.textContent.trim() || '',
+                link: cells[3]?.querySelector('a')?.href || '',
+                range: rangeCheckbox ? rangeCheckbox.checked : false,
+                checkbox: rangeCheckbox  // Keep reference to the actual checkbox element
+            };
+        })
+        .filter(item => item.competitor && item.price > 0);  // Just filter out empty rows
+}
+
+// TODO: Can we remove this 
 // Extract table data for analysis
 function extractCheckedCompetitorTableData() {
     const rows = allCompetitorRows;
