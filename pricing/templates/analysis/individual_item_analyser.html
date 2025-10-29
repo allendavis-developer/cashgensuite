@@ -84,6 +84,7 @@
 {% block urgency %} {% endblock urgency %}
 
 {% block after_description %}
+  {% block scraped_nospos_data %}
   <div class="input-row">
     <div class="input-group" style="flex: 1;">
       <label class="input-label" for="cost-price">Cost Price (£)</label>
@@ -125,6 +126,8 @@
     </div>
 
   </div>
+  {% endblock scraped_nospos_data %}
+
 
     <div class="input-group" style="margin-top: 16px;">
       <label class="input-label">Select Websites to Scrape</label>

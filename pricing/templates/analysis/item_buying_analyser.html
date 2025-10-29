@@ -5,13 +5,12 @@
 {% block panel_title %}INPUT PANEL{% endblock %}
 {% block analyze_range_button %}
     <button type="button" id="analyze-btn" class="analyze-button" onclick="analyzeTableBuying()">
-      <span id="button-text">ANALYZE SELECTED RANGE</span>
+      <span id="button-text">ANALYZE BUYING</span>
       <span id="button-spinner" class="loading-spinner hidden"></span>
     </button>
 {% endblock analyze_range_button %}
-{% block confirm_list_btn %}
 
-{% endblock confirm_list_btn %}
+{% block scraped_nospos_data %} {% endblock scraped_nospos_data %}}
 
 {% block analysis_section %}
 <div class="analysis-section analysis-scroll-container" id="analysis-section" style="display: none;">
@@ -463,7 +462,15 @@
 
 {% block extra_script %}
 {{ block.super }}
+
+
 <script>
+// Disable th e button
+confirmListBtn.disabled = true;
+
+// Hide it from the DOM (not removed, just invisible)
+confirmListBtn.style.display = 'none';
+
 // ==============================
 // BUYING RANGE CALCULATION
 // ==============================
@@ -522,7 +529,6 @@ function displayBuyingAnalysis(reasoning, suggestedPrice, buyingRange, buyingRea
 async function analyzeTableBuying() {
     const itemName = document.getElementById('item-name').value.trim();
     const description = document.getElementById('description').value.trim();
-    const costPrice = parseFloat(document.getElementById('cost-price').value) || 0;
 
     const competitorDataSets = getCCAndCGData();
     if (!competitorDataSets) return;
