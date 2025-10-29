@@ -52,20 +52,33 @@
 }
 .modal-btn:hover { background-color: #e0e0e0; }
 
+/* Quantity Input (modern inline style) */
 .qty-input {
-  width: 50px;
-  text-align: center;
+  width: 80px;
+  padding: 6px 10px;
   background: #1a1a1a;
   border: 1px solid #333;
+  border-radius: 4px;
   color: #fff;
-  border-radius: 3px;
-  font-size: 12px;
+  font-size: 14px;
+  text-align: center;
+  transition: all 0.2s ease;
+  -moz-appearance: textfield; /* remove spinners in Firefox */
 }
+
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0; /* remove spinners in Chrome/Safari/Edge */
+}
+
 .qty-input:focus {
   outline: none;
-  border-color: #555;
+  border-color: #4da6ff;
   background: #222;
+  box-shadow: 0 0 6px rgba(77,166,255,0.3);
 }
+
 
 /* Modal */
 .modal {
@@ -98,25 +111,6 @@
   transition: color 0.2s;
 }
 .modal-close:hover { color: #fff; }
-
-/* Table */
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-.data-table th, .data-table td {
-  padding: 8px;
-  border: 1px solid #333;
-  text-align: left;
-  color: #fff;
-}
-.data-table th { background: #222; }
-.data-table td { 
-  overflow: hidden; 
-  text-overflow: ellipsis; 
-  white-space: nowrap; 
-}
 
 .actions-links {
   display: flex;
@@ -163,6 +157,56 @@
   background: #4caf50;
   color: #000;
 }
+
+/* =====================
+   Item Table Styling
+===================== */
+.item-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #111;
+  border: 1px solid #333;
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 14px;
+  color: #ddd;
+  margin-top: 10px;
+}
+
+.item-table thead {
+  background-color: #1a1a1a;
+}
+
+.item-table th, 
+.item-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #333;
+}
+
+.item-table th {
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.item-table tbody tr:hover {
+  background-color: #1f1f1f;
+}
+
+.item-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Action column */
+.item-table .actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+
 {% endblock %}
 
 {% block content %}
@@ -208,7 +252,7 @@ function createCategoryTable(categoryId, categoryName, attributes) {
   if (categoryTables[categoryId]) return categoryTables[categoryId];
 
   const table = document.createElement('table');
-  table.className = 'data-table';
+  table.className = 'item-table';
   const thead = document.createElement('thead');
   const columns = ['Subcategory', 'Model', ...attributes.map(a => a.name), 'Item Name', 'Selling Price', 'Buying In Price', 'Margin', 'Quantity', 'Actions'];
   
@@ -286,10 +330,7 @@ async function addItemToTable() {
 
 function createQuantityCell() {
   const td = document.createElement('td');
-  td.innerHTML = `<button class="qty-btn">-</button><input type="number" class="qty-input" min="1" value="1"><button class="qty-btn">+</button>`;
-  const [minus, input, plus] = td.children;
-  minus.onclick = () => input.value = Math.max(1, input.value - 1);
-  plus.onclick = () => input.value++;
+  td.innerHTML = `<input type="number" class="qty-input" min="1" value="1">`;
   return td;
 }
 
