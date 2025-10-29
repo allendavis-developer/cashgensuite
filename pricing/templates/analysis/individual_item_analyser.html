@@ -1233,6 +1233,7 @@ function collectAttributeData() {
 // -------------------------------
 async function fetchGeneratedSearchTerm() {
     const data = collectAttributeData();
+
     if (!data) return;
 
     try {
@@ -1396,8 +1397,12 @@ document.getElementById('model').addEventListener('change', async (e) => {
 
 // When attributes change
 document.getElementById('attributes-container').addEventListener('input', maybeCheckExistingItems);
-document.getElementById('attributes-container').addEventListener('input', fetchGeneratedSearchTerm);
 
+// Listen for both user and programmatic changes (like the prefiller)
+const attrContainer = document.getElementById('attributes-container');
+['input', 'change'].forEach(event =>
+    attrContainer.addEventListener(event, fetchGeneratedSearchTerm)
+);
 
 
 </script>
