@@ -13,7 +13,6 @@ urlpatterns = [
     path("scraper/", v.scraper_view, name="scraper"),
     path("buyer/", v.buyer_view, name="buyer"),
 
-
     # ------------------ CATEGORY AND GLOBAL RULES --------------------------------
     path("categories/", v.category_list, name="category_list"),
     path("categories/add/", v.add_category_view, name="add_category"),
@@ -46,6 +45,7 @@ urlpatterns = [
     path('api/models/', v.models, name='api-models'),
     path('api/category_attributes/', v.category_attributes, name='api-category-attributes'),
     path('api/check_existing_items/', v.check_existing_items, name='api-check-existing-items'),
+    path('api/get-selling-price/', v.get_selling_price, name='api-get-selling-price'),
 
 
      # Creation endpoints (allow adding new items)

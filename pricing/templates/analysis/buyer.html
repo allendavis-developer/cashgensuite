@@ -326,9 +326,9 @@ function createActionsCell(row) {
   };
 
 
-  analyse.onclick = e => {
+  analyse.onclick = async e => {
     e.preventDefault();
-    scrapePricesForRow(row, ['CEX', 'CashConverters', 'CashGenerator']);
+    await handleAnalyseClick(row);
   };
 
   remove.onclick = e => {
@@ -344,6 +344,76 @@ function createActionsCell(row) {
   return td;
 }
 
+async function handleAnalyseClick(row) {
+  const scrapeBtn = row.querySelector('.analyse');
+  scrapeBtn.disabled = true;
+  scrapeBtn.textContent = 'Checking...';
+
+  const category = row.dataset.categoryName;
+  const model = row.querySelector('td:nth-child(2)')?.textContent?.trim() || '';
+  const attributes = JSON.parse(row.dataset.attributes || '{}');
+
+  try {
+    // Step 1: Check if existing competitor data is found
+    const checkResponse = await fetch('/api/check_existing_items/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({
+        category: category,
+        model: model,
+        attributes: attributes
+      })
+    });
+
+    const checkResult = await checkResponse.json();
+    console.log(checkResult)
+
+    if (!checkResult.success) throw new Error(checkResult.error || 'Failed to check items');
+
+    // Step 2: If competitor data found, get selling price
+    if (checkResult.competitor_count > 0) {
+      scrapeBtn.textContent = 'Calculating Price...';
+
+      const priceResponse = await fetch('/api/get-selling-price/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+          category: category,
+          model: model,
+          attributes: attributes
+        })
+      });
+
+      const priceResult = await priceResponse.json();
+
+      if (!priceResult.success) throw new Error(priceResult.error || 'Failed to get selling price');
+
+      // Step 3: Update Selling Price cell in the table
+      const priceCell = row.querySelector('td:nth-last-child(5)'); // Adjust if column order changes
+      priceCell.textContent = `£${priceResult.selling_price.toFixed(2)}`;
+
+    } else {
+      // Step 4: If no existing data, run scraper
+      scrapeBtn.textContent = 'Scraping...';
+      await scrapePricesForRow(row, ['CEX', 'CashConverters', 'CashGenerator']);
+    }
+
+  } catch (error) {
+    console.error('Analyse error:', error);
+    alert('Error during analysis: ' + error.message);
+  } finally {
+    scrapeBtn.disabled = false;
+    scrapeBtn.textContent = 'Analyse';
+  }
+}
+
+
 async function scrapePricesForRow(row, selectedCompetitors = []) {
   const modelName = row.querySelector('td:nth-child(2)')?.textContent?.trim() || '';
   const rawAttributes = JSON.parse(row.dataset.attributes || '{}');
@@ -355,7 +425,7 @@ async function scrapePricesForRow(row, selectedCompetitors = []) {
     attributes[normalizedKey] = value || '';
   });
 
-  const itemName = modelName || 'Unnamed Item';
+  const itemName = row.dataset.itemName || 'Unnamed Item';
   const scrapeBtn = row.querySelector('.analyse');
   scrapeBtn.disabled = true;
   scrapeBtn.textContent = 'Scraping...';

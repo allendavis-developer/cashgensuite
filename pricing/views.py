@@ -111,6 +111,60 @@ def check_existing_items(request):
         return JsonResponse({"success": False, "error": str(e)})
 
 
+@require_POST
+def get_selling_price(request):
+    try:
+        data = json.loads(request.body)
+        category = data.get("category")
+        model = data.get("model")
+        attributes = data.get("attributes", {})
+
+        if not category or not model:
+            return JsonResponse({"success": False, "error": "Category and model are required."})
+
+        # Build search term
+        search_term = build_search_term(model, category, attributes)
+
+        # Step 1: Find the matching MarketItem
+        market_item = MarketItem.objects.filter(title__icontains=search_term).first()
+        if not market_item:
+            return JsonResponse({"success": False, "error": "No matching market item found."})
+
+        # Step 2: Get Cash Generator listings (active only)
+        listings = (
+            CompetitorListing.objects
+            .filter(market_item=market_item, competitor="CashGenerator", is_active=True)
+            .order_by("price")
+        )
+
+        if not listings.exists():
+            return JsonResponse({
+                "success": True,
+                "search_term": search_term,
+                "selling_price": None,
+                "message": "No Cash Generator listings found."
+            })
+
+        # Step 3: Get the 3rd cheapest or fallback to the cheapest
+        if listings.count() >= 3:
+            base_price = listings[2].price
+        else:
+            base_price = listings.last().price  # cheapest available
+
+        # Step 4: Undercut slightly (e.g., £1) and round down to nearest multiple of 2
+        selling_price = (int(base_price) // 2) * 2  # ensures multiple of 2, rounded down
+
+        return JsonResponse({
+            "success": True,
+            "search_term": search_term,
+            "selling_price": selling_price,
+        })
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
+
+
+
 # ----------------------- HOME PAGE VIEWS -------------------------------------
 def home_view(request):
     return render(request, "home.html")
