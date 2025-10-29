@@ -207,25 +207,6 @@ function removeRow(button, barcode) {
   }
 }
 
-// TODO: This is repeated in base_item_analysis and very WET. Figure out a way to make it DRY. Local automation agent helper
-async function callLocalAgent(endpoint, payload = {}) {
-  const agentUrl = "http://127.0.0.1:8001"; // local FastAPI agent
-  const fullUrl = `${agentUrl}${endpoint}`;
-  try {
-    const res = await fetch(fullUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  } catch (err) {
-    console.error("Could not connect to local automation agent:", err);
-    alert("❌ Could NOT connect to local agent. Is it running?");
-    return null;
-  }
-}
 
 function normalizeBranchName(branch) {
   if (!branch) return "Warrington"; // default fallback
