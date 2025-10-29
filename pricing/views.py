@@ -30,6 +30,7 @@ from pricing.utils.ai_utils import call_gemini_sync, generate_price_analysis, ge
 from pricing.utils.competitor_utils import get_competitor_data
 from pricing.utils.analysis_utils import process_item_analysis, save_analysis_to_db
 from pricing.utils.search_term import build_search_term
+from pricing.utils.pricing import get_effective_margin
 
 
 def get_prefilled_data(request):
@@ -112,25 +113,24 @@ def check_existing_items(request):
 
 
 @require_POST
-def get_selling_price(request):
+def get_selling_and_buying_price(request):
     try:
         data = json.loads(request.body)
         category = data.get("category")
+        category_id = data.get("categoryId")
+        subcategory_id = data.get("subcategoryId")
         model = data.get("model")
         attributes = data.get("attributes", {})
 
         if not category or not model:
             return JsonResponse({"success": False, "error": "Category and model are required."})
 
-        # Build search term
         search_term = build_search_term(model, category, attributes)
 
-        # Step 1: Find the matching MarketItem
         market_item = MarketItem.objects.filter(title__icontains=search_term).first()
         if not market_item:
             return JsonResponse({"success": False, "error": "No matching market item found."})
 
-        # Step 2: Get Cash Generator listings (active only)
         listings = (
             CompetitorListing.objects
             .filter(market_item=market_item, competitor="CashGenerator", is_active=True)
@@ -145,23 +145,40 @@ def get_selling_price(request):
                 "message": "No Cash Generator listings found."
             })
 
-        # Step 3: Get the 3rd cheapest or fallback to the cheapest
-        if listings.count() >= 3:
-            base_price = listings[2].price
-        else:
-            base_price = listings.last().price  # cheapest available
+        base_price = listings[2].price if listings.count() >= 3 else listings.last().price
+        selling_price = (int(base_price) // 2) * 2  # round down to nearest even number
 
-        # Step 4: Undercut slightly (e.g., £1) and round down to nearest multiple of 2
-        selling_price = (int(base_price) // 2) * 2  # ensures multiple of 2, rounded down
+        
+        # Get margin data
+        effective_margin, category, subcategory, rule_matches = get_effective_margin(
+            category_id=category_id,
+            subcategory_id=subcategory_id,
+            model_name=model
+        )
+
+        print(effective_margin)
+
+        # Compute buying price
+        buying_price = round(selling_price * effective_margin)
 
         return JsonResponse({
             "success": True,
             "search_term": search_term,
             "selling_price": selling_price,
+            "buying_price": buying_price,
+            "margin_info": {
+                "base_margin": category.base_margin,
+                "effective_margin": effective_margin,
+                "rules_applied": rule_matches,
+            },
         })
 
+    except ValueError as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=404)
     except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)})
+        import traceback; traceback.print_exc()
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
 
 
 
@@ -385,9 +402,6 @@ def delete_global_rule(request, pk):
 @csrf_exempt
 @require_POST
 def buying_range_analysis(request):
-    """
-    API endpoint to calculate buying range using Gemini
-    """
     try:
         data = json.loads(request.body)
         item_name = (data.get("item_name") or "").strip()
@@ -398,53 +412,12 @@ def buying_range_analysis(request):
         if not (item_name and category_id):
             return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
-        print("Received request with ", data)
+        effective_margin, category, subcategory, rule_matches = get_effective_margin(
+            category_id=category_id,
+            subcategory_id=subcategory_id,
+            model_name=item_name
+        )
 
-        # Find Category and Subcategory
-        try:
-            category = Category.objects.get(id=category_id)
-        except Category.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Invalid category"}, status=404)
-
-        subcategory = None
-        if subcategory_id:
-            try:
-                subcategory = Subcategory.objects.get(id=subcategory_id)
-            except Subcategory.DoesNotExist:
-                return JsonResponse({"success": False, "error": "Invalid subcategory"}, status=404)
-
-        # Find applicable MarginRule(s)
-        rules = MarginRule.objects.filter(category=category, is_active=True)
-
-        # Subcategory-based rule
-        subcategory_rule = None
-        if subcategory:
-            subcategory_rule = rules.filter(rule_type='subcategory', match_value__iexact=subcategory.name).first()
-
-        # Model-based rule (match item_name)
-        model_rule = rules.filter(rule_type='model', match_value__iexact=item_name).first()
-
-        # Calculate effective margin (category base + adjustments)
-        effective_margin = category.base_margin
-        rule_matches = []
-
-        if subcategory_rule:
-            effective_margin += subcategory_rule.adjustment
-            rule_matches.append({
-                "type": "subcategory",
-                "match": subcategory_rule.match_value,
-                "adjustment": subcategory_rule.adjustment,
-            })
-
-        if model_rule:
-            effective_margin += model_rule.adjustment
-            rule_matches.append({
-                "type": "model",
-                "match": model_rule.match_value,
-                "adjustment": model_rule.adjustment,
-            })
-
-        #  Return analysis summary
         return JsonResponse({
             "success": True,
             "category": category.name,
@@ -454,9 +427,12 @@ def buying_range_analysis(request):
             "rules_applied": rule_matches,
         })
 
+    except ValueError as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=404)
     except Exception as e:
         import traceback; traceback.print_exc()
         return JsonResponse({"success": False, "error": str(e)}, status=500)
+
 
 
 @csrf_exempt

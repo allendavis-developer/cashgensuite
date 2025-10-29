@@ -377,7 +377,7 @@ async function handleAnalyseClick(row) {
     if (checkResult.competitor_count > 0) {
       scrapeBtn.textContent = 'Calculating Price...';
 
-      const priceResponse = await fetch('/api/get-selling-price/', {
+      const priceResponse = await fetch('/api/get-selling-and-buying-price/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -385,6 +385,8 @@ async function handleAnalyseClick(row) {
         },
         body: JSON.stringify({
           category: category,
+          categoryId: row.dataset.categoryId,
+          subcategoryId: row.dataset.subcategoryId,
           model: model,
           attributes: attributes
         })
@@ -394,9 +396,29 @@ async function handleAnalyseClick(row) {
 
       if (!priceResult.success) throw new Error(priceResult.error || 'Failed to get selling price');
 
-      // Step 3: Update Selling Price cell in the table
-      const priceCell = row.querySelector('td:nth-last-child(5)'); // Adjust if column order changes
-      priceCell.textContent = `£${priceResult.selling_price.toFixed(2)}`;
+     // Step 3: Update Selling and Buying Price cells
+      const priceCell = row.querySelector('td:nth-last-child(5)'); // Selling Price
+      const buyCell = row.querySelector('td:nth-last-child(4)');   // Buying In Price
+      const marginCell = row.querySelector('td:nth-last-child(3)'); // Margin
+
+      const sellingPrice = parseFloat(priceResult.selling_price);
+      const buyingPrice = parseFloat(priceResult.buying_price);
+
+      // Update table cells
+      priceCell.textContent = `£${sellingPrice.toFixed(2)}`;
+      buyCell.textContent = `£${buyingPrice.toFixed(2)}`;
+
+      // Calculate margin = (profit / selling price) * 100
+      let marginPercent = 0;
+      if (sellingPrice > 0 && buyingPrice >= 0) {
+        const profit = sellingPrice - buyingPrice;
+        marginPercent = (profit / sellingPrice) * 100;
+      }
+
+      // Display formatted margin
+      marginCell.textContent = `${marginPercent.toFixed(1)}%`;
+
+
 
     } else {
       // Step 4: If no existing data, run scraper

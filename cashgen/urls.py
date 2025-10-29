@@ -45,7 +45,7 @@ urlpatterns = [
     path('api/models/', v.models, name='api-models'),
     path('api/category_attributes/', v.category_attributes, name='api-category-attributes'),
     path('api/check_existing_items/', v.check_existing_items, name='api-check-existing-items'),
-    path('api/get-selling-price/', v.get_selling_price, name='api-get-selling-price'),
+    path('api/get-selling-and-buying-price/', v.get_selling_and_buying_price, name='api-get-selling-and-buying-price'),
 
 
      # Creation endpoints (allow adding new items)
