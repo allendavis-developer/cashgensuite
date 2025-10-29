@@ -1,5 +1,5 @@
 from django import forms
-from .models import Category, MarginRule, GlobalMarginRule, Manufacturer, ItemModel
+from .models import Category, MarginRule, GlobalMarginRule, Subcategory, ItemModel
 
 
 class CategoryForm(forms.ModelForm):
@@ -34,8 +34,8 @@ class MarginRuleForm(forms.ModelForm):
             rule_type = self.instance.rule_type
 
         # Dynamically populate match_value dropdown
-        if rule_type == "manufacturer":
-            choices = [(m.name, m.name) for m in Manufacturer.objects.all().order_by("name")]
+        if rule_type == "subcategory":
+            choices = [(m.name, m.name) for m in Subcategory.objects.all().order_by("name")]
         elif rule_type == "model":
             choices = [(m.name, m.name) for m in ItemModel.objects.all().order_by("name")]
         else:

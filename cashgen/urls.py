@@ -42,7 +42,7 @@ urlpatterns = [
     path("api/price-analysis/<int:analysis_id>/", v.price_analysis_detail, name="price_analysis_detail"),
     path("api/buying-range-analysis/", v.buying_range_analysis, name="buying_range_analysis"),
     path('api/negotiation-step/', v.negotiation_step, name='negotiation-step'),
-    path('api/manufacturers/', v.manufacturers, name='api-manufacturers'),
+    path('api/subcategorys/', v.subcategorys, name='api-subcategorys'),
     path('api/models/', v.models, name='api-models'),
     path('api/category_attributes/', v.category_attributes, name='api-category-attributes'),
     path('api/check_existing_items/', v.check_existing_items, name='api-check-existing-items'),
@@ -50,7 +50,7 @@ urlpatterns = [
 
      # Creation endpoints (allow adding new items)
     path('api/add_category/', v.add_category, name='api-add-category'),
-    path('api/add_manufacturer/', v.add_manufacturer, name='api-add-manufacturer'),
+    path('api/add_subcategory/', v.add_subcategory, name='api-add-subcategory'),
     path('api/add_model/', v.add_model, name='api-add-model'),
     path('api/add_attribute_option/', v.add_attribute_option, name='api-add-attribute-option'),
 ]

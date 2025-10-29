@@ -97,7 +97,7 @@ class CompetitorListingAdmin(admin.ModelAdmin):
 
 
 from .models import (
-    MarketItem, Category, CategoryAttribute, Manufacturer, ItemModel
+    MarketItem, Category, CategoryAttribute, Subcategory, ItemModel
 )
 
 class MarketItemForm(forms.ModelForm):
@@ -120,18 +120,18 @@ class MarketItemForm(forms.ModelForm):
         else:
             self.fields['model'].queryset = ItemModel.objects.none()
         
-        # If manufacturer is also set, filter further
-        if 'manufacturer' in self.data:
+        # If subcategory is also set, filter further
+        if 'subcategory' in self.data:
             try:
-                manufacturer_id = int(self.data.get('manufacturer'))
+                subcategory_id = int(self.data.get('subcategory'))
                 self.fields['model'].queryset = self.fields['model'].queryset.filter(
-                    manufacturer_id=manufacturer_id
+                    subcategory_id=subcategory_id
                 )
             except (ValueError, TypeError):
                 pass
-        elif self.instance.pk and self.instance.manufacturer:
+        elif self.instance.pk and self.instance.subcategory:
             self.fields['model'].queryset = self.fields['model'].queryset.filter(
-                manufacturer=self.instance.manufacturer
+                subcategory=self.instance.subcategory
             )
 
 class ItemModelAttributeValueInlineFromMarketItem(admin.StackedInline):
@@ -198,8 +198,8 @@ class ItemModelInline(admin.TabularInline):
     fields = ('category', 'name')
 
 
-@admin.register(Manufacturer)
-class ManufacturerAdmin(admin.ModelAdmin):
+@admin.register(Subcategory)
+class SubcategoryAdmin(admin.ModelAdmin):
     list_display = ('name', 'model_count')
     search_fields = ('name',)
     inlines = [ItemModelInline]
@@ -271,10 +271,16 @@ class ItemModelAttributeValueInline(admin.StackedInline):
 
 @admin.register(ItemModel)
 class ItemModelAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'category', 'manufacturer')
-    list_filter = ('category', 'manufacturer')
-    search_fields = ('name', 'manufacturer__name')
+    list_display = ('name', 'get_category', 'subcategory')
+    list_filter = ('subcategory__category', 'subcategory')
+    search_fields = ('name', 'subcategory__name')
     inlines = [ItemModelAttributeValueInline]
+
+    def get_category(self, obj):
+        return obj.category
+    get_category.admin_order_field = 'subcategory__category'  # allows column sorting
+    get_category.short_description = 'Category'
+
 
 
 # -------------------------------

@@ -171,7 +171,7 @@
     </select>
 
     <label>Subcategory</label>
-    <select id="modalItemManufacturer" class="input-field">
+    <select id="modalItemSubcategory" class="input-field">
       <option value="">Select subcategory</option>
     </select>
 
@@ -191,7 +191,7 @@ const addItemModal = document.getElementById('addItemModal');
 const closeAddItemModal = document.getElementById('closeAddItemModal');
 const saveItemBtn = document.getElementById('saveItemBtn');
 const modalItemCategory = document.getElementById('modalItemCategory');
-const modalItemManufacturer = document.getElementById('modalItemManufacturer');
+const modalItemSubcategory = document.getElementById('modalItemSubcategory');
 const modalItemModel = document.getElementById('modalItemModel');
 const attributesContainer = document.getElementById('attributes-container');
 const tablesContainer = document.getElementById('tablesContainer');
@@ -201,9 +201,8 @@ let currentAttributes = [];
 const categoryTables = {};
 
 populateCategories();
-fetchManufacturers();
 
-/* ---------- Category / Manufacturer / Model ---------- */
+/* ---------- Category / Subcategory / Model ---------- */
 function populateCategories() {
   modalItemCategory.innerHTML = '<option value="">Select category</option>';
   categories.forEach(c =>
@@ -211,23 +210,28 @@ function populateCategories() {
   );
 }
 
-function fetchManufacturers() {
-  fetch("{% url 'api-manufacturers' %}")
+function fetchSubcategorys(categoryId) {
+  let url = "{% url 'api-subcategorys' %}";
+  if (categoryId) url += `?category=${categoryId}`;
+  
+  fetch(url)
     .then(res => res.json())
     .then(data => {
-      modalItemManufacturer.innerHTML = '<option value="">Select subcategory</option>';
-      data.forEach(m => modalItemManufacturer.insertAdjacentHTML('beforeend', `<option value="${m.id}">${m.name}</option>`));
+      modalItemSubcategory.innerHTML = '<option value="">Select subcategory</option>';
+      data.forEach(m => modalItemSubcategory.insertAdjacentHTML('beforeend', `<option value="${m.id}">${m.name}</option>`));
+      // Clear model dropdown whenever subcategory list changes
+      modalItemModel.innerHTML = '<option value="">Select model</option>';
     });
 }
 
 function fetchModels() {
   const categoryId = modalItemCategory.value;
-  const manufacturerId = modalItemManufacturer.value;
-  if (!categoryId || !manufacturerId) {
+  const subcategoryId = modalItemSubcategory.value;
+  if (!categoryId || !subcategoryId) {
     modalItemModel.innerHTML = '<option value="">Select model</option>';
     return;
   }
-  fetch(`/api/models/?category=${categoryId}&manufacturer=${manufacturerId}`)
+  fetch(`/api/models/?category=${categoryId}&subcategory=${subcategoryId}`)
     .then(res => res.json())
     .then(data => {
       modalItemModel.innerHTML = '<option value="">Select model</option>';
@@ -260,8 +264,9 @@ function renderAttributes(attrs) {
 modalItemCategory.addEventListener('change', () => {
   fetchModels();
   loadCategoryAttributes(modalItemCategory.value);
+  fetchSubcategorys(modalItemCategory.value); // Pass category ID
 });
-modalItemManufacturer.addEventListener('change', fetchModels);
+modalItemSubcategory.addEventListener('change', fetchModels);
 addItemBtn.addEventListener('click', () => { resetModal(); addItemModal.classList.add('active'); });
 closeAddItemModal.addEventListener('click', () => addItemModal.classList.remove('active'));
 saveItemBtn.addEventListener('click', addItemToTable);
@@ -269,7 +274,7 @@ saveItemBtn.addEventListener('click', addItemToTable);
 /* ---------- UI Helpers ---------- */
 function resetModal() {
   modalItemCategory.value = '';
-  modalItemManufacturer.value = '';
+  modalItemSubcategory.value = '';
   modalItemModel.innerHTML = '<option value="">Select model</option>';
   attributesContainer.innerHTML = '';
 }
@@ -293,7 +298,7 @@ function addItemToTable() {
   const catId = modalItemCategory.value;
   if (!catId) return alert("Please select a category.");
   const catName = modalItemCategory.options[modalItemCategory.selectedIndex]?.text;
-  const manu = modalItemManufacturer.options[modalItemManufacturer.selectedIndex]?.text || '—';
+  const manu = modalItemSubcategory.options[modalItemSubcategory.selectedIndex]?.text || '—';
   const model = modalItemModel.options[modalItemModel.selectedIndex]?.text || '—';
   const tbody = createCategoryTable(catId, catName, currentAttributes);
   if (tbody.querySelector('.placeholder')) tbody.innerHTML = '';
@@ -303,7 +308,7 @@ function addItemToTable() {
   currentAttributes.forEach(a => row.insertAdjacentHTML('beforeend', `<td>${document.getElementById(`attr_${a.id}`)?.value || '—'}</td>`));
   row.insertAdjacentHTML('beforeend', `<td>—</td><td>—</td><td>—</td><td>${createQuantityCell().innerHTML}</td>`);
   row.dataset.categoryId = catId;
-  row.dataset.manufacturerId = modalItemManufacturer.value;
+  row.dataset.subcategoryId = modalItemSubcategory.value;
   row.dataset.modelId = modalItemModel.value;
   row.dataset.attributes = JSON.stringify(currentAttributes.map(a => ({ id: a.id, value: document.getElementById(`attr_${a.id}`)?.value || '' })));
   row.appendChild(createActionsCell(row));
@@ -334,14 +339,14 @@ function createActionsCell(row) {
 
     const data = {
       categoryId: row.dataset.categoryId,
-      manufacturerId: row.dataset.manufacturerId,
+      subcategoryId: row.dataset.subcategoryId,
       modelId: row.dataset.modelId,
       attributes: JSON.parse(row.dataset.attributes)
     };
 
     const query = new URLSearchParams({
       categoryId: data.categoryId,
-      manufacturerId: data.manufacturerId,
+      subcategoryId: data.subcategoryId,
       modelId: data.modelId,
       attributes: JSON.stringify(data.attributes) // <-- fix here
     });

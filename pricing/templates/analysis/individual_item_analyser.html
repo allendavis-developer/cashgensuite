@@ -32,13 +32,13 @@
   </div>
 
   <div class="input-group">
-      <!-- TODO: We need to rename manufacturer to subcategory everywhere in the code -->
-    <label for="manufacturer">Subcategory</label>
+      <!-- TODO: We need to rename subcategory to subcategory everywhere in the code -->
+    <label for="subcategory">Subcategory</label>
     <div style="display: flex; gap: 0.5rem; align-items: center;">
-      <select id="manufacturer" class="input-field" disabled style="flex: 1;">
-        <option value="" selected disabled>-- Select Manufacturer --</option>
+      <select id="subcategory" class="input-field" disabled style="flex: 1;">
+        <option value="" selected disabled>-- Select Subcategory --</option>
       </select>
-      <button type="button" class="add-btn" onclick="openAddModal('manufacturer')" disabled>+</button>
+      <button type="button" class="add-btn" onclick="openAddModal('subcategory')" disabled>+</button>
     </div>
   </div>
 
@@ -583,7 +583,7 @@ async function scrapePrices() {
                 attributes: data.attributes
             }
         });
-
+        
         // Save scraped data to backend
         await fetch("/save_scraped_data/", {
             method: "POST",
@@ -940,44 +940,7 @@ function closeAddModal() {
   currentAttributeId = null;
 }
 
-// Load ALL manufacturers (no category filtering)
-async function loadManufacturers(preselectId = null) {
-  try {
-    const response = await fetch(`/api/manufacturers/`);
-    if (!response.ok) {
-      console.warn('Failed to load manufacturers:', response.statusText);
-      return [];
-    }
-
-    const manufacturers = await response.json();
-
-    const manufacturerSelect = document.getElementById('manufacturer');
-    manufacturerSelect.innerHTML = `<option value="" selected disabled>-- Select Manufacturer --</option>`;
-
-    manufacturers.forEach(m => {
-      const opt = document.createElement('option');
-      opt.value = String(m.id);
-      opt.textContent = m.name;
-      manufacturerSelect.appendChild(opt);
-    });
-
-    manufacturerSelect.disabled = false;
-    const addNewBtn = manufacturerSelect.nextElementSibling;
-    if (addNewBtn) addNewBtn.disabled = false;
-
-    if (preselectId !== null && preselectId !== undefined) {
-      manufacturerSelect.value = String(preselectId);
-      manufacturerSelect.dispatchEvent(new Event('change'));
-    }
-
-    return manufacturers;
-  } catch (err) {
-    console.error('Error loading manufacturers:', err);
-    return [];
-  }
-}
-
-// Save a new category/manufacturer/model/attribute_option
+// Save a new category/subcategory/model/attribute_option
 async function saveNewItem() {
   const name = document.getElementById('new-item-name').value.trim();
   if (!name) return alert('Please enter a name.');
@@ -989,15 +952,15 @@ async function saveNewItem() {
   // Handle model dependencies
   if (currentAddType === 'model') {
     const categoryId = document.getElementById('category').value;
-    const manufacturerId = document.getElementById('manufacturer').value;
+    const subcategoryId = document.getElementById('subcategory').value;
 
-    if (!categoryId || !manufacturerId) {
-      alert('Please select both a category and manufacturer first.');
+    if (!categoryId || !subcategoryId) {
+      alert('Please select both a category and subcategory first.');
       return;
     }
 
     data.category = categoryId;
-    data.manufacturer = manufacturerId;
+    data.subcategory = subcategoryId;
   }
 
   // Handle attribute option creation
@@ -1010,6 +973,16 @@ async function saveNewItem() {
     data.attribute_id = currentAttributeId;
     data.option = name;
   }
+
+  if (currentAddType === 'subcategory') {
+    const categoryId = document.getElementById('category').value;
+    if (!categoryId) {
+        alert('Please select a category first.');
+        return;
+    }
+    data.category_id = categoryId;  // this will be sent to backend
+}
+
 
   try {
     const response = await fetch(url, {
@@ -1053,26 +1026,21 @@ async function saveNewItem() {
       catSelect.dispatchEvent(new Event('change'));
     }
 
-    // Handle Manufacturer refresh
-    else if (currentAddType === 'manufacturer') {
-      const manufacturerSelect = document.getElementById('manufacturer');
-      manufacturerSelect.disabled = false;
+    // Handle Subcategory refresh
+    else if (currentAddType === 'subcategory') {
+      const subcategorySelect = document.getElementById('subcategory');
+      subcategorySelect.disabled = false;
 
       const newIdStr = String(result.id);
-      if (![...manufacturerSelect.options].some(o => o.value === newIdStr)) {
+      if (![...subcategorySelect.options].some(o => o.value === newIdStr)) {
         const opt = document.createElement('option');
         opt.value = newIdStr;
         opt.textContent = result.name;
-        manufacturerSelect.appendChild(opt);
+        subcategorySelect.appendChild(opt);
       }
 
-      manufacturerSelect.value = newIdStr;
-      manufacturerSelect.dispatchEvent(new Event('change'));
-
-      // Optional background reload
-      loadManufacturers(result.id).catch(err => {
-        console.warn('Background reload of manufacturers failed:', err);
-      });
+      subcategorySelect.value = newIdStr;
+      subcategorySelect.dispatchEvent(new Event('change'));
     }
 
     // Handle Model refresh
@@ -1119,7 +1087,7 @@ async function saveNewItem() {
 }
 
 
-// ✅ Add this:
+// Add this:
 async function loadCategoryAttributes(categoryId) {
   try {
     const res = await fetch(`/api/category_attributes/?category=${categoryId}`);
@@ -1168,19 +1136,19 @@ async function maybeCheckExistingItems() {
 // -------------------------------
 function collectAttributeData() {
     const categorySelect = document.getElementById('category');
-    const manufacturerSelect = document.getElementById('manufacturer');
+    const subcategorySelect = document.getElementById('subcategory');
     const modelSelect = document.getElementById('model');
 
-    if (!categorySelect?.value || !manufacturerSelect?.value || !modelSelect?.value) {
-        console.warn("Category, manufacturer, or model not selected yet.");
+    if (!categorySelect?.value || !subcategorySelect?.value || !modelSelect?.value) {
+        console.warn("Category, subcategory, or model not selected yet.");
         return null;
     }
 
     // Add IDs and names for all three
     const categoryId = categorySelect.value;
     const categoryName = categorySelect.options[categorySelect.selectedIndex]?.text.trim() || '';
-    const manufacturerId = manufacturerSelect.value;
-    const manufacturerName = manufacturerSelect.options[manufacturerSelect.selectedIndex]?.text.trim() || '';
+    const subcategoryId = subcategorySelect.value;
+    const subcategoryName = subcategorySelect.options[subcategorySelect.selectedIndex]?.text.trim() || '';
     const modelId = modelSelect.value;
     const modelName = modelSelect.options[modelSelect.selectedIndex]?.text.trim() || '';
 
@@ -1203,8 +1171,8 @@ function collectAttributeData() {
     return {
         categoryId,
         categoryName,
-        manufacturerId,
-        manufacturerName,
+        subcategoryId,
+        subcategoryName,
         modelId,
         modelName,
         attributes
@@ -1314,30 +1282,29 @@ document.getElementById('category').addEventListener('change', async (e) => {
       // Clear competitor table
     updateCompetitorData([], 0);
 
-
-    document.getElementById('manufacturer').disabled = true;
+    document.getElementById('subcategory').disabled = true;
     document.getElementById('model').disabled = true;
     document.getElementById('attributes-container').innerHTML = '';
 
-    // Fetch manufacturers for this category
-    const response = await fetch(`/api/manufacturers/?category=${categoryId}`);
-    const manufacturers = await response.json();
+    // Fetch subcategorys for this category
+    const response = await fetch(`/api/subcategorys/?category=${categoryId}`);
+    const subcategorys = await response.json();
 
-    const manufacturerSelect = document.getElementById('manufacturer');
-    manufacturerSelect.innerHTML = `<option value="" selected disabled>-- Select Manufacturer --</option>`;
-    manufacturers.forEach(m => {
-        manufacturerSelect.innerHTML += `<option value="${m.id}">${m.name}</option>`;
+    const subcategorySelect = document.getElementById('subcategory');
+    subcategorySelect.innerHTML = `<option value="" selected disabled>-- Select Subcategory --</option>`;
+    subcategorys.forEach(m => {
+        subcategorySelect.innerHTML += `<option value="${m.id}">${m.name}</option>`;
     });
-    manufacturerSelect.disabled = false;
+    subcategorySelect.disabled = false;
 
-    const addNewBtn = manufacturerSelect.nextElementSibling;
+    const addNewBtn = subcategorySelect.nextElementSibling;
     addNewBtn.disabled = false
 
 });
 
-document.getElementById('manufacturer').addEventListener('change', async (e) => {
+document.getElementById('subcategory').addEventListener('change', async (e) => {
     const categoryId = document.getElementById('category').value;
-    const manufacturerId = e.target.value;
+    const subcategoryId = e.target.value;
 
     // Clear competitor table
     updateCompetitorData([], 0);
@@ -1347,9 +1314,10 @@ document.getElementById('manufacturer').addEventListener('change', async (e) => 
     modelSelect.disabled = true;
     modelSelect.innerHTML = `<option value="" selected disabled>-- Select Model --</option>`;
 
-    // Fetch models for category + manufacturer
-    const response = await fetch(`/api/models/?category=${categoryId}&manufacturer=${manufacturerId}`);
+    // Fetch models for category + subcategory
+    const response = await fetch(`/api/models/?category=${categoryId}&subcategory=${subcategoryId}`);
     const models = await response.json();
+    console.log(response);
 
     // Sort models alphabetically by name
     models.sort((a, b) => a.name.localeCompare(b.name));

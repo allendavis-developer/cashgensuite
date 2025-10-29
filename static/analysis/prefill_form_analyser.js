@@ -2,16 +2,16 @@ async function prefillFormFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
     
     const categoryId = urlParams.get('categoryId');
-    const manufacturerId = urlParams.get('manufacturerId');
+    const subcategoryId = urlParams.get('subcategoryId');
     const modelId = urlParams.get('modelId');
     const attributesParam = urlParams.get('attributes');
     
-    if (!categoryId || !manufacturerId || !modelId) {
+    if (!categoryId || !subcategoryId || !modelId) {
         console.log('No prefill data found in URL');
         return;
     }
     
-    console.log('Prefilling form with:', {categoryId, manufacturerId, modelId, attributesParam});
+    console.log('Prefilling form with:', {categoryId, subcategoryId, modelId, attributesParam});
     
     try {
         // Parse attributes from URL-encoded JSON
@@ -30,14 +30,14 @@ async function prefillFormFromURL() {
             categorySelect.value = categoryId;
             categorySelect.dispatchEvent(new Event('change'));
             
-            // Wait for manufacturers to load
-            await waitForElement('#manufacturer option[value]:not([value=""])');
+            // Wait for subcategorys to load
+            await waitForElement('#subcategory option[value]:not([value=""])');
             
-            // 2. Select manufacturer
-            const manufacturerSelect = document.getElementById('manufacturer');
-            if (manufacturerSelect) {
-                manufacturerSelect.value = manufacturerId;
-                manufacturerSelect.dispatchEvent(new Event('change'));
+            // 2. Select subcategory
+            const subcategorySelect = document.getElementById('subcategory');
+            if (subcategorySelect) {
+                subcategorySelect.value = subcategoryId;
+                subcategorySelect.dispatchEvent(new Event('change'));
                 
                 // Wait for models to load
                 await waitForElement('#model option[value]:not([value=""])');

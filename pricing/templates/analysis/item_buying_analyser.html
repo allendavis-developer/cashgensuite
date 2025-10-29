@@ -622,7 +622,7 @@ async function analyzeTableBuying() {
               item_name: itemName,
               category: data.categoryId,
               attributes: data.attributes,
-              manufacturer: data.manufacturerId,
+              subcategory: data.subcategoryId,
           }),
       });
 
@@ -670,7 +670,7 @@ async function analyzeTableBuying() {
               const adj = rule.adjustment >= 0
                 ? `+${(rule.adjustment * 100).toFixed(1)}%`
                 : `${(rule.adjustment * 100).toFixed(1)}%`;
-              return `${rule.type === "manufacturer" ? "Manufacturer" : "Model"} match (<b>${rule.match}</b>, ${adj})`;
+              return `${rule.type === "subcategory" ? "Subcategory" : "Model"} match (<b>${rule.match}</b>, ${adj})`;
             });
             reasoningParts.push(`Adjustments applied: ${ruleDescriptions.join(", ")}.`);
           }

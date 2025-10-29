@@ -6,10 +6,15 @@ from django.contrib.contenttypes.models import ContentType
 # SCRAPED MARKET DATA
 # -------------------------------
 
-# This field is sometimes overloaded.
-# For GAMES this refers to the platform.
-class Manufacturer(models.Model):
+class Subcategory(models.Model):
     name = models.CharField(max_length=100, unique=True)
+
+    category = models.ForeignKey(
+        'Category',
+        on_delete=models.CASCADE,
+        related_name='subcategories'
+    )
+
 
     def __str__(self):
         return self.name
@@ -51,15 +56,18 @@ class CategoryAttribute(models.Model):
 
 class ItemModel(models.Model):
     """e.g. Apple iPhone 15 (in Smartphones category)"""
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='models')
-    manufacturer = models.ForeignKey(Manufacturer, on_delete=models.CASCADE, related_name='models')
+    subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, related_name='models')
     name = models.CharField(max_length=100)
 
     class Meta:
-        unique_together = ('category', 'manufacturer', 'name')
+        unique_together = ('subcategory', 'name')
+
+    @property
+    def category(self):
+        return self.subcategory.category
 
     def __str__(self):
-        return f"{self.manufacturer.name} {self.name}"
+        return f"{self.subcategory.name} {self.name}"
 
 class ItemModelAttributeValue(models.Model):
     """Stores the canonical attribute values for each ItemModel."""
@@ -296,7 +304,7 @@ class MarginCategory(models.Model):
 
 class MarginRule(models.Model):
     RULE_TYPES = [
-        ('manufacturer', 'Manufacturer'),
+        ('subcategory', 'Subcategory'),
         ('model', 'Model'),
     ]
 

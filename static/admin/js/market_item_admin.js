@@ -3,12 +3,12 @@
     
     $(document).ready(function() {
         var categoryField = $('#id_category');
-        var manufacturerField = $('#id_manufacturer');
+        var subcategoryField = $('#id_subcategory');
         var modelField = $('#id_model');
         
         function updateModelChoices() {
             var categoryId = categoryField.val();
-            var manufacturerId = manufacturerField.val();
+            var subcategoryId = subcategoryField.val();
             
             if (!categoryId) {
                 modelField.empty().append('<option value="">---------</option>');
@@ -18,8 +18,8 @@
             
             // Build URL with filters
             var url = '/admin/get-models/?category=' + categoryId;
-            if (manufacturerId) {
-                url += '&manufacturer=' + manufacturerId;
+            if (subcategoryId) {
+                url += '&subcategory=' + subcategoryId;
             }
             
             $.ajax({
@@ -46,12 +46,12 @@
             });
         }
         
-        // Update models when category or manufacturer changes
+        // Update models when category or subcategory changes
         categoryField.on('change', function() {
             updateModelChoices();
         });
         
-        manufacturerField.on('change', function() {
+        subcategoryField.on('change', function() {
             updateModelChoices();
         });
         

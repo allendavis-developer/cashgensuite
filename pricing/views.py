@@ -17,7 +17,7 @@ from pricing.models import (
     Category, 
     MarginRule, 
     GlobalMarginRule,
-    Manufacturer,
+    Subcategory,
     ItemModel,
     CategoryAttribute
     )
@@ -222,7 +222,7 @@ def delete_category(request, pk):
 
 def add_rule(request, category_pk):
     category = get_object_or_404(Category, pk=category_pk)
-    manufacturers = Manufacturer.objects.all().order_by("name")
+    subcategorys = Subcategory.objects.all().order_by("name")
 
     if request.method == "POST":
         form = MarginRuleForm(request.POST)
@@ -238,13 +238,13 @@ def add_rule(request, category_pk):
         "form": form,
         "category": category,
         "is_edit": False,
-        "manufacturers": manufacturers,  
+        "subcategorys": subcategorys,  
     })
 
 def edit_rule(request, pk):
     rule = get_object_or_404(MarginRule, pk=pk)
     category = rule.category
-    manufacturers = Manufacturer.objects.all().order_by("name")
+    subcategorys = Subcategory.objects.all().order_by("name")
 
     if request.method == "POST":
         form = MarginRuleForm(request.POST, instance=rule)
@@ -258,15 +258,15 @@ def edit_rule(request, pk):
         "form": form,
         "category": category,
         "is_edit": True,
-        "manufacturers": manufacturers,  
+        "subcategorys": subcategorys,  
     })
 
 def get_match_value_choices(request):
     rule_type = request.GET.get("rule_type")
     data = []
 
-    if rule_type == "manufacturer":
-        data = list(Manufacturer.objects.values_list("name", flat=True))
+    if rule_type == "subcategory":
+        data = list(Subcategory.objects.values_list("name", flat=True))
     elif rule_type == "model":
         data = list(ItemModel.objects.values_list("name", flat=True))
 
@@ -339,33 +339,33 @@ def buying_range_analysis(request):
         item_name = (data.get("item_name") or "").strip()
         attributes = data.get("attributes", {})
         category_id = data.get('category')
-        manufacturer_id = data.get('manufacturer')
+        subcategory_id = data.get('subcategory')
 
         if not (item_name and category_id):
             return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
         print("Received request with ", data)
 
-        # Find Category and Manufacturer
+        # Find Category and Subcategory
         try:
             category = Category.objects.get(id=category_id)
         except Category.DoesNotExist:
             return JsonResponse({"success": False, "error": "Invalid category"}, status=404)
 
-        manufacturer = None
-        if manufacturer_id:
+        subcategory = None
+        if subcategory_id:
             try:
-                manufacturer = Manufacturer.objects.get(id=manufacturer_id)
-            except Manufacturer.DoesNotExist:
-                return JsonResponse({"success": False, "error": "Invalid manufacturer"}, status=404)
+                subcategory = Subcategory.objects.get(id=subcategory_id)
+            except Subcategory.DoesNotExist:
+                return JsonResponse({"success": False, "error": "Invalid subcategory"}, status=404)
 
         # Find applicable MarginRule(s)
         rules = MarginRule.objects.filter(category=category, is_active=True)
 
-        # Manufacturer-based rule
-        manufacturer_rule = None
-        if manufacturer:
-            manufacturer_rule = rules.filter(rule_type='manufacturer', match_value__iexact=manufacturer.name).first()
+        # Subcategory-based rule
+        subcategory_rule = None
+        if subcategory:
+            subcategory_rule = rules.filter(rule_type='subcategory', match_value__iexact=subcategory.name).first()
 
         # Model-based rule (match item_name)
         model_rule = rules.filter(rule_type='model', match_value__iexact=item_name).first()
@@ -374,12 +374,12 @@ def buying_range_analysis(request):
         effective_margin = category.base_margin
         rule_matches = []
 
-        if manufacturer_rule:
-            effective_margin += manufacturer_rule.adjustment
+        if subcategory_rule:
+            effective_margin += subcategory_rule.adjustment
             rule_matches.append({
-                "type": "manufacturer",
-                "match": manufacturer_rule.match_value,
-                "adjustment": manufacturer_rule.adjustment,
+                "type": "subcategory",
+                "match": subcategory_rule.match_value,
+                "adjustment": subcategory_rule.adjustment,
             })
 
         if model_rule:
@@ -394,7 +394,7 @@ def buying_range_analysis(request):
         return JsonResponse({
             "success": True,
             "category": category.name,
-            "manufacturer": manufacturer.name if manufacturer else None,
+            "subcategory": subcategory.name if subcategory else None,
             "base_margin": category.base_margin,
             "effective_margin": effective_margin,
             "rules_applied": rule_matches,
@@ -563,44 +563,55 @@ from django.contrib.admin.views.decorators import staff_member_required
 from .models import ItemModel
 @staff_member_required
 def get_models(request):
-    """AJAX endpoint to get models filtered by category and optionally manufacturer"""
+    """AJAX endpoint to get models filtered by category and optionally subcategory"""
     category_id = request.GET.get('category')
-    manufacturer_id = request.GET.get('manufacturer')
+    subcategory_id = request.GET.get('subcategory')
     
     if not category_id:
         return JsonResponse({'models': []})
     
     models = ItemModel.objects.filter(category_id=category_id)
     
-    if manufacturer_id:
-        models = models.filter(manufacturer_id=manufacturer_id)
+    if subcategory_id:
+        models = models.filter(subcategory_id=subcategory_id)
     
     models_data = [
         {
             'id': model.id,
             'name': str(model)  # This will show "Apple iPhone 15"
         }
-        for model in models.order_by('manufacturer__name', 'name')
+        for model in models.order_by('subcategory__name', 'name')
     ]
     
     return JsonResponse({'models': models_data})
 
 
 # ----------------------------------------------------------------------------------------
-# ENDPOINTS FOR DROPDOWN CATEGORY, MANUFACTURER, MODEL, ATTRIBUTE SEARCHING AND CREATION
+# ENDPOINTS FOR DROPDOWN CATEGORY, SUBCATEGORY, MODEL, ATTRIBUTE SEARCHING AND CREATION
 # ----------------------------------------------------------------------------------------
 
 
-def manufacturers(request):
-    manufacturers = Manufacturer.objects.all().order_by('name')
-    data = [{"id": m.id, "name": m.name} for m in manufacturers]
+def subcategorys(request):
+    # Get category id from GET parameters (e.g., ?category=1)
+    category_id = request.GET.get('category')
+
+    if category_id:
+        subcategories = Subcategory.objects.filter(category_id=category_id).order_by('name')
+        print("Got category id!")
+    else:
+        subcategories = Subcategory.objects.all().order_by('name')
+
+    data = [{"id": s.id, "name": s.name} for s in subcategories]
     return JsonResponse(data, safe=False)
 
 
 def models(request):
     category_id = request.GET.get('category')
-    manufacturer_id = request.GET.get('manufacturer')
-    models = ItemModel.objects.filter(category_id=category_id, manufacturer_id=manufacturer_id)
+    subcategory_id = request.GET.get('subcategory')
+    models = ItemModel.objects.filter(
+        subcategory__category_id=category_id,  # <-- traverse via subcategory
+        subcategory_id=subcategory_id
+    )
     data = [{"id": m.id, "name": m.name} for m in models]
     return JsonResponse(data, safe=False)
 
@@ -631,28 +642,42 @@ def add_category(request):
         return JsonResponse({'id': cat.id, 'name': cat.name})
 
 @csrf_exempt
-def add_manufacturer(request):
+def add_subcategory(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         name = (data.get('name') or '').strip()
+        category_id = data.get('category_id')  # <-- get the category ID from the request
+
         if not name:
             return JsonResponse({'error': 'Name required'}, status=400)
-        manufacturer, _ = Manufacturer.objects.get_or_create(name=name)
-        return JsonResponse({'id': manufacturer.id, 'name': manufacturer.name})
+        if not category_id:
+            return JsonResponse({'error': 'Category is required'}, status=400)
+
+        try:
+            category = Category.objects.get(id=category_id)
+        except Category.DoesNotExist:
+            return JsonResponse({'error': 'Category does not exist'}, status=404)
+
+        # Use 'defaults' to pass required foreign keys when creating
+        subcategory, created = Subcategory.objects.get_or_create(
+            name=name,
+            defaults={'category': category}
+        )
+
+        return JsonResponse({'id': subcategory.id, 'name': subcategory.name})
 
 @csrf_exempt
 def add_model(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         name = data.get('name')
-        manufacturer_id = data.get('manufacturer')
+        subcategory_id = data.get('subcategory')
         category_id = data.get('category')
-        if not (name and manufacturer_id and category_id):
+        if not (name and subcategory_id and category_id):
             return JsonResponse({'error': 'Missing fields'}, status=400)
         model, _ = ItemModel.objects.get_or_create(
             name=name, 
-            manufacturer_id=manufacturer_id, 
-            category_id=category_id
+            subcategory_id=subcategory_id, 
         )
         return JsonResponse({'id': model.id, 'name': model.name})
 
