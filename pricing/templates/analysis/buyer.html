@@ -254,7 +254,7 @@ function createCategoryTable(categoryId, categoryName, attributes) {
   const table = document.createElement('table');
   table.className = 'item-table';
   const thead = document.createElement('thead');
-  const columns = ['Subcategory', 'Model', ...attributes.map(a => a.name), 'Item Name', 'Selling Price', 'Buying In Price', 'Margin', 'Quantity', 'Actions'];
+  const columns = ['Subcategory', 'Model', ...attributes.map(a => a.name), 'Item Name', 'Selling Price', 'Buying In Range', 'Margin', 'Quantity', 'Actions'];
   
   thead.innerHTML = `<tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr>`;
   
@@ -443,23 +443,18 @@ async function handleAnalyseClick(row) {
       const marginCell = row.querySelector('td:nth-last-child(3)'); // Margin
 
       const sellingPrice = parseFloat(priceResult.selling_price);
-      const buyingPrice = parseFloat(priceResult.buying_price);
-
+      const buyingStartPrice = parseFloat(priceResult.buying_price); // start price
+      const buyingEndPrice = buyingStartPrice * 1.10; // end price = 110% of start
+      
       // Update table cells
       priceCell.textContent = `£${sellingPrice.toFixed(2)}`;
-      buyCell.textContent = `£${buyingPrice.toFixed(2)}`;
+      buyCell.textContent = `£${buyingStartPrice.toFixed(2)} - £${buyingEndPrice.toFixed(2)}`;
+      
+      // Calculate margin range
+      const maxMargin = ((sellingPrice - buyingStartPrice) / sellingPrice) * 100;
+      const minMargin = ((sellingPrice - buyingEndPrice) / sellingPrice) * 100;
 
-      // Calculate margin = (profit / selling price) * 100
-      let marginPercent = 0;
-      if (sellingPrice > 0 && buyingPrice >= 0) {
-        const profit = sellingPrice - buyingPrice;
-        marginPercent = (profit / sellingPrice) * 100;
-      }
-
-      // Display formatted margin
-      marginCell.textContent = `${marginPercent.toFixed(1)}%`;
-
-
+      marginCell.textContent = `${maxMargin.toFixed(1)}% - ${minMargin.toFixed(1)}%`;
 
     } else {
       // Step 4: If no existing data, run scraper
