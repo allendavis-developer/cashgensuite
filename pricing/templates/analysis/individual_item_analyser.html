@@ -1150,6 +1150,7 @@ async function loadCategoryAttributes(categoryId) {
 // Called when model changes or attribute values change
 async function maybeCheckExistingItems() {
     const data = collectAttributeData();
+    console.log(data);
     if (!data) return;
 
     // data.attributes may be empty — that's fine
@@ -1395,13 +1396,14 @@ document.getElementById('model').addEventListener('change', async (e) => {
 
 });
 
-// When attributes change
-document.getElementById('attributes-container').addEventListener('input', maybeCheckExistingItems);
-
 // Listen for both user and programmatic changes (like the prefiller)
 const attrContainer = document.getElementById('attributes-container');
 ['input', 'change'].forEach(event =>
     attrContainer.addEventListener(event, fetchGeneratedSearchTerm)
+);
+
+['input', 'change'].forEach(event =>
+    attrContainer.addEventListener(event, maybeCheckExistingItems)
 );
 
 

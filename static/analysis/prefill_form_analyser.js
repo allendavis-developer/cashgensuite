@@ -85,6 +85,7 @@ async function prefillFormFromURL() {
 
         console.log('Form prefilled successfully');
         fetchGeneratedSearchTerm();
+        maybeCheckExistingItems();
 
 
     } catch (error) {
