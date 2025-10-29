@@ -111,12 +111,15 @@
   color: #fff;
 }
 .data-table th { background: #222; }
+
 .data-table td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .actions-links {
   display: flex;
-  gap: 12px; /* adds space between buttons */
-  justify-content: center;
+  flex-direction: column;
+  gap: 6px; /* spacing between buttons */
+  align-items: center;
 }
+
 
 .actions-links a {
   text-decoration: none;
@@ -146,6 +149,18 @@
   background: #ff5555;
   color: #000;
 }
+
+
+/* Analyse button (green tone) */
+.actions-links .analyse {
+  color: #4caf50;
+  border: 1px solid #4caf50;
+}
+.actions-links .analyse:hover {
+  background: #4caf50;
+  color: #000;
+}
+
 
 {% endblock %}
 
@@ -186,7 +201,6 @@
 </div>
 
 
-
 <script>
 const addItemBtn = document.getElementById('addItemBtn');
 const tablesContainer = document.getElementById('tablesContainer');
@@ -195,40 +209,92 @@ const categories = {{ categories|safe }};
 
 function createCategoryTable(categoryId, categoryName, attributes) {
   if (categoryTables[categoryId]) return categoryTables[categoryId];
+
   const table = document.createElement('table');
   table.className = 'data-table';
   const thead = document.createElement('thead');
-  const columns = ['Subcategory', 'Model', ...attributes.map(a => a.name), 'Selling Price', 'Buying In Price', 'Margin', 'Quantity', 'Actions'];
+
+  // Added "Item Name" column
+  const columns = ['Subcategory', 'Model', ...attributes.map(a => a.name), 'Item Name', 'Selling Price', 'Buying In Price', 'Margin', 'Quantity', 'Actions'];
+  
   thead.innerHTML = `<tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr>`;
+  
   const tbody = document.createElement('tbody');
   tbody.innerHTML = `<tr class="placeholder"><td colspan="${columns.length}" style="text-align:center; color:#777;">No items added yet.</td></tr>`;
+  
   table.append(thead, tbody);
   tablesContainer.append(Object.assign(document.createElement('h3'), { textContent: categoryName }), table);
   categoryTables[categoryId] = tbody;
   return tbody;
 }
 
-function addItemToTable() {
+
+async function addItemToTable() {
   const catId = modalItemCategory.value;
   if (!catId) return alert("Please select a category.");
+  
   const catName = modalItemCategory.options[modalItemCategory.selectedIndex]?.text;
-  const manu = modalItemSubcategory.options[modalItemSubcategory.selectedIndex]?.text || '—';
+  const subcategory = modalItemSubcategory.options[modalItemSubcategory.selectedIndex]?.text || '—';
   const model = modalItemModel.options[modalItemModel.selectedIndex]?.text || '—';
   const tbody = createCategoryTable(catId, catName, currentAttributes);
   if (tbody.querySelector('.placeholder')) tbody.innerHTML = '';
 
+  // Convert currentAttributes array to a flat dict for the API
+  const attributesPayload = {};
+  currentAttributes.forEach(a => {
+      const key = a.name; // Keep original name, e.g., 'storage'
+      const value = document.getElementById(`attr_${a.id}`)?.value || '';
+      attributesPayload[key] = value;
+  });
+
+  // Call generate_search_term API
+  let itemName = '—';
+  try {
+    const response = await fetch('/api/generate_search_term/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({
+        category: catName,
+        model: model,
+        attributes: attributesPayload
+      })
+    });
+
+    const result = await response.json();
+    itemName = result.data.generated_search_term;
+  } catch (error) {
+    console.error("Error generating item name:", error);
+  }
+
+  // Create the row
   const row = document.createElement('tr');
-  row.innerHTML = `<td>${manu}</td><td>${model}</td>`;
-  currentAttributes.forEach(a => row.insertAdjacentHTML('beforeend', `<td>${document.getElementById(`attr_${a.id}`)?.value || '—'}</td>`));
+  row.innerHTML = `<td>${subcategory}</td><td>${model}</td>`;
+  
+  currentAttributes.forEach(a => {
+    row.insertAdjacentHTML('beforeend', `<td>${document.getElementById(`attr_${a.id}`)?.value || '—'}</td>`);
+  });
+
+  // Insert item name
+  row.insertAdjacentHTML('beforeend', `<td>${itemName}</td>`);
+
+  // Add placeholder cells for remaining columns
   row.insertAdjacentHTML('beforeend', `<td>—</td><td>—</td><td>—</td><td>${createQuantityCell().innerHTML}</td>`);
+
+  // Store metadata
   row.dataset.categoryId = catId;
   row.dataset.subcategoryId = modalItemSubcategory.value;
   row.dataset.modelId = modalItemModel.value;
-  row.dataset.attributes = JSON.stringify(currentAttributes.map(a => ({ id: a.id, value: document.getElementById(`attr_${a.id}`)?.value || '' })));
+  row.dataset.categoryName = catName;
+  row.dataset.attributes = JSON.stringify(attributesPayload);
+
   row.appendChild(createActionsCell(row));
   tbody.appendChild(row);
   addItemModal.classList.remove('active');
 }
+
 
 function createQuantityCell() {
   const td = document.createElement('td');
@@ -245,8 +311,10 @@ function createActionsCell(row) {
   div.className = 'actions-links';
   div.innerHTML = `
     <a href="#" class="details">Details</a>
+    <a href="#" class="analyse">Analyse</a>
     <a href="#" class="remove">Remove</a>`;
-  const [details, remove] = div.querySelectorAll('a');
+
+  const [details, analyse, remove] = div.querySelectorAll('a');
 
   details.onclick = e => {
     e.preventDefault();
@@ -268,6 +336,13 @@ function createActionsCell(row) {
     window.open('/item-buying-analyser/?' + query.toString(), '_blank');
   };
 
+  // Analyse click
+  analyse.onclick = e => {
+    e.preventDefault();
+    scrapePricesForRow(row, ['CEX', 'CashConverters', 'CashGenerator']);
+  };
+
+
   remove.onclick = e => {
     e.preventDefault();
     row.remove();
@@ -277,6 +352,66 @@ function createActionsCell(row) {
   td.append(div);
   return td;
 }
+
+// ------------------------ ANALYSIS SUITE --------------------------
+async function scrapePricesForRow(row, selectedCompetitors = []) {
+    const modelName = row.querySelector('td:nth-child(2)')?.textContent?.trim() || '';
+    const rawAttributes = JSON.parse(row.dataset.attributes || '{}'); // always object
+    const attributes = {};
+
+    // Convert keys to normalized format
+    Object.entries(rawAttributes).forEach(([key, value]) => {
+        const normalizedKey = key.toLowerCase().replace(/\s+/g, '_');
+        attributes[normalizedKey] = value || '';
+    });
+
+    const itemName = modelName || 'Unnamed Item';
+    const scrapeBtn = row.querySelector('.analyse');
+    scrapeBtn.disabled = true;
+    scrapeBtn.textContent = 'Scraping...';
+
+    try {
+        const response = await sendExtensionMessage({
+            action: "scrape",
+            data: {
+                query: itemName,
+                competitors: selectedCompetitors,
+                category: row.dataset.categoryName,
+                model: modelName,
+                attributes: attributes
+            }
+        });
+
+        if (!response.success) throw new Error(response.error || "Unknown scraping error");
+
+        const payload = {
+            item_name: itemName,
+            category: parseInt(row.dataset.categoryId),
+            item_model: parseInt(row.dataset.modelId),
+            attributes: attributes,
+            results: response.results
+        };
+
+        await fetch("/save_scraped_data/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken"),
+            },
+            body: JSON.stringify(payload)
+        });
+
+    } catch (error) {
+        console.error('Scraping error:', error);
+        alert('Error running scraper: ' + error.message);
+    } finally {
+        scrapeBtn.disabled = false;
+        scrapeBtn.textContent = 'Analyse';
+    }
+}
+
+
+
 </script>
 {% load static %}
 <script src="{% static 'analysis/add_item_modal.js' %}"></script>
