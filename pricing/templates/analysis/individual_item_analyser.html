@@ -1,6 +1,5 @@
-<!-- vscode: set syntax to Jinja HTML -->
-
 {% extends "analysis/base_item_analysis.html" %}
+{% load static %}
 
 {% block title %}Pricing Analysis{% endblock %}
 
@@ -10,6 +9,7 @@
 
 {% block search_term %}
 
+
 <div class="input-group">
     <!-- Display original prefilled data as a heading -->
 {% if prefilled_data.name %}
@@ -17,7 +17,8 @@
     {{ prefilled_data.name }}
   </h3>
 {% endif %}
-
+  <!-- Prefill the forms -->
+  <script src="{% static 'analysis/prefill_form_analyser.js' %}"></script>
     <label for="category">Category</label>
     <div style="display: flex; gap: 0.5rem; align-items: center;">
       <select id="category" class="input-field" style="flex: 1;">
@@ -52,7 +53,6 @@
   </div>
 
   <div id="attributes-container" style="margin-top: 10px;"></div>
-
 
 
   <div class="input-row">
@@ -416,7 +416,6 @@
 
 {% block extra_script %}
 <script>
-
 function toggleModal(modal, show = true) {
     modal.style.display = show ? 'flex' : 'none';
     modal.classList.toggle('hidden', !show);
@@ -425,8 +424,6 @@ function toggleModal(modal, show = true) {
 function roundToNearest2(value) {
     return Math.round(value / 2) * 2;
 }
-
-
 
 const modal = document.getElementById('list-modal');
 const modalClose = document.getElementById('modal-close');

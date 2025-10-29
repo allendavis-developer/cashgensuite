@@ -54,3 +54,10 @@ urlpatterns = [
     path('api/add_model/', v.add_model, name='api-add-model'),
     path('api/add_attribute_option/', v.add_attribute_option, name='api-add-attribute-option'),
 ]
+
+from django.conf import settings
+from django.conf.urls.static import static
+
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

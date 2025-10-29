@@ -11,42 +11,54 @@
   padding: 2rem;
 }
 
+/* Center button area with tighter spacing */
+.main-content > div:first-child {
+  text-align: center;
+  margin-bottom: 10px; /* reduced from 20px */
+}
+
+/* Category headers (h3) */
+.main-content h3 {
+  font-size: 1.6rem; /* bigger header text */
+  font-weight: 700;
+  margin-top: 30px;   /* space above header */
+  margin-bottom: 10px; /* spacing between header and table */
+  color: #fff;
+}
+
 /* Buttons */
-.qty-btn {
-  padding: 2px 6px;
-  margin: 0 2px;
+.qty-btn, .modal-btn {
   cursor: pointer;
   border: 1px solid #333;
   background: #1a1a1a;
   color: #fff;
   border-radius: 3px;
-  font-size: 12px;
+  transition: background 0.2s;
 }
-.qty-btn:hover {
-  background: #222;
-}
+.qty-btn { padding: 2px 6px; margin: 0 2px; font-size: 12px; }
+.qty-btn:hover { background: #222; }
 
-.btn-sm {
-  padding: 6px 12px;
-  font-size: 0.75rem;
+.modal-btn {
+  width: 100%;
+  padding: 14px;
+  background-color: #fff;
+  color: #000;
   font-weight: 600;
-  border-radius: 0.25rem;
+  border: none;
+  border-radius: 6px;
   text-transform: uppercase;
 }
-.btn-sm:hover:not(:disabled) {
-  background-color: #e6e6e6;
-}
+.modal-btn:hover { background-color: #e0e0e0; }
 
 /* Quantity input */
 .qty-input {
-  padding: 2px 6px;
+  width: 50px;
+  text-align: center;
   background: #1a1a1a;
   border: 1px solid #333;
   color: #fff;
   border-radius: 3px;
   font-size: 12px;
-  width: 50px;
-  text-align: center;
 }
 .qty-input:focus {
   outline: none;
@@ -75,7 +87,6 @@
   padding: 24px;
   position: relative;
 }
-
 .modal-close {
   position: absolute;
   top: 12px;
@@ -87,59 +98,65 @@
 }
 .modal-close:hover { color: #fff; }
 
-.modal h2 {
-  margin-bottom: 20px;
-  font-size: 16px;
-  text-transform: uppercase;
-  color: #fff;
-}
-
-.modal-btn {
-  width: 100%;
-  padding: 14px;
-  background-color: #fff;
-  color: #000;
-  font-weight: 600;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  text-transform: uppercase;
-  transition: all 0.2s;
-  margin-top: 16px;
-}
-.modal-btn:hover { background-color: #e0e0e0; }
-
-/* Table spacing */
-.table-container {
-  margin-top: 1rem;
-}
-
+/* Table */
 .data-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
-
 .data-table th, .data-table td {
   padding: 8px;
   border: 1px solid #333;
   text-align: left;
   color: #fff;
 }
-.data-table th {
-  background: #222;
+.data-table th { background: #222; }
+.data-table td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.actions-links {
+  display: flex;
+  gap: 12px; /* adds space between buttons */
+  justify-content: center;
 }
+
+.actions-links a {
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 4px;
+  transition: background 0.2s, color 0.2s;
+}
+
+/* Details button (blue tone) */
+.actions-links .details {
+  color: #4da6ff;
+  border: 1px solid #4da6ff;
+}
+.actions-links .details:hover {
+  background: #4da6ff;
+  color: #000;
+}
+
+/* Remove button (red tone) */
+.actions-links .remove {
+  color: #ff5555;
+  border: 1px solid #ff5555;
+}
+.actions-links .remove:hover {
+  background: #ff5555;
+  color: #000;
+}
+
 {% endblock %}
 
 {% block content %}
 <div class="main-content">
 
-  <div class="input-row" style="display: flex; justify-content: center; margin-bottom: 20px;">
+  <div style="text-align:center; margin-bottom: 20px;">
     <button id="addItemBtn" style="padding: 16px 32px; font-size: 20px; font-weight: bold;">Add</button>
   </div>
 
-  <!-- Container for dynamic tables per category -->
-  <div id="tablesContainer" class="table-container"></div>
-
+  <div id="tablesContainer"></div>
 </div>
 
 <!-- Add Item Modal -->
@@ -148,133 +165,95 @@
     <span class="modal-close" id="closeAddItemModal">&times;</span>
     <h2>Add New Item</h2>
 
-    <div class="input-group">
-      <label for="modalItemCategory">Category</label>
-      <select id="modalItemCategory" class="input-field">
-        <option value="">Select category</option>
-      </select>
-    </div>
+    <label>Category</label>
+    <select id="modalItemCategory" class="input-field">
+      <option value="">Select category</option>
+    </select>
 
-    <div class="input-group">
-      <label for="modalItemManufacturer">Subcategory</label>
-      <select id="modalItemManufacturer" class="input-field">
-        <option value="">Select subcategory</option>
-      </select>
-    </div>
+    <label>Subcategory</label>
+    <select id="modalItemManufacturer" class="input-field">
+      <option value="">Select subcategory</option>
+    </select>
 
-    <div class="input-group">
-      <label for="modalItemModel">Model</label>
-      <select id="modalItemModel" class="input-field">
-        <option value="">Select model</option>
-      </select>
-    </div>
+    <label>Model</label>
+    <select id="modalItemModel" class="input-field">
+      <option value="">Select model</option>
+    </select>
 
-    <div class="input-group">
-      <label>Attributes</label>
-      <div id="attributes-container"></div>
-    </div>
-
+    <div id="attributes-container"></div>
     <button class="modal-btn" id="saveItemBtn">Save Item</button>
   </div>
 </div>
 
 <script>
-/* ---------- Cached DOM Elements ---------- */
 const addItemBtn = document.getElementById('addItemBtn');
 const addItemModal = document.getElementById('addItemModal');
 const closeAddItemModal = document.getElementById('closeAddItemModal');
 const saveItemBtn = document.getElementById('saveItemBtn');
-const modalItemName = document.getElementById('modalItemName');
 const modalItemCategory = document.getElementById('modalItemCategory');
 const modalItemManufacturer = document.getElementById('modalItemManufacturer');
 const modalItemModel = document.getElementById('modalItemModel');
 const attributesContainer = document.getElementById('attributes-container');
 const tablesContainer = document.getElementById('tablesContainer');
 
-/* ---------- Data ---------- */
 const categories = {{ categories|safe }};
 let currentAttributes = [];
-const categoryTables = {}; // Stores tbody per category ID
+const categoryTables = {};
 
-/* ---------- Initialization ---------- */
-document.addEventListener('DOMContentLoaded', () => {
-  populateCategories();
-  fetchManufacturers();
-});
+populateCategories();
+fetchManufacturers();
 
 /* ---------- Category / Manufacturer / Model ---------- */
 function populateCategories() {
   modalItemCategory.innerHTML = '<option value="">Select category</option>';
-  categories.forEach(cat => {
-    modalItemCategory.insertAdjacentHTML('beforeend', `<option value="${cat.id}">${cat.name}</option>`);
-  });
+  categories.forEach(c =>
+    modalItemCategory.insertAdjacentHTML('beforeend', `<option value="${c.id}">${c.name}</option>`)
+  );
 }
 
 function fetchManufacturers() {
   fetch("{% url 'api-manufacturers' %}")
     .then(res => res.json())
     .then(data => {
-      modalItemManufacturer.innerHTML = '<option value="">Select manufacturer</option>';
-      data.forEach(m => {
-        modalItemManufacturer.insertAdjacentHTML('beforeend', `<option value="${m.id}">${m.name}</option>`);
-      });
+      modalItemManufacturer.innerHTML = '<option value="">Select subcategory</option>';
+      data.forEach(m => modalItemManufacturer.insertAdjacentHTML('beforeend', `<option value="${m.id}">${m.name}</option>`));
     });
 }
 
 function fetchModels() {
   const categoryId = modalItemCategory.value;
   const manufacturerId = modalItemManufacturer.value;
-
   if (!categoryId || !manufacturerId) {
     modalItemModel.innerHTML = '<option value="">Select model</option>';
     return;
   }
-
   fetch(`/api/models/?category=${categoryId}&manufacturer=${manufacturerId}`)
     .then(res => res.json())
     .then(data => {
       modalItemModel.innerHTML = '<option value="">Select model</option>';
-      data.forEach(m => {
-        modalItemModel.insertAdjacentHTML('beforeend', `<option value="${m.id}">${m.name}</option>`);
-      });
+      data.forEach(m => modalItemModel.insertAdjacentHTML('beforeend', `<option value="${m.id}">${m.name}</option>`));
     });
 }
 
 /* ---------- Attributes ---------- */
 async function loadCategoryAttributes(categoryId) {
-  try {
-    const res = await fetch(`/api/category_attributes/?category=${categoryId}`);
-    const data = await res.json();
-    renderAttributes(data);
-    currentAttributes = data;
-  } catch (err) {
-    console.error("Error loading attributes:", err);
-  }
+  const res = await fetch(`/api/category_attributes/?category=${categoryId}`);
+  const data = await res.json();
+  currentAttributes = data;
+  renderAttributes(data);
 }
 
-function renderAttributes(attributes) {
-  attributesContainer.innerHTML = '';
-  attributes.forEach(attr => {
-    const field =
-      attr.field_type === 'select'
-        ? renderSelectAttribute(attr)
-        : `<input type="${attr.field_type === 'number' ? 'number' : 'text'}" id="attr_${attr.id}" class="input-field">`;
-    attributesContainer.insertAdjacentHTML('beforeend', `
-      <div class="input-group">
-        <label>${attr.label || attr.name}</label>
-        ${field}
-      </div>
-    `);
-  });
-}
-
-function renderSelectAttribute(attr) {
-  const options = (attr.options || []).map(opt => `<option value="${opt}">${opt}</option>`).join('');
-  return `
-    <select id="attr_${attr.id}" class="input-field">
-      <option value="">-- Select ${attr.label || attr.name} --</option>
-      ${options}
-    </select>`;
+function renderAttributes(attrs) {
+  attributesContainer.innerHTML = attrs.map(attr => `
+    <div class="input-group">
+      <label>${attr.label || attr.name}</label>
+      ${attr.field_type === 'select'
+        ? `<select id="attr_${attr.id}" class="input-field">
+            <option value="">-- Select ${attr.label || attr.name} --</option>
+            ${(attr.options || []).map(o => `<option value="${o}">${o}</option>`).join('')}
+          </select>`
+        : `<input type="${attr.field_type === 'number' ? 'number' : 'text'}" id="attr_${attr.id}" class="input-field">`}
+    </div>`).join('');
 }
 
 /* ---------- Event Listeners ---------- */
@@ -282,14 +261,8 @@ modalItemCategory.addEventListener('change', () => {
   fetchModels();
   loadCategoryAttributes(modalItemCategory.value);
 });
-
 modalItemManufacturer.addEventListener('change', fetchModels);
-
-addItemBtn.addEventListener('click', () => {
-  resetModal();
-  addItemModal.classList.add('active');
-});
-
+addItemBtn.addEventListener('click', () => { resetModal(); addItemModal.classList.add('active'); });
 closeAddItemModal.addEventListener('click', () => addItemModal.classList.remove('active'));
 saveItemBtn.addEventListener('click', addItemToTable);
 
@@ -303,116 +276,87 @@ function resetModal() {
 
 function createCategoryTable(categoryId, categoryName, attributes) {
   if (categoryTables[categoryId]) return categoryTables[categoryId];
-
   const table = document.createElement('table');
   table.className = 'data-table';
-  table.setAttribute('data-category', categoryId);
-
   const thead = document.createElement('thead');
-  const tr = document.createElement('tr');
-
-  const columns = [
-    'Item',
-    categoryName.toLowerCase() === 'games' ? 'Platform' : 'Manufacturer',
-    categoryName.toLowerCase() === 'games' ? 'Name' : 'Model',
-    ...attributes.map(a => a.name),
-    'Selling Price',
-    'Buying In Price',
-    'Margin',
-    'Quantity',
-    'Actions'
-  ];
-
-  columns.forEach(col => tr.insertAdjacentHTML('beforeend', `<th>${col}</th>`));
-  thead.appendChild(tr);
-  table.appendChild(thead);
-
+  const columns = ['Subcategory', 'Model', ...attributes.map(a => a.name), 'Selling Price', 'Buying In Price', 'Margin', 'Quantity', 'Actions'];
+  thead.innerHTML = `<tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr>`;
   const tbody = document.createElement('tbody');
   tbody.innerHTML = `<tr class="placeholder"><td colspan="${columns.length}" style="text-align:center; color:#777;">No items added yet.</td></tr>`;
-  table.appendChild(tbody);
-
-  const title = document.createElement('h3');
-  title.textContent = categoryName;
-
-  tablesContainer.append(title, table);
+  table.append(thead, tbody);
+  tablesContainer.append(Object.assign(document.createElement('h3'), { textContent: categoryName }), table);
   categoryTables[categoryId] = tbody;
   return tbody;
 }
 
 function addItemToTable() {
-  const categoryId = modalItemCategory.value;
-  const categoryName = modalItemCategory.options[modalItemCategory.selectedIndex]?.text;
-  const manufacturerText = modalItemManufacturer.options[modalItemManufacturer.selectedIndex]?.text || '—';
-  const modelText = modalItemModel.options[modalItemModel.selectedIndex]?.text || '—';
-
-  if (!categoryId) return alert("Please select a category.");
-
-  const tbody = createCategoryTable(categoryId, categoryName, currentAttributes);
-
+  const catId = modalItemCategory.value;
+  if (!catId) return alert("Please select a category.");
+  const catName = modalItemCategory.options[modalItemCategory.selectedIndex]?.text;
+  const manu = modalItemManufacturer.options[modalItemManufacturer.selectedIndex]?.text || '—';
+  const model = modalItemModel.options[modalItemModel.selectedIndex]?.text || '—';
+  const tbody = createCategoryTable(catId, catName, currentAttributes);
   if (tbody.querySelector('.placeholder')) tbody.innerHTML = '';
 
   const row = document.createElement('tr');
-  row.innerHTML = `
-    <td>New Item</td>
-    <td>${manufacturerText}</td>
-    <td>${modelText}</td>
-  `;
-
-  currentAttributes.forEach(attr => {
-    const td = document.createElement('td');
-    td.textContent = document.getElementById(`attr_${attr.id}`)?.value || '—';
-    row.appendChild(td);
-  });
-
-  row.insertAdjacentHTML('beforeend', `
-    <td>—</td>
-    <td>—</td>
-    <td>—</td>
-    <td>${createQuantityCell().innerHTML}</td>
-  `);
-
+  row.innerHTML = `<td>${manu}</td><td>${model}</td>`;
+  currentAttributes.forEach(a => row.insertAdjacentHTML('beforeend', `<td>${document.getElementById(`attr_${a.id}`)?.value || '—'}</td>`));
+  row.insertAdjacentHTML('beforeend', `<td>—</td><td>—</td><td>—</td><td>${createQuantityCell().innerHTML}</td>`);
+  row.dataset.categoryId = catId;
+  row.dataset.manufacturerId = modalItemManufacturer.value;
+  row.dataset.modelId = modalItemModel.value;
+  row.dataset.attributes = JSON.stringify(currentAttributes.map(a => ({ id: a.id, value: document.getElementById(`attr_${a.id}`)?.value || '' })));
   row.appendChild(createActionsCell(row));
   tbody.appendChild(row);
   addItemModal.classList.remove('active');
 }
 
-
 function createQuantityCell() {
-  const cell = document.createElement('td');
-  cell.innerHTML = `
-    <button class="qty-btn">-</button>
-    <input type="number" class="qty-input" min="1" value="1">
-    <button class="qty-btn">+</button>
-  `;
-  const [minus, input, plus] = cell.children;
-  minus.addEventListener('click', () => input.value = Math.max(1, input.value - 1));
-  plus.addEventListener('click', () => input.value++);
-  return cell;
+  const td = document.createElement('td');
+  td.innerHTML = `<button class="qty-btn">-</button><input type="number" class="qty-input" min="1" value="1"><button class="qty-btn">+</button>`;
+  const [minus, input, plus] = td.children;
+  minus.onclick = () => input.value = Math.max(1, input.value - 1);
+  plus.onclick = () => input.value++;
+  return td;
 }
 
 function createActionsCell(row) {
-  const cell = document.createElement('td');
-  cell.style.display = 'flex';
-  cell.style.gap = '8px';
-  cell.style.alignItems = 'center';
+  const td = document.createElement('td');
+  const div = document.createElement('div');
+  div.className = 'actions-links';
+  div.innerHTML = `
+    <a href="#" class="details">Details</a>
+    <a href="#" class="remove">Remove</a>`;
+  const [details, remove] = div.querySelectorAll('a');
 
-  const detailsBtn = document.createElement('button');
-  detailsBtn.textContent = 'Details';
-  detailsBtn.className = 'btn btn-sm';
-  detailsBtn.addEventListener('click', () => alert(`Analysing ${row.querySelector('td').textContent}`));
+  details.onclick = e => {
+    e.preventDefault();
 
-  const removeBtn = document.createElement('button');
-  removeBtn.textContent = 'Remove';
-  removeBtn.className = 'btn btn-sm';
-  removeBtn.style.backgroundColor = '#ff4444';
-  removeBtn.style.color = '#fff';
-  removeBtn.addEventListener('click', () => {
+    const data = {
+      categoryId: row.dataset.categoryId,
+      manufacturerId: row.dataset.manufacturerId,
+      modelId: row.dataset.modelId,
+      attributes: JSON.parse(row.dataset.attributes)
+    };
+
+    const query = new URLSearchParams({
+      categoryId: data.categoryId,
+      manufacturerId: data.manufacturerId,
+      modelId: data.modelId,
+      attributes: JSON.stringify(data.attributes) // <-- fix here
+    });
+
+    window.open('/item-buying-analyser/?' + query.toString(), '_blank');
+  };
+
+  remove.onclick = e => {
+    e.preventDefault();
     row.remove();
-    if (!row.parentElement.children.length) row.parentElement.innerHTML = `<tr class="placeholder"><td colspan="${row.parentElement.parentElement.querySelectorAll('th').length}" style="text-align:center; color:#777;">No items added yet.</td></tr>`;
-  });
-
-  cell.append(detailsBtn, removeBtn);
-  return cell;
+    const tb = row.parentElement;
+    if (!tb.children.length) tb.innerHTML = `<tr class="placeholder"><td colspan="${row.parentElement.parentElement.querySelectorAll('th').length}" style="text-align:center; color:#777;">No items added yet.</td></tr>`;
+  };
+  td.append(div);
+  return td;
 }
 </script>
 {% endblock %}
