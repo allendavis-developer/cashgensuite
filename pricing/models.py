@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from multiselectfield import MultiSelectField
 
 # -------------------------------
 # SCRAPED MARKET DATA
@@ -21,6 +22,20 @@ class Subcategory(models.Model):
 
 
 class Category(models.Model):
+    SCRAPE_SOURCES = [
+        ("CEX", "CEX"),
+        ("eBay", "eBay"),
+        ("CashConverters", "CashConverters"),
+        ("CashGenerator", "CashGenerator"),
+    ]
+
+    scrape_sources = MultiSelectField(
+        choices=SCRAPE_SOURCES,
+        blank=True,
+        max_length=200,
+        help_text="Select which competitor sites to scrape for this category."
+    )
+
     name = models.CharField(max_length=100, unique=True)
     base_margin = models.FloatField(default=0.0)
     description = models.TextField(blank=True)

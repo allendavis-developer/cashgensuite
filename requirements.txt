@@ -4,6 +4,7 @@ playwright
 # Web framework
 django
 psycopg2-binary
+django-multiselectfield
 
 # HTTP requests
 requests

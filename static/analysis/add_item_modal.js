@@ -31,19 +31,30 @@ function fetchSubcategorys(categoryId) {
 }
 
 function fetchModels() {
+  console.log("Fetching Models");
+
   const categoryId = modalItemCategory.value;
   const subcategoryId = modalItemSubcategory.value;
   if (!categoryId || !subcategoryId) {
-    modalItemModel.innerHTML = '<option value="">Select model</option>';
+    modalItemModel.innerHTML = `
+      <option value="">Select model</option>
+      <option value="__new__">Add new model...</option>
+    `;
     return;
   }
+
   fetch(`/api/models/?category=${categoryId}&subcategory=${subcategoryId}`)
     .then(res => res.json())
     .then(data => {
       modalItemModel.innerHTML = '<option value="">Select model</option>';
-      data.forEach(m => modalItemModel.insertAdjacentHTML('beforeend', `<option value="${m.id}">${m.name}</option>`));
+      data.forEach(m =>
+        modalItemModel.insertAdjacentHTML('beforeend', `<option value="${m.id}">${m.name}</option>`)
+      );
+      modalItemModel.insertAdjacentHTML('beforeend', '<option value="__new__">Add new model...</option>');
+      console.log("Inserted add new model");
     });
 }
+
 
 /* ---------- Attributes ---------- */
 async function loadCategoryAttributes(categoryId) {
@@ -84,3 +95,53 @@ function resetModal() {
   modalItemModel.innerHTML = '<option value="">Select model</option>';
   attributesContainer.innerHTML = '';
 }
+
+modalItemModel.addEventListener('change', async () => {
+  if (modalItemModel.value === '__new__') {
+    const newModelName = prompt('Enter a name for the new model:');
+    if (!newModelName) {
+      modalItemModel.value = '';
+      return;
+    }
+
+    const categoryId = modalItemCategory.value;
+    const subcategoryId = modalItemSubcategory.value;
+    if (!categoryId || !subcategoryId) {
+      alert('Please select a category and subcategory first.');
+      modalItemModel.value = '';
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/add_model/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'), 
+        },
+        body: JSON.stringify({
+          name: newModelName,
+          category: categoryId,
+          subcategory: subcategoryId
+        }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        // Add it to the dropdown and select it
+        const newOption = document.createElement('option');
+        newOption.value = data.id;
+        newOption.textContent = data.name;
+        modalItemModel.appendChild(newOption);
+        modalItemModel.value = data.id;
+      } else {
+        alert(data.error || 'Error adding model');
+        modalItemModel.value = '';
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to add model.');
+      modalItemModel.value = '';
+    }
+  }
+});

@@ -184,18 +184,38 @@ class CategoryAttributeInline(admin.TabularInline):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'base_margin', 'attribute_count')
+    list_display = ('name', 'base_margin', 'attribute_count', 'get_scrape_sources')
     inlines = [CategoryAttributeInline]
-    
+    search_fields = ('name',)
+    list_filter = ('scrape_sources',)
+
+    def get_scrape_sources(self, obj):
+        """Display selected scrape sources as a comma-separated string."""
+        return ", ".join(obj.scrape_sources) if obj.scrape_sources else "-"
+    get_scrape_sources.short_description = "Scrape Sources"
+
     def attribute_count(self, obj):
+        """Show how many custom attributes the category has."""
         return obj.attributes.count()
     attribute_count.short_description = 'Attributes'
 
 
 class ItemModelInline(admin.TabularInline):
     model = ItemModel
-    extra = 1
-    fields = ('category', 'name')
+    extra = 0
+    readonly_fields = ("get_category", "get_subcategory")
+    fields = ("name", "get_category", "get_subcategory")
+
+    def get_category(self, obj):
+        """Display the parent category (through subcategory)."""
+        return obj.subcategory.category.name if obj.subcategory and obj.subcategory.category else "-"
+    get_category.short_description = "Category"
+
+    def get_subcategory(self, obj):
+        """Display the subcategory name."""
+        return obj.subcategory.name if obj.subcategory else "-"
+    get_subcategory.short_description = "Subcategory"
+
 
 
 @admin.register(Subcategory)

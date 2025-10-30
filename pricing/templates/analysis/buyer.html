@@ -236,6 +236,7 @@
     <label>Model</label>
     <select id="modalItemModel" class="input-field">
       <option value="">Select model</option>
+      <option value="__new__">Add new model...</option>
     </select>
 
     <div id="attributes-container"></div>
@@ -322,6 +323,8 @@ async function addItemToTable() {
   row.dataset.categoryName = catName;
   row.dataset.attributes = JSON.stringify(attributesPayload);
   row.dataset.itemName = itemName;
+  row.dataset.subcategoryName = subcategory;
+
 
   row.appendChild(createActionsCell(row));
   tbody.appendChild(row);
@@ -495,6 +498,7 @@ async function scrapePricesForRow(row, selectedCompetitors = []) {
         query: itemName,
         competitors: selectedCompetitors,
         category: row.dataset.categoryName,
+        subcategory: row.dataset.subcategoryName,
         model: modelName,
         attributes: attributes
       }
