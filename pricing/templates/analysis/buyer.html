@@ -665,7 +665,9 @@ async function updatePriceCells(row, category, model, attributes) {
 
     const sellingPrice = parseFloat(priceResult.selling_price);
     const buyingStartPrice = parseFloat(priceResult.buying_price);
-    const buyingEndPrice = buyingStartPrice * 1.10;
+    const buyingEndPrice = priceResult.buying_end_price;
+
+    console.log(priceResult.cex_cash_price);
 
     priceCell.textContent = `£${sellingPrice.toFixed(2)}`;
     buyCell.querySelector('.buying-value').textContent = `£${buyingStartPrice.toFixed(2)} - £${buyingEndPrice.toFixed(2)}`;

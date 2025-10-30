@@ -147,7 +147,7 @@ def determine_base_price(market_item):
         if qs.exists():
             listings = list(qs)
             if competitor == "CEX":
-                base_price = listings[0].price * 0.75
+                base_price = listings[0].price * 0.85
             else:
                 base_price = listings[2].price if len(listings) >= 3 else listings[-1].price
             return base_price, competitor
@@ -158,8 +158,10 @@ def round_down_to_even(value):
     """Round down to the nearest even integer."""
     return (int(value) // 2) * 2
 
-def compute_buying_price(selling_price, category_id, subcategory_id, model_name):
-    """Compute the buying price using margin data."""
+import requests
+
+def compute_buying_price(selling_price, category_id, subcategory_id, model_name, market_item):
+    """Compute the buying price using margin data and CeX cash price if available."""
     effective_margin, category_obj, subcategory_obj, rule_matches = get_effective_margin(
         category_id=category_id,
         subcategory_id=subcategory_id,
@@ -171,9 +173,54 @@ def compute_buying_price(selling_price, category_id, subcategory_id, model_name)
         "base_margin": category_obj.base_margin,
         "effective_margin": effective_margin,
         "rules_applied": rule_matches,
+        "source": "margin_rule",
     }
 
-    return buying_price, margin_info
+    cex_cash_price = None
+    cex_url = None
+
+    # Try to adjust using live CeX cash price if a CeX listing exists
+    try:
+        # Get the first competitor listing for this market item (by insertion order)
+        cex_listing = CompetitorListing.objects.filter(
+            competitor="CEX",
+            market_item=market_item,
+            is_active=True
+        ).order_by("id").first()
+
+        print(cex_listing)
+
+        if cex_listing and cex_listing.stable_id:
+            cex_url = f"https://uk.webuy.com/product-detail?id={cex_listing.stable_id}"
+            
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                              "AppleWebKit/537.36 (KHTML, like Gecko) "
+                              "Chrome/118.0.5993.117 Safari/537.36",
+                "Accept": "application/json, text/javascript, */*; q=0.01",
+                "Referer": "https://www.cex.uk/",
+            }
+
+            response = requests.get(
+                f"https://wss2.cex.uk.webuy.io/v3/boxes/{cex_listing.stable_id}/detail",
+                headers=headers,
+                timeout=10
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            box = data.get("response", {}).get("data", {}).get("boxDetails", [{}])[0]
+            cex_cash_price = box.get("cashPrice")
+            print(cex_cash_price)
+
+    except Exception as e:
+        print(f"CeX price lookup failed: {e}")
+
+    # If CeX cash price exists, use it as the final buying_end_price
+    buying_end_price = cex_cash_price if cex_cash_price is not None else buying_price * 1.10
+
+    return buying_price, margin_info, cex_cash_price, cex_url, buying_end_price
+
 
 
 @require_POST
@@ -205,26 +252,27 @@ def get_selling_and_buying_price(request):
             })
 
         selling_price = round_down_to_even(base_price)
-        buying_price, margin_info = compute_buying_price(
-            selling_price, category_id, subcategory_id, model
-        )
+        buying_price, margin_info, cex_cash_price, cex_url, buying_end_price = compute_buying_price(
+                selling_price, category_id, subcategory_id, model, market_item
+            )
 
         return JsonResponse({
             "success": True,
             "search_term": search_term,
             "selling_price": selling_price,
             "buying_price": buying_price,
+            "buying_end_price": buying_end_price,  # <-- final price to display/pay
             "margin_info": margin_info,
+            "cex_cash_price": cex_cash_price,
+            "cex_url": cex_url,
         })
+
 
     except ValueError as e:
         return JsonResponse({"success": False, "error": str(e)}, status=404)
     except Exception as e:
         import traceback; traceback.print_exc()
         return JsonResponse({"success": False, "error": str(e)}, status=500)
-
-
-
 
 
 
