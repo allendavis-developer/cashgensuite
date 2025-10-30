@@ -234,13 +234,58 @@
   font-size: 2rem;  /* Even larger for the actual numbers */
 }
 
+/* Rectangular unified button style */
+.action-btn {
+  min-width: 160px;           /* enough width for longer text */
+  height: 60px;               /* rectangular height */
+  background-color: #1a1a1a;
+  font-weight: bold;
+  font-size: 20px;            /* readable size */
+  font-family: 'Arial', sans-serif; /* or your preferred font */
+  border: 2px solid #333;
+  border-radius: 8px;         /* slightly rounded corners */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  transition: transform 0.2s, background-color 0.2s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.action-btn:hover {
+  background-color: #222;
+}
+
+/* Add button - muted green */
+.add-btn {
+  color: #6ca06c; /* muted green */
+  margin-right: 20px;
+}
+
+/* Analyse All button - muted yellow */
+.analyse-all-btn {
+  color: #d4c264; /* muted yellow */
+}
+
+.add-btn-container {
+  width: 100%;                  /* full width */
+  display: flex;
+  justify-content: center;      /* center horizontally */
+  gap: 20px;                    /* spacing between buttons */
+  margin-bottom: 30px;          /* space below buttons */
+}
+
+
 {% endblock %}
 
 {% block content %}
 <div class="main-content">
-  <div>
-    <button id="addItemBtn" style="padding: 16px 32px; font-size: 20px; font-weight: bold;">Add</button>
+  <div class="add-btn-container">
+    <button id="addItemBtn" class="action-btn add-btn">Add</button>
+    <button id="analyseAllBtn" class="action-btn analyse-all-btn">Analyse</button>
   </div>
+
   <div id="tablesContainer"></div>  
   <div id="summaryContainer" style="padding: 16px; color: #fff;">
     <h3>Summary</h3>
@@ -586,6 +631,7 @@ async function scrapePricesForRow(row, selectedCompetitors = []) {
     if (!response.success) throw new Error(response.error || "Unknown scraping error");
 
     console.log(response.results);
+    console.log("Finished scraping! Time to save data now...");
 
     await fetch("/save_scraped_data/", {
       method: "POST",
@@ -601,6 +647,9 @@ async function scrapePricesForRow(row, selectedCompetitors = []) {
         results: response.results
       })
     });
+    
+    console.log("Saved scraped data to database!");
+
 
   } catch (error) {
     console.error('Scraping error:', error);
@@ -610,6 +659,36 @@ async function scrapePricesForRow(row, selectedCompetitors = []) {
     scrapeBtn.textContent = 'Analyse';
   }
 }
+
+const analyseAllBtn = document.getElementById('analyseAllBtn');
+
+analyseAllBtn.addEventListener('click', async () => {
+    analyseAllBtn.disabled = true;
+    analyseAllBtn.textContent = 'Analysing...';
+
+    // Gather all rows that are not placeholder and haven't been analysed
+    const rowsToAnalyse = [];
+    document.querySelectorAll('.item-table tbody tr').forEach(row => {
+        if (row.classList.contains('placeholder')) return;
+
+        const buyCell = row.querySelector('td:nth-last-child(4)');
+        const sellingCell = row.querySelector('td:nth-last-child(5)');
+
+        // Check if selling price or buying range is empty → not analysed
+        if (!buyCell.textContent.includes('£') || !sellingCell.textContent.includes('£')) {
+            rowsToAnalyse.push(row);
+        }
+    });
+
+    for (let row of rowsToAnalyse) {
+        await handleAnalyseClick(row);
+    }
+
+    analyseAllBtn.disabled = false;
+    analyseAllBtn.textContent = 'Analyse All';
+});
+
+
 </script>
 
 {% load static %}
