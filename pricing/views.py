@@ -127,7 +127,7 @@ def get_selling_and_buying_price(request):
 
         search_term = build_search_term(model, category, attributes)
 
-        market_item = MarketItem.objects.filter(title__icontains=search_term).first()
+        market_item = MarketItem.objects.filter(title__iexact=search_term).first()
         if not market_item:
             return JsonResponse({"success": False, "error": "No matching market item found."})
 

@@ -206,6 +206,33 @@
   gap: 8px;
 }
 
+#summaryContainer {
+  color: #fff;
+  font-weight: 700;           
+  text-transform: uppercase;   
+  width: 100%;                 
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 32px;  /* Increased from 16px */
+  background: #1a1a1a;  /* Add background to make it stand out */
+  border: 2px solid #333;
+  border-radius: 8px;
+}
+
+#summaryContainer h3 {
+  font-size: 2.5rem;  /* Much larger heading */
+  margin-bottom: 20px;
+  color: #00ff00;
+}
+
+#summaryContainer p {
+  font-size: 1.25rem;  /* Much larger text */
+  margin: 15px 0;
+}
+
+#summaryContainer span {
+  font-size: 2rem;  /* Even larger for the actual numbers */
+}
 
 {% endblock %}
 
@@ -214,7 +241,13 @@
   <div>
     <button id="addItemBtn" style="padding: 16px 32px; font-size: 20px; font-weight: bold;">Add</button>
   </div>
-  <div id="tablesContainer"></div>
+  <div id="tablesContainer"></div>  
+  <div id="summaryContainer" style="padding: 16px; color: #fff;">
+    <h3>Summary</h3>
+    <p>Total Buying Price Range: <span id="totalBuying">£0.00 - £0.00</span></p>
+    <p>Total Selling Price: <span id="totalSelling">£0.00</span></p>
+  </div>
+
 </div>
 
 <!-- Add Item Modal -->
@@ -248,6 +281,12 @@
 const addItemBtn = document.getElementById('addItemBtn');
 const tablesContainer = document.getElementById('tablesContainer');
 const categories = {{ categories|safe }};
+
+// Hide summary if no items on initial load
+document.addEventListener('DOMContentLoaded', () => {
+  updateSummary();
+});
+
 
 function createCategoryTable(categoryId, categoryName, attributes) {
   if (categoryTables[categoryId]) return categoryTables[categoryId];
@@ -377,13 +416,15 @@ function createActionsCell(row) {
 
   remove.onclick = e => {
     e.preventDefault();
-    row.remove();
     const tb = row.parentElement;
+    const colCount = tb.parentElement.querySelectorAll('th').length;
+    row.remove();
     if (!tb.children.length) {
-      tb.innerHTML = `<tr class="placeholder"><td colspan="${row.parentElement.parentElement.querySelectorAll('th').length}" style="text-align:center; color:#777;">No items added yet.</td></tr>`;
+      tb.innerHTML = `<tr class="placeholder"><td colspan="${colCount}" style="text-align:center; color:#777;">No items added yet.</td></tr>`;
     }
+    updateSummary();
   };
-  
+    
   td.append(div);
   return td;
 }
@@ -470,6 +511,46 @@ async function updatePriceCells(row, category, model, attributes) {
     const maxMargin = ((sellingPrice - buyingStartPrice) / sellingPrice) * 100;
     const minMargin = ((sellingPrice - buyingEndPrice) / sellingPrice) * 100;
     marginCell.textContent = `${maxMargin.toFixed(1)}% - ${minMargin.toFixed(1)}%`;
+
+    updateSummary();
+
+}
+
+function updateSummary() {
+  let totalBuyingMin = 0;
+  let totalBuyingMax = 0;
+  let totalSelling = 0;
+  let hasItems = false;
+
+  document.querySelectorAll('.item-table tbody tr').forEach(row => {
+    if (row.classList.contains('placeholder')) return;
+
+    hasItems = true;
+
+    const sellingCell = row.querySelector('td:nth-last-child(5)');
+    const buyingCell = row.querySelector('td:nth-last-child(4)');
+
+    if (!sellingCell || !buyingCell) return;
+
+    const selling = parseFloat(sellingCell.textContent.replace(/[£,]/g, '')) || 0;
+    const [buyMin, buyMax] = buyingCell.textContent
+      .replace(/[£,]/g, '')
+      .split('-')
+      .map(s => parseFloat(s.trim()) || 0);
+
+    totalSelling += selling;
+    totalBuyingMin += buyMin;
+    totalBuyingMax += buyMax;
+  });
+
+  const summaryContainer = document.getElementById('summaryContainer');
+  if (hasItems) {
+    summaryContainer.style.display = 'block';
+    document.getElementById('totalBuying').textContent = `£${totalBuyingMin.toFixed(2)} - £${totalBuyingMax.toFixed(2)}`;
+    document.getElementById('totalSelling').textContent = `£${totalSelling.toFixed(2)}`;
+  } else {
+    summaryContainer.style.display = 'none';
+  }
 }
 
 
