@@ -521,7 +521,6 @@ async function scrapePricesForRow(row, selectedCompetitors = []) {
 
     if (!response.success) throw new Error(response.error || "Unknown scraping error");
 
-    console.log(response.results);
 
     await fetch("/save_scraped_data/", {
       method: "POST",
