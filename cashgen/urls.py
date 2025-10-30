@@ -44,6 +44,8 @@ urlpatterns = [
     path('api/subcategorys/', v.subcategorys, name='api-subcategorys'),
     path('api/models/', v.models, name='api-models'),
     path('api/category_attributes/', v.category_attributes, name='api-category-attributes'),
+    path('api/categories/', v.categories, name='api-categories'),
+
     path('api/check_existing_items/', v.check_existing_items, name='api-check-existing-items'),
     path('api/get-selling-and-buying-price/', v.get_selling_and_buying_price, name='api-get-selling-and-buying-price'),
     path('api/get-scrape-sources-for-category/', v.get_scrape_sources_for_category, name='api-get-scrape-sources-for-category'),

@@ -79,6 +79,55 @@
   box-shadow: 0 0 6px rgba(77,166,255,0.3);
 }
 
+/* ===== Tom Select Dark Mode ===== */
+.ts-wrapper,
+.ts-dropdown {
+  background-color: #1e1e1e !important;
+  color: #f5f5f5 !important;
+  border-color: #333 !important;
+  font-size: 0.95rem;
+}
+
+/* Input field and selected item area */
+.ts-control {
+  background-color: #1e1e1e !important;
+  color: #f5f5f5 !important;
+  border: 1px solid #333 !important;
+  border-radius: 0.5rem;
+}
+
+/* Placeholder text */
+.ts-control input {
+  color: #ccc !important;
+}
+
+/* Dropdown options */
+.ts-dropdown .option {
+  background-color: #1e1e1e !important;
+  color: #e0e0e0 !important;
+}
+
+/* Hover / active item */
+.ts-dropdown .option:hover,
+.ts-dropdown .active {
+  background-color: #333 !important;
+  color: #fff !important;
+}
+
+/* Selected item chip */
+.ts-wrapper.multi .item {
+  background-color: #333 !important;
+  border: 1px solid #555 !important;
+  color: #fff !important;
+  border-radius: 0.4rem;
+}
+
+/* Focus ring */
+.ts-control.focus {
+  border-color: #666 !important;
+  box-shadow: 0 0 0 1px #666 !important;
+}
+
 
 /* Modal */
 .modal {
@@ -206,6 +255,39 @@
   gap: 8px;
 }
 
+/* Buying Range Adjust Buttons */
+.buying-range-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;                    /* more breathing space */
+  justify-content: flex-start;
+}
+
+.buying-range-cell .qty-btn {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  color: #fff;
+  font-size: 16px;             /* increased from 12px */
+  font-weight: bold;
+  width: 32px;                 /* increased from ~20px */
+  height: 32px;                /* more tappable */
+  border-radius: 6px;          /* smoother corners */
+  transition: background 0.2s, transform 0.15s;
+}
+
+.buying-range-cell .qty-btn:hover {
+  background: #333;
+  transform: scale(1.05);
+}
+
+.buying-range-cell .buying-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f0;                 /* subtle green tint for price visibility */
+}
+
+
+
 #summaryContainer {
   color: #fff;
   font-weight: 700;           
@@ -253,6 +335,7 @@
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
+
 .action-btn:hover {
   background-color: #222;
 }
@@ -262,6 +345,7 @@
   color: #6ca06c; /* muted green */
   margin-right: 20px;
 }
+
 
 /* Analyse All button - muted yellow */
 .analyse-all-btn {
@@ -321,6 +405,11 @@
     <button class="modal-btn" id="saveItemBtn">Save Item</button>
   </div>
 </div>
+
+<!-- Tom Select CSS -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+<!-- Tom Select JS -->
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 
 <script>
 const addItemBtn = document.getElementById('addItemBtn');
@@ -411,7 +500,19 @@ async function addItemToTable() {
     row.insertAdjacentHTML('beforeend', `<td>${document.getElementById(`attr_${a.id}`)?.value || '—'}</td>`);
   });
 
-  row.insertAdjacentHTML('beforeend', `<td>${itemName}</td><td>—</td><td>—</td><td>—</td><td>${createQuantityCell().innerHTML}</td>`);
+  row.insertAdjacentHTML('beforeend', `
+    <td>${itemName}</td>
+    <td>—</td>
+    <td>
+      <div class="buying-range-cell">
+        <span class="buying-value">—</span>
+        <button class="qty-btn increase-buying">+</button>
+        <button class="qty-btn decrease-buying">−</button>
+      </div>
+    </td>
+    <td>—</td>
+    <td>${createQuantityCell().innerHTML}</td>
+  `);
 
   // Store metadata
   row.dataset.categoryId = catId;
@@ -567,7 +668,11 @@ async function updatePriceCells(row, category, model, attributes) {
     const buyingEndPrice = buyingStartPrice * 1.10;
 
     priceCell.textContent = `£${sellingPrice.toFixed(2)}`;
-    buyCell.textContent = `£${buyingStartPrice.toFixed(2)} - £${buyingEndPrice.toFixed(2)}`;
+    buyCell.querySelector('.buying-value').textContent = `£${buyingStartPrice.toFixed(2)} - £${buyingEndPrice.toFixed(2)}`;
+    buyCell.dataset.buyMin = buyingStartPrice;
+    buyCell.dataset.buyMax = buyingEndPrice;
+    attachBuyingAdjustListeners();
+
 
     const maxMargin = ((sellingPrice - buyingStartPrice) / sellingPrice) * 100;
     const minMargin = ((sellingPrice - buyingEndPrice) / sellingPrice) * 100;
@@ -576,6 +681,58 @@ async function updatePriceCells(row, category, model, attributes) {
     updateSummary();
 
 }
+
+function attachBuyingAdjustListeners() {
+  document.querySelectorAll('.buying-range-cell').forEach(cell => {
+    const increaseBtn = cell.querySelector('.increase-buying');
+    const decreaseBtn = cell.querySelector('.decrease-buying');
+    const td = cell.closest('td');
+
+    // Store initial range once if not already stored
+    if (!td.dataset.baseBuyMin) {
+      td.dataset.baseBuyMin = td.dataset.buyMin;
+      td.dataset.baseBuyMax = td.dataset.buyMax;
+      td.dataset.adjustPercent = "0"; // current adjustment level
+    }
+
+    increaseBtn.onclick = () => adjustBuying(td, +5);
+    decreaseBtn.onclick = () => adjustBuying(td, -5);
+  });
+}
+
+function adjustBuying(td, percentChange) {
+  const baseMin = parseFloat(td.dataset.baseBuyMin);
+  const baseMax = parseFloat(td.dataset.baseBuyMax);
+  let currentAdjust = parseFloat(td.dataset.adjustPercent) || 0;
+
+  // Update adjustment percentage (but clamp to reasonable range)
+  currentAdjust = Math.min(Math.max(currentAdjust + percentChange, -50), 50);
+  td.dataset.adjustPercent = currentAdjust;
+
+  // Calculate new prices relative to base values
+  const factor = 1 + currentAdjust / 100;
+  const newMin = baseMin * factor;
+  const newMax = baseMax * factor;
+
+  td.dataset.buyMin = newMin;
+  td.dataset.buyMax = newMax;
+  td.querySelector('.buying-value').textContent = `£${newMin.toFixed(2)} - £${newMax.toFixed(2)}`;
+
+  // Update margin and summary
+  const row = td.closest('tr');
+  const priceCell = row.querySelector('td:nth-last-child(5)');
+  const marginCell = row.querySelector('td:nth-last-child(3)');
+  const selling = parseFloat(priceCell.textContent.replace(/[£,]/g, '')) || 0;
+
+  if (selling > 0) {
+    const maxMargin = ((selling - newMin) / selling) * 100;
+    const minMargin = ((selling - newMax) / selling) * 100;
+    marginCell.textContent = `${maxMargin.toFixed(1)}% - ${minMargin.toFixed(1)}%`;
+  }
+
+  updateSummary();
+}
+
 
 function updateSummary() {
   let totalBuyingMin = 0;

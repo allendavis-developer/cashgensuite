@@ -681,6 +681,11 @@ def get_models(request):
 # ----------------------------------------------------------------------------------------
 
 
+def categories(request):
+    categories = list(Category.objects.values('id', 'name'))
+    return JsonResponse({'categories': categories})
+
+
 def subcategorys(request):
     # Get category id from GET parameters (e.g., ?category=1)
     category_id = request.GET.get('category')
