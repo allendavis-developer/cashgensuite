@@ -4,215 +4,94 @@
 {% block header_title %}BUYER DASHBOARD{% endblock %}
 
 {% block extra_style %}
+:root {
+  --color-bg: #111;
+  --color-bg-dark: #1a1a1a;
+  --color-hover-dark: #222;
+  --color-white: #fff;
+  --color-grey: #777;
+  --color-blue: #4da6ff;
+  --color-red: #ff5555;
+  --color-green: #4caf50;
+  --transition: 0.2s;
+}
+
 .main-content {
   display: flex;
   flex-direction: column;
   gap: 20px;
   padding: 2rem;
 }
-
-.main-content > div:first-child {
-  text-align: center;
-  margin-bottom: 10px;
-}
-
+.main-content > div:first-child { text-align: center; margin-bottom: 10px; }
 .main-content h3 {
   font-size: 1.6rem;
   font-weight: 700;
-  margin-top: 30px;
-  margin-bottom: 10px;
-  color: #fff;
+  margin: 30px 0 10px;
+  color: var(--color-white);
 }
 
-/* Buttons */
-.qty-btn, .modal-btn {
-  cursor: pointer;
+/* Shared Input Styles */
+.input-element {
+  border-radius: 4px;
   border: 1px solid #333;
-  background: #1a1a1a;
-  color: #fff;
-  border-radius: 3px;
-  transition: background 0.2s;
+  transition: all var(--transition) ease;
 }
-.qty-btn { 
-  padding: 2px 6px; 
-  margin: 0 2px; 
-  font-size: 12px; 
-}
-.qty-btn:hover { background: #222; }
-
-.modal-btn {
-  width: 100%;
-  padding: 14px;
-  background-color: #fff;
-  color: #000;
-  font-weight: 600;
-  border: none;
-  border-radius: 6px;
-  text-transform: uppercase;
-}
-.modal-btn:hover { background-color: #e0e0e0; }
-
-/* Quantity Input (modern inline style) */
 .qty-input {
   width: 80px;
   padding: 6px 10px;
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 4px;
-  color: #fff;
-  font-size: 14px;
+  background: var(--color-bg-dark);
+  color: var(--color-white);
   text-align: center;
-  transition: all 0.2s ease;
-  -moz-appearance: textfield; /* remove spinners in Firefox */
+  font-size: 14px;
+  -moz-appearance: textfield;
 }
+.qty-input::-webkit-inner-spin-button,
+.qty-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.qty-input:focus { outline: none; border-color: var(--color-blue); background: var(--color-hover-dark); box-shadow: 0 0 6px rgba(77,166,255,0.3); }
 
-.qty-input::-webkit-outer-spin-button,
-.qty-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0; /* remove spinners in Chrome/Safari/Edge */
-}
-
-.qty-input:focus {
-  outline: none;
-  border-color: #4da6ff;
-  background: #222;
-  box-shadow: 0 0 6px rgba(77,166,255,0.3);
-}
-
+.qty-btn, .modal-btn { cursor: pointer; border-radius: 3px; transition: background var(--transition); }
+.qty-btn { padding: 2px 6px; margin: 0 2px; font-size: 12px; border: 1px solid #333; background: var(--color-bg-dark); color: var(--color-white); }
+.qty-btn:hover { background: var(--color-hover-dark); }
+.modal-btn { width: 100%; padding: 14px; background-color: var(--color-white); color: #000; font-weight: 600; border: none; text-transform: uppercase; }
+.modal-btn:hover { background-color: #e0e0e0; }
 
 /* Modal */
-.modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0,0,0,0.85);
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
+.modal { display: none; position: fixed; inset: 0; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 1000; }
 .modal.active { display: flex; }
+.modal-content { background-color: var(--color-bg); border: 1px solid #333; border-radius: 8px; width: 400px; max-width: 90%; padding: 24px; position: relative; }
+.modal-close { position: absolute; top: 12px; right: 16px; cursor: pointer; font-size: 24px; color: #888; transition: color var(--transition); }
+.modal-close:hover { color: var(--color-white); }
 
-.modal-content {
-  background-color: #111;
-  border: 1px solid #333;
-  border-radius: 8px;
-  width: 400px;
-  max-width: 90%;
-  padding: 24px;
-  position: relative;
-}
-.modal-close {
-  position: absolute;
-  top: 12px;
-  right: 16px;
-  cursor: pointer;
-  font-size: 24px;
-  color: #888;
-  transition: color 0.2s;
-}
-.modal-close:hover { color: #fff; }
-
-.actions-links {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-items: center;
-}
-
+/* Actions */
+.actions-links { display: flex; flex-direction: column; gap: 6px; align-items: center; }
 .actions-links a {
   text-decoration: none;
   font-weight: 600;
   cursor: pointer;
   padding: 6px 10px;
   border-radius: 4px;
-  transition: background 0.2s, color 0.2s;
+  transition: background var(--transition), color var(--transition);
 }
+.actions-links a.details { --color: var(--color-blue); }
+.actions-links a.remove { --color: var(--color-red); }
+.actions-links a.analyse { --color: var(--color-green); }
+.actions-links a { color: var(--color); border: 1px solid var(--color); }
+.actions-links a:hover { background: var(--color); color: #000; }
 
-/* Details button (blue) */
-.actions-links .details {
-  color: #4da6ff;
-  border: 1px solid #4da6ff;
-}
-.actions-links .details:hover {
-  background: #4da6ff;
-  color: #000;
-}
-
-/* Remove button (red) */
-.actions-links .remove {
-  color: #ff5555;
-  border: 1px solid #ff5555;
-}
-.actions-links .remove:hover {
-  background: #ff5555;
-  color: #000;
-}
-
-/* Analyse button (green) */
-.actions-links .analyse {
-  color: #4caf50;
-  border: 1px solid #4caf50;
-}
-.actions-links .analyse:hover {
-  background: #4caf50;
-  color: #000;
-}
-
-/* =====================
-   Item Table Styling
-===================== */
-.item-table {
-  width: 100%;
-  border-collapse: collapse;
-  background-color: #111;
-  border: 1px solid #333;
-  border-radius: 8px;
-  overflow: hidden;
-  font-size: 14px;
-  color: #ddd;
-  margin-top: 10px;
-}
-
-.item-table thead {
-  background-color: #1a1a1a;
-}
-
-.item-table th, 
-.item-table td {
-  padding: 12px 16px;
-  text-align: left;
-  border-bottom: 1px solid #333;
-}
-
-.item-table th {
-  font-weight: 700;
-  color: #fff;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.item-table tbody tr:hover {
-  background-color: #1f1f1f;
-}
-
-.item-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-/* Action column */
-.item-table .actions {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-}
-
-
+/* Item Table */
+.item-table { width: 100%; border-collapse: collapse; background-color: var(--color-bg); border: 1px solid #333; border-radius: 8px; overflow: hidden; font-size: 14px; color: #ddd; margin-top: 10px; }
+.item-table thead { background-color: var(--color-bg-dark); }
+.item-table th, .item-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #333; }
+.item-table th { font-weight: 700; color: var(--color-white); text-transform: uppercase; letter-spacing: 0.5px; }
+.item-table tbody tr:hover { background-color: #1f1f1f; }
+.item-table tbody tr:last-child td { border-bottom: none; }
+.item-table .actions { display: flex; justify-content: center; gap: 8px; }
 {% endblock %}
 
 {% block content %}
 <div class="main-content">
   <div>
-    <button id="addItemBtn" style="padding: 16px 32px; font-size: 20px; font-weight: bold;">Add</button>
+    <button id="addItemBtn" class="modal-btn" style="font-size: 20px; padding:16px 32px;">Add</button>
   </div>
   <div id="tablesContainer"></div>
 </div>
@@ -247,88 +126,37 @@
 <script>
 const addItemBtn = document.getElementById('addItemBtn');
 const tablesContainer = document.getElementById('tablesContainer');
+const addItemModal = document.getElementById('addItemModal');
+const modalItemCategory = document.getElementById('modalItemCategory');
+const modalItemSubcategory = document.getElementById('modalItemSubcategory');
+const modalItemModel = document.getElementById('modalItemModel');
+const saveItemBtn = document.getElementById('saveItemBtn');
+
 const categories = {{ categories|safe }};
+const categoryTables = {};
+let currentAttributes = [];
 
-function createCategoryTable(categoryId, categoryName, attributes) {
-  if (categoryTables[categoryId]) return categoryTables[categoryId];
-
-  const table = document.createElement('table');
-  table.className = 'item-table';
-  const thead = document.createElement('thead');
-  const columns = ['Subcategory', 'Model', ...attributes.map(a => a.name), 'Item Name', 'Selling Price', 'Buying In Range', 'Margin', 'Quantity', 'Actions'];
-  
-  thead.innerHTML = `<tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr>`;
-  
-  const tbody = document.createElement('tbody');
-  tbody.innerHTML = `<tr class="placeholder"><td colspan="${columns.length}" style="text-align:center; color:#777;">No items added yet.</td></tr>`;
-  
-  table.append(thead, tbody);
-  tablesContainer.append(Object.assign(document.createElement('h3'), { textContent: categoryName }), table);
-  categoryTables[categoryId] = tbody;
-  return tbody;
+/* ------------------- Helpers ------------------- */
+function getCurrentAttributesPayload() {
+  const payload = {};
+  currentAttributes.forEach(a => payload[a.name] = document.getElementById(`attr_${a.id}`)?.value || '');
+  return payload;
 }
 
-async function addItemToTable() {
-  const catId = modalItemCategory.value;
-  if (!catId) return alert("Please select a category.");
-  
-  const catName = modalItemCategory.options[modalItemCategory.selectedIndex]?.text;
-  const subcategory = modalItemSubcategory.options[modalItemSubcategory.selectedIndex]?.text || '—';
-  const model = modalItemModel.options[modalItemModel.selectedIndex]?.text || '—';
-  const tbody = createCategoryTable(catId, catName, currentAttributes);
-  if (tbody.querySelector('.placeholder')) tbody.innerHTML = '';
+function postJSON(url, data) {
+  return fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify(data)
+  }).then(r => r.json());
+}
 
-  // Convert currentAttributes to flat dict
-  const attributesPayload = {};
-  currentAttributes.forEach(a => {
-    attributesPayload[a.name] = document.getElementById(`attr_${a.id}`)?.value || '';
-  });
-
-  // Generate item name via API
-  let itemName = '—';
-  try {
-    const response = await fetch('/api/generate_search_term/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken')
-      },
-      body: JSON.stringify({
-        category: catName,
-        model: model,
-        attributes: attributesPayload
-      })
-    });
-
-    const result = await response.json();
-    itemName = result.data.generated_search_term;
-  } catch (error) {
-    console.error("Error generating item name:", error);
-  }
-
-  // Build row
-  const row = document.createElement('tr');
-  row.innerHTML = `<td>${subcategory}</td><td>${model}</td>`;
-  
-  currentAttributes.forEach(a => {
-    row.insertAdjacentHTML('beforeend', `<td>${document.getElementById(`attr_${a.id}`)?.value || '—'}</td>`);
-  });
-
-  row.insertAdjacentHTML('beforeend', `<td>${itemName}</td><td>—</td><td>—</td><td>—</td><td>${createQuantityCell().innerHTML}</td>`);
-
-  // Store metadata
-  row.dataset.categoryId = catId;
-  row.dataset.subcategoryId = modalItemSubcategory.value;
-  row.dataset.modelId = modalItemModel.value;
-  row.dataset.categoryName = catName;
-  row.dataset.attributes = JSON.stringify(attributesPayload);
-  row.dataset.itemName = itemName;
-  row.dataset.subcategoryName = subcategory;
-
-
-  row.appendChild(createActionsCell(row));
-  tbody.appendChild(row);
-  addItemModal.classList.remove('active');
+function setButtonState(button, {disabled, text}) {
+  button.disabled = disabled;
+  button.textContent = text;
 }
 
 function createQuantityCell() {
@@ -345,205 +173,127 @@ function createActionsCell(row) {
     <a href="#" class="details">Details</a>
     <a href="#" class="analyse">Analyse</a>
     <a href="#" class="remove">Remove</a>`;
-
+  
   const [details, analyse, remove] = div.querySelectorAll('a');
 
-  details.onclick = e => {
+  details.addEventListener('click', e => {
     e.preventDefault();
-
-    const attributesPayload = {};
-    currentAttributes.forEach(a => {
-      attributesPayload[a.id] = document.getElementById(`attr_${a.id}`)?.value || '';
-    });
-
-    const itemName = row.dataset.itemName || 'Unnamed Item';
-
+    const attributes = getCurrentAttributesPayload();
     const query = new URLSearchParams({
       categoryId: row.dataset.categoryId,
       subcategoryId: row.dataset.subcategoryId,
       modelId: row.dataset.modelId,
-      attributes: JSON.stringify(attributesPayload),
-      name: itemName
+      attributes: JSON.stringify(attributes),
+      name: row.dataset.itemName || 'Unnamed Item'
     });
-
     window.open('/item-buying-analyser/?' + query.toString(), '_blank');
-  };
+  });
 
-
-  analyse.onclick = async e => {
-    e.preventDefault();
-    await handleAnalyseClick(row);
-  };
-
-  remove.onclick = e => {
-    e.preventDefault();
-    row.remove();
-    const tb = row.parentElement;
-    if (!tb.children.length) {
-      tb.innerHTML = `<tr class="placeholder"><td colspan="${row.parentElement.parentElement.querySelectorAll('th').length}" style="text-align:center; color:#777;">No items added yet.</td></tr>`;
-    }
-  };
+  analyse.addEventListener('click', e => { e.preventDefault(); handleAnalyseClick(row); });
   
-  td.append(div);
+  remove.addEventListener('click', e => {
+    e.preventDefault();
+    const tbody = row.parentElement;
+    row.remove();
+    if (!tbody.children.length) {
+      tbody.innerHTML = `<tr class="placeholder"><td colspan="${tbody.parentElement.querySelectorAll('th').length}" style="text-align:center; color:#777;">No items added yet.</td></tr>`;
+    }
+  });
+
+  td.appendChild(div);
   return td;
 }
 
-async function handleAnalyseClick(row) {
-  const scrapeBtn = row.querySelector('.analyse');
-  scrapeBtn.disabled = true;
-  scrapeBtn.textContent = 'Checking...';
+function createCategoryTable(catId, catName, attributes) {
+  if (categoryTables[catId]) return categoryTables[catId];
+  
+  const table = document.createElement('table');
+  table.className = 'item-table';
+  const columns = ['Subcategory', 'Model', ...attributes.map(a => a.name), 'Item Name', 'Selling Price', 'Buying In Range', 'Margin', 'Quantity', 'Actions'];
+  table.innerHTML = `<thead><tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody><tr class="placeholder"><td colspan="${columns.length}" style="text-align:center; color:#777;">No items added yet.</td></tr></tbody>`;
+  
+  tablesContainer.append(Object.assign(document.createElement('h3'), { textContent: catName }), table);
+  categoryTables[catId] = table.querySelector('tbody');
+  return categoryTables[catId];
+}
 
-  const category = row.dataset.categoryName;
-  const model = row.querySelector('td:nth-child(2)')?.textContent?.trim() || '';
+/* ------------------- Core ------------------- */
+async function addItemToTable() {
+  const catId = modalItemCategory.value;
+  if (!catId) return alert("Please select a category.");
+  const catName = modalItemCategory.selectedOptions[0].text;
+  const subcategory = modalItemSubcategory.selectedOptions[0]?.text || '—';
+  const model = modalItemModel.selectedOptions[0]?.text || '—';
+
+  const tbody = createCategoryTable(catId, catName, currentAttributes);
+  if (tbody.querySelector('.placeholder')) tbody.innerHTML = '';
+
+  const attributesPayload = getCurrentAttributesPayload();
+  let itemName = '—';
+
+  try {
+    const result = await postJSON('/api/generate_search_term/', { category: catName, model, attributes: attributesPayload });
+    itemName = result.data?.generated_search_term || '—';
+  } catch (e) { console.error('Error generating item name:', e); }
+
+  const row = document.createElement('tr');
+  row.dataset = { categoryId: catId, subcategoryId: modalItemSubcategory.value, modelId: modalItemModel.value, categoryName: catName, attributes: JSON.stringify(attributesPayload), itemName, subcategoryName: subcategory };
+  row.innerHTML = `<td>${subcategory}</td><td>${model}</td>`;
+  currentAttributes.forEach(a => row.insertAdjacentHTML('beforeend', `<td>${document.getElementById(`attr_${a.id}`)?.value || '—'}</td>`));
+  row.insertAdjacentHTML('beforeend', `<td>${itemName}</td><td>—</td><td>—</td><td>—</td>`);
+
+  row.appendChild(createQuantityCell());
+  row.appendChild(createActionsCell(row));
+  tbody.appendChild(row);
+  addItemModal.classList.remove('active');
+}
+
+/* ------------------- Analyse ------------------- */
+async function handleAnalyseClick(row) {
+  const btn = row.querySelector('.analyse');
+  setButtonState(btn, { disabled: true, text: 'Checking...' });
+  const category = row.dataset.categoryName, model = row.querySelector('td:nth-child(2)')?.textContent?.trim() || '';
   const attributes = JSON.parse(row.dataset.attributes || '{}');
 
   try {
-    // Step 1: Check if existing competitor data is found
-    const checkResponse = await fetch('/api/check_existing_items/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken')
-      },
-      body: JSON.stringify({
-        category: category,
-        model: model,
-        attributes: attributes
-      })
-    });
+    const check = await postJSON('/api/check_existing_items/', { category, model, attributes });
+    if (!check.success) throw new Error(check.error || 'Check failed');
 
-    const checkResult = await checkResponse.json();
-    console.log(checkResult)
+    if (check.competitor_count > 0) {
+      setButtonState(btn, { disabled: true, text: 'Calculating Price...' });
+      const priceRes = await postJSON('/api/get-selling-and-buying-price/', { category, categoryId: row.dataset.categoryId, subcategoryId: row.dataset.subcategoryId, model, attributes });
+      if (!priceRes.success) throw new Error(priceRes.error || 'Price fetch failed');
 
-    if (!checkResult.success) throw new Error(checkResult.error || 'Failed to check items');
-
-    // Step 2: If competitor data found, get selling price
-    if (checkResult.competitor_count > 0) {
-      scrapeBtn.textContent = 'Calculating Price...';
-
-      const priceResponse = await fetch('/api/get-selling-and-buying-price/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-          category: category,
-          categoryId: row.dataset.categoryId,
-          subcategoryId: row.dataset.subcategoryId,
-          model: model,
-          attributes: attributes
-        })
-      });
-
-      const priceResult = await priceResponse.json();
-
-      if (!priceResult.success) throw new Error(priceResult.error || 'Failed to get selling price');
-
-     // Step 3: Update Selling and Buying Price cells
-      const priceCell = row.querySelector('td:nth-last-child(5)'); // Selling Price
-      const buyCell = row.querySelector('td:nth-last-child(4)');   // Buying In Price
-      const marginCell = row.querySelector('td:nth-last-child(3)'); // Margin
-
-      const sellingPrice = parseFloat(priceResult.selling_price);
-      const buyingStartPrice = parseFloat(priceResult.buying_price); // start price
-      const buyingEndPrice = buyingStartPrice * 1.10; // end price = 110% of start
-      
-      // Update table cells
-      priceCell.textContent = `£${sellingPrice.toFixed(2)}`;
-      buyCell.textContent = `£${buyingStartPrice.toFixed(2)} - £${buyingEndPrice.toFixed(2)}`;
-      
-      // Calculate margin range
-      const maxMargin = ((sellingPrice - buyingStartPrice) / sellingPrice) * 100;
-      const minMargin = ((sellingPrice - buyingEndPrice) / sellingPrice) * 100;
-
-      marginCell.textContent = `${maxMargin.toFixed(1)}% - ${minMargin.toFixed(1)}%`;
-
+      const selling = parseFloat(priceRes.selling_price), buyingStart = parseFloat(priceRes.buying_price), buyingEnd = buyingStart * 1.10;
+      row.querySelector('td:nth-last-child(5)').textContent = `£${selling.toFixed(2)}`;
+      row.querySelector('td:nth-last-child(4)').textContent = `£${buyingStart.toFixed(2)} - £${buyingEnd.toFixed(2)}`;
+      row.querySelector('td:nth-last-child(3)').textContent = `${((selling - buyingStart)/selling*100).toFixed(1)}% - ${((selling - buyingEnd)/selling*100).toFixed(1)}%`;
     } else {
-      
-      const sourcesResponse = await fetch(`/api/get-scrape-sources-for-category/?category_name=${encodeURIComponent(category)}`);
-      const sourcesResult = await sourcesResponse.json();
-      let scrapeSources = [];
-      if (Array.isArray(sourcesResult)) {
-        scrapeSources = sourcesResult;
-      } else if (sourcesResult.error) {
-        console.warn('Could not get scrape sources:', sourcesResult.error);
-      }
-
-      scrapeBtn.textContent = 'Scraping...';
-      scrapeBtn.disabled = true;
-      if (scrapeSources.length === 0) {
-        // fallback sources if none found
-        scrapeSources = ['CEX', 'CashConverters', 'CashGenerator'];
-      }
-      await scrapePricesForRow(row, scrapeSources);
-
+      const sourcesRes = await fetch(`/api/get-scrape-sources-for-category/?category_name=${encodeURIComponent(category)}`);
+      const sources = (await sourcesRes.json()) || ['CEX','CashConverters','CashGenerator'];
+      await scrapePricesForRow(row, sources);
     }
-
-  } catch (error) {
-    console.error('Analyse error:', error);
-    alert('Error during analysis: ' + error.message);
+  } catch (err) {
+    console.error(err);
+    alert('Analyse error: ' + err.message);
   } finally {
-    scrapeBtn.disabled = false;
-    scrapeBtn.textContent = 'Analyse';
+    setButtonState(btn, { disabled: false, text: 'Analyse' });
   }
 }
 
-
-async function scrapePricesForRow(row, selectedCompetitors = []) {
-  const modelName = row.querySelector('td:nth-child(2)')?.textContent?.trim() || '';
-  const rawAttributes = JSON.parse(row.dataset.attributes || '{}');
-  
-  // Normalize attribute keys
-  const attributes = {};
-  Object.entries(rawAttributes).forEach(([key, value]) => {
-    const normalizedKey = key.toLowerCase().replace(/\s+/g, '_');
-    attributes[normalizedKey] = value || '';
-  });
-
+/* ------------------- Scraping ------------------- */
+async function scrapePricesForRow(row, competitors = []) {
   const itemName = row.dataset.itemName || 'Unnamed Item';
-  const scrapeBtn = row.querySelector('.analyse');
-  scrapeBtn.disabled = true;
-  scrapeBtn.textContent = 'Scraping...';
+  const attributes = Object.fromEntries(Object.entries(JSON.parse(row.dataset.attributes || '{}')).map(([k,v]) => [k.toLowerCase().replace(/\s+/g,'_'), v || '']));
+  const btn = row.querySelector('.analyse');
+  setButtonState(btn, { disabled: true, text: 'Scraping...' });
 
   try {
-    const response = await sendExtensionMessage({
-      action: "scrape",
-      data: {
-        query: itemName,
-        competitors: selectedCompetitors,
-        category: row.dataset.categoryName,
-        subcategory: row.dataset.subcategoryName,
-        model: modelName,
-        attributes: attributes
-      }
-    });
-
-    if (!response.success) throw new Error(response.error || "Unknown scraping error");
-
-
-    await fetch("/save_scraped_data/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken"),
-      },
-      body: JSON.stringify({
-        item_name: itemName,
-        category: parseInt(row.dataset.categoryId),
-        item_model: parseInt(row.dataset.modelId),
-        attributes: attributes,
-        results: response.results
-      })
-    });
-
-  } catch (error) {
-    console.error('Scraping error:', error);
-    alert('Error running scraper: ' + error.message);
-  } finally {
-    scrapeBtn.disabled = false;
-    scrapeBtn.textContent = 'Analyse';
-  }
+    const response = await sendExtensionMessage({ action:'scrape', data:{ query:itemName, competitors, category: row.dataset.categoryName, subcategory: row.dataset.subcategoryName, model: row.querySelector('td:nth-child(2)')?.textContent || '', attributes } });
+    if (!response.success) throw new Error(response.error || 'Scrape failed');
+    await postJSON('/save_scraped_data/', { item_name: itemName, category: parseInt(row.dataset.categoryId), item_model: parseInt(row.dataset.modelId), attributes, results: response.results });
+  } catch(e){ console.error(e); alert('Scraping error: '+e.message); }
+  finally { setButtonState(btn, { disabled: false, text: 'Analyse' }); }
 }
 </script>
 
