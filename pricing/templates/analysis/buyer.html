@@ -460,9 +460,24 @@ async function handleAnalyseClick(row) {
       marginCell.textContent = `${maxMargin.toFixed(1)}% - ${minMargin.toFixed(1)}%`;
 
     } else {
-      // Step 4: If no existing data, run scraper
+      
+      const sourcesResponse = await fetch(`/api/get-scrape-sources-for-category/?category_name=${encodeURIComponent(category)}`);
+      const sourcesResult = await sourcesResponse.json();
+      let scrapeSources = [];
+      if (Array.isArray(sourcesResult)) {
+        scrapeSources = sourcesResult;
+      } else if (sourcesResult.error) {
+        console.warn('Could not get scrape sources:', sourcesResult.error);
+      }
+
       scrapeBtn.textContent = 'Scraping...';
-      await scrapePricesForRow(row, ['CEX', 'CashConverters', 'CashGenerator']);
+      scrapeBtn.disabled = true;
+      if (scrapeSources.length === 0) {
+        // fallback sources if none found
+        scrapeSources = ['CEX', 'CashConverters', 'CashGenerator'];
+      }
+      await scrapePricesForRow(row, scrapeSources);
+
     }
 
   } catch (error) {
@@ -505,6 +520,8 @@ async function scrapePricesForRow(row, selectedCompetitors = []) {
     });
 
     if (!response.success) throw new Error(response.error || "Unknown scraping error");
+
+    console.log(response.results);
 
     await fetch("/save_scraped_data/", {
       method: "POST",

@@ -131,32 +131,54 @@ def get_selling_and_buying_price(request):
         if not market_item:
             return JsonResponse({"success": False, "error": "No matching market item found."})
 
-        listings = (
-            CompetitorListing.objects
-            .filter(market_item=market_item, competitor="CashGenerator", is_active=True)
-            .order_by("price")
-        )
+        competitor_priority = ["CashGenerator", "CashConverters", "CEX", "eBay"]
+        listings = None
+        used_competitor = None
 
-        if not listings.exists():
+        for competitor in competitor_priority:
+            if competitor == "CEX":
+                # Explicitly order by insertion (id) to get the first inserted listing
+                qs = CompetitorListing.objects.filter(
+                    market_item=market_item,
+                    competitor=competitor,
+                    is_active=True
+                ).order_by("id")
+            else:
+                # For other competitors, order by price
+                qs = CompetitorListing.objects.filter(
+                    market_item=market_item,
+                    competitor=competitor,
+                    is_active=True
+                ).order_by("price")
+
+            if qs.exists():
+                listings = list(qs)
+                used_competitor = competitor
+                break
+
+        if not listings:
             return JsonResponse({
                 "success": True,
                 "search_term": search_term,
                 "selling_price": None,
-                "message": "No Cash Generator listings found."
+                "message": "No listings found for any competitor."
             })
 
-        base_price = listings[2].price if listings.count() >= 3 else listings.last().price
+        # Determine base_price
+        if used_competitor == "CEX":
+            # times cex price by 3/4 as our selling price
+            base_price = listings[0].price * 0.75  # first inserted listing
+        else:
+            base_price = listings[2].price if len(listings) >= 3 else listings[-1].price
+
         selling_price = (int(base_price) // 2) * 2  # round down to nearest even number
 
-        
         # Get margin data
-        effective_margin, category, subcategory, rule_matches = get_effective_margin(
+        effective_margin, category_obj, subcategory_obj, rule_matches = get_effective_margin(
             category_id=category_id,
             subcategory_id=subcategory_id,
             model_name=model
         )
-
-        print(effective_margin)
 
         # Compute buying price
         buying_price = round(selling_price * effective_margin)
@@ -167,7 +189,7 @@ def get_selling_and_buying_price(request):
             "selling_price": selling_price,
             "buying_price": buying_price,
             "margin_info": {
-                "base_margin": category.base_margin,
+                "base_margin": category_obj.base_margin,
                 "effective_margin": effective_margin,
                 "rules_applied": rule_matches,
             },
@@ -178,7 +200,6 @@ def get_selling_and_buying_price(request):
     except Exception as e:
         import traceback; traceback.print_exc()
         return JsonResponse({"success": False, "error": str(e)}, status=500)
-
 
 
 
@@ -434,12 +455,27 @@ def buying_range_analysis(request):
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
+def get_scrape_sources_for_category(request):
+    category_name = request.GET.get('category_name')  # get from query params
+    if not category_name:
+        return JsonResponse({"error": "category_name parameter is required"}, status=400)
+
+    try:
+        category = Category.objects.get(name__iexact=category_name)
+        # Ensure scrape_sources is a list
+        sources = category.scrape_sources if category.scrape_sources else []
+        return JsonResponse(sources, safe=False)
+    except Category.DoesNotExist:
+        return JsonResponse({"error": "Category not found"}, status=404)
+
 
 @csrf_exempt
 @require_POST
 def save_scraped_data(request):
     try:
         data = json.loads(request.body.decode('utf-8'))
+        print("Received data:", data, flush=True)
+
         item_name = data.get('item_name')
         results = data.get('results', [])
         category_id = data.get('category')  
@@ -588,6 +624,7 @@ def save_scraped_data(request):
     except Exception as e:
         print("❌ Error saving scraped data:", e)
         return JsonResponse({'success': False, 'error': str(e)})
+
 
 from django.contrib.admin.views.decorators import staff_member_required
 from .models import ItemModel
