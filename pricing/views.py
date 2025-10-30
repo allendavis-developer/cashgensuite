@@ -132,44 +132,67 @@ def get_selling_and_buying_price(request):
             return JsonResponse({"success": False, "error": "No matching market item found."})
 
         competitor_priority = ["CashGenerator", "CashConverters", "CEX", "eBay"]
-        listings = None
+        listings = []
         used_competitor = None
 
-        for competitor in competitor_priority:
-            if competitor == "CEX":
-                # Explicitly order by insertion (id) to get the first inserted listing
-                qs = CompetitorListing.objects.filter(
-                    market_item=market_item,
-                    competitor=competitor,
-                    is_active=True
-                ).order_by("id")
+        # Get listings from all relevant competitors
+        cash_generator_listings = list(
+            CompetitorListing.objects.filter(
+                market_item=market_item,
+                competitor="CashGenerator",
+                is_active=True
+            ).order_by("price")
+        )
+        cash_converters_listings = list(
+            CompetitorListing.objects.filter(
+                market_item=market_item,
+                competitor="CashConverters",
+                is_active=True
+            ).order_by("price")
+        )
+
+        # Case 1: Both competitors have listings — combine and pick the 3rd cheapest overall
+        if cash_generator_listings and cash_converters_listings:
+            combined = sorted(cash_generator_listings + cash_converters_listings, key=lambda x: x.price)
+            if len(combined) >= 3:
+                base_price = combined[2].price  # 3rd cheapest
             else:
-                # For other competitors, order by price
+                base_price = combined[-1].price  # fallback to last (cheapest available)
+            used_competitor = "Combined_CashGen_CashConv"
+
+        # Case 2: Fallback to individual competitors in priority order
+        else:
+            for competitor in competitor_priority:
                 qs = CompetitorListing.objects.filter(
                     market_item=market_item,
                     competitor=competitor,
                     is_active=True
-                ).order_by("price")
+                )
 
-            if qs.exists():
-                listings = list(qs)
-                used_competitor = competitor
-                break
+                if competitor == "CEX":
+                    qs = qs.order_by("id")
+                else:
+                    qs = qs.order_by("price")
 
-        if not listings:
-            return JsonResponse({
-                "success": True,
-                "search_term": search_term,
-                "selling_price": None,
-                "message": "No listings found for any competitor."
-            })
+                if qs.exists():
+                    listings = list(qs)
+                    used_competitor = competitor
+                    break
 
-        # Determine base_price
-        if used_competitor == "CEX":
-            # times cex price by 3/4 as our selling price
-            base_price = listings[0].price * 0.75  # first inserted listing
-        else:
-            base_price = listings[2].price if len(listings) >= 3 else listings[-1].price
+            if not listings:
+                return JsonResponse({
+                    "success": True,
+                    "search_term": search_term,
+                    "selling_price": None,
+                    "message": "No listings found for any competitor."
+                })
+
+            # Determine base_price if not combined case
+            if used_competitor == "CEX":
+                base_price = listings[0].price * 0.75
+            else:
+                base_price = listings[2].price if len(listings) >= 3 else listings[-1].price
+
 
         selling_price = (int(base_price) // 2) * 2  # round down to nearest even number
 

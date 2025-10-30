@@ -332,7 +332,6 @@ document.addEventListener('DOMContentLoaded', () => {
   updateSummary();
 });
 
-
 function createCategoryTable(categoryId, categoryName, attributes) {
   if (categoryTables[categoryId]) return categoryTables[categoryId];
 
@@ -351,6 +350,20 @@ function createCategoryTable(categoryId, categoryName, attributes) {
   categoryTables[categoryId] = tbody;
   return tbody;
 }
+
+// Attach quantity listeners to all rows
+function attachQuantityListeners() {
+  document.querySelectorAll('.item-table tbody tr').forEach(row => {
+    if (row.classList.contains('placeholder')) return;
+    const qtyInput = row.querySelector('.qty-input');
+    if (!qtyInput) return;
+
+    qtyInput.addEventListener('input', () => {
+      updateSummary();
+    });
+  });
+}
+
 
 async function addItemToTable() {
   const catId = modalItemCategory.value;
@@ -413,6 +426,9 @@ async function addItemToTable() {
   row.appendChild(createActionsCell(row));
   tbody.appendChild(row);
   addItemModal.classList.remove('active');
+
+  attachQuantityListeners();
+
 }
 
 function createQuantityCell() {
@@ -572,6 +588,7 @@ function updateSummary() {
 
     hasItems = true;
 
+    const qty = parseInt(row.querySelector('.qty-input')?.value) || 1;
     const sellingCell = row.querySelector('td:nth-last-child(5)');
     const buyingCell = row.querySelector('td:nth-last-child(4)');
 
@@ -583,9 +600,9 @@ function updateSummary() {
       .split('-')
       .map(s => parseFloat(s.trim()) || 0);
 
-    totalSelling += selling;
-    totalBuyingMin += buyMin;
-    totalBuyingMax += buyMax;
+    totalSelling += selling * qty;
+    totalBuyingMin += buyMin * qty;
+    totalBuyingMax += buyMax * qty;
   });
 
   const summaryContainer = document.getElementById('summaryContainer');
