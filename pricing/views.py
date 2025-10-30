@@ -112,6 +112,70 @@ def check_existing_items(request):
         return JsonResponse({"success": False, "error": str(e)})
 
 
+def get_market_item(search_term):
+    """Retrieve a market item by exact title match."""
+    return MarketItem.objects.filter(title__iexact=search_term).first()
+
+def determine_base_price(market_item):
+    """Determine the base price based on competitor listings."""
+    competitor_priority = ["CashGenerator", "CashConverters", "CEX", "eBay"]
+
+    cash_gen_listings = list(
+        CompetitorListing.objects.filter(
+            market_item=market_item, competitor="CashGenerator", is_active=True
+        ).order_by("price")
+    )
+    cash_conv_listings = list(
+        CompetitorListing.objects.filter(
+            market_item=market_item, competitor="CashConverters", is_active=True
+        ).order_by("price")
+    )
+
+    # Case 1: Both competitors have listings
+    if cash_gen_listings and cash_conv_listings:
+        combined = sorted(cash_gen_listings + cash_conv_listings, key=lambda x: x.price)
+        base_price = combined[2].price if len(combined) >= 3 else combined[-1].price
+        return base_price, "Combined_CashGen_CashConv"
+
+    # Case 2: Fallback to individual competitors
+    for competitor in competitor_priority:
+        qs = CompetitorListing.objects.filter(
+            market_item=market_item, competitor=competitor, is_active=True
+        )
+        qs = qs.order_by("id") if competitor == "CEX" else qs.order_by("price")
+
+        if qs.exists():
+            listings = list(qs)
+            if competitor == "CEX":
+                base_price = listings[0].price * 0.75
+            else:
+                base_price = listings[2].price if len(listings) >= 3 else listings[-1].price
+            return base_price, competitor
+
+    return None, None
+
+def round_down_to_even(value):
+    """Round down to the nearest even integer."""
+    return (int(value) // 2) * 2
+
+def compute_buying_price(selling_price, category_id, subcategory_id, model_name):
+    """Compute the buying price using margin data."""
+    effective_margin, category_obj, subcategory_obj, rule_matches = get_effective_margin(
+        category_id=category_id,
+        subcategory_id=subcategory_id,
+        model_name=model_name
+    )
+
+    buying_price = round(selling_price * effective_margin)
+    margin_info = {
+        "base_margin": category_obj.base_margin,
+        "effective_margin": effective_margin,
+        "rules_applied": rule_matches,
+    }
+
+    return buying_price, margin_info
+
+
 @require_POST
 def get_selling_and_buying_price(request):
     try:
@@ -127,95 +191,30 @@ def get_selling_and_buying_price(request):
 
         search_term = build_search_term(model, category, attributes)
 
-        market_item = MarketItem.objects.filter(title__iexact=search_term).first()
+        market_item = get_market_item(search_term)
         if not market_item:
             return JsonResponse({"success": False, "error": "No matching market item found."})
 
-        competitor_priority = ["CashGenerator", "CashConverters", "CEX", "eBay"]
-        listings = []
-        used_competitor = None
+        base_price, used_competitor = determine_base_price(market_item)
+        if base_price is None:
+            return JsonResponse({
+                "success": True,
+                "search_term": search_term,
+                "selling_price": None,
+                "message": "No listings found for any competitor."
+            })
 
-        # Get listings from all relevant competitors
-        cash_generator_listings = list(
-            CompetitorListing.objects.filter(
-                market_item=market_item,
-                competitor="CashGenerator",
-                is_active=True
-            ).order_by("price")
+        selling_price = round_down_to_even(base_price)
+        buying_price, margin_info = compute_buying_price(
+            selling_price, category_id, subcategory_id, model
         )
-        cash_converters_listings = list(
-            CompetitorListing.objects.filter(
-                market_item=market_item,
-                competitor="CashConverters",
-                is_active=True
-            ).order_by("price")
-        )
-
-        # Case 1: Both competitors have listings — combine and pick the 3rd cheapest overall
-        if cash_generator_listings and cash_converters_listings:
-            combined = sorted(cash_generator_listings + cash_converters_listings, key=lambda x: x.price)
-            if len(combined) >= 3:
-                base_price = combined[2].price  # 3rd cheapest
-            else:
-                base_price = combined[-1].price  # fallback to last (cheapest available)
-            used_competitor = "Combined_CashGen_CashConv"
-
-        # Case 2: Fallback to individual competitors in priority order
-        else:
-            for competitor in competitor_priority:
-                qs = CompetitorListing.objects.filter(
-                    market_item=market_item,
-                    competitor=competitor,
-                    is_active=True
-                )
-
-                if competitor == "CEX":
-                    qs = qs.order_by("id")
-                else:
-                    qs = qs.order_by("price")
-
-                if qs.exists():
-                    listings = list(qs)
-                    used_competitor = competitor
-                    break
-
-            if not listings:
-                return JsonResponse({
-                    "success": True,
-                    "search_term": search_term,
-                    "selling_price": None,
-                    "message": "No listings found for any competitor."
-                })
-
-            # Determine base_price if not combined case
-            if used_competitor == "CEX":
-                base_price = listings[0].price * 0.75
-            else:
-                base_price = listings[2].price if len(listings) >= 3 else listings[-1].price
-
-
-        selling_price = (int(base_price) // 2) * 2  # round down to nearest even number
-
-        # Get margin data
-        effective_margin, category_obj, subcategory_obj, rule_matches = get_effective_margin(
-            category_id=category_id,
-            subcategory_id=subcategory_id,
-            model_name=model
-        )
-
-        # Compute buying price
-        buying_price = round(selling_price * effective_margin)
 
         return JsonResponse({
             "success": True,
             "search_term": search_term,
             "selling_price": selling_price,
             "buying_price": buying_price,
-            "margin_info": {
-                "base_margin": category_obj.base_margin,
-                "effective_margin": effective_margin,
-                "rules_applied": rule_matches,
-            },
+            "margin_info": margin_info,
         })
 
     except ValueError as e:
@@ -223,6 +222,9 @@ def get_selling_and_buying_price(request):
     except Exception as e:
         import traceback; traceback.print_exc()
         return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+
 
 
 
