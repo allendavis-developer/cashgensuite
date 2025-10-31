@@ -177,6 +177,11 @@ def compute_prices_from_cex_rule(market_item, cex_rule=None):
 
     buying_start_price = round(selling_price / 2)
     buying_end_price = market_item.cex_cash_trade_price or round(selling_price * 0.67)
+
+    # sometimes buying start price is greater than the cex price so this will that issue
+    if buying_start_price > buying_end_price:
+        buying_start_price = round(buying_end_price * 0.8) 
+
     cex_url = market_item.cex_url if market_item.cex_url else None
 
     return selling_price, buying_start_price, buying_end_price, market_item.cex_cash_trade_price, market_item.cex_sale_price, cex_url
