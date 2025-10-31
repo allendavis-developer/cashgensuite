@@ -92,43 +92,56 @@ def get_market_item(search_term):
     """Retrieve a market item by exact title match."""
     return MarketItem.objects.filter(title__iexact=search_term).first()
 
-def determine_base_price(market_item):
-    """Determine the base price based on competitor listings."""
-    competitor_priority = ["CashGenerator", "CashConverters", "CEX", "eBay"]
+from collections import Counter
 
-    cash_gen_listings = list(
-        CompetitorListing.objects.filter(
-            market_item=market_item, competitor="CashGenerator", is_active=True
-        ).order_by("price")
-    )
-    cash_conv_listings = list(
+def get_competitor_price_stats(market_item):
+    """Determine competitor price statistics including frequency, mode, and range."""
+    
+    def get_stats(listings):
+        """Return mode, frequency, low, high for a list of listings."""
+        if not listings:
+            return None, 0, None, None
+        
+        prices = [l.price for l in listings]
+        price_counts = Counter(prices)
+        mode_price = price_counts.most_common(1)[0][0]  # Most frequent price
+        frequency = len(listings)
+        low = min(prices)
+        high = max(prices)
+        return mode_price, frequency, low, high
+
+    # Fetch active listings for CC and CG
+    cc_listings = list(
         CompetitorListing.objects.filter(
             market_item=market_item, competitor="CashConverters", is_active=True
         ).order_by("price")
     )
+    
+    cg_listings = list(
+        CompetitorListing.objects.filter(
+            market_item=market_item, competitor="CashGenerator", is_active=True
+        ).order_by("price")
+    )
 
-    # Case 1: Both competitors have listings
-    if cash_gen_listings and cash_conv_listings:
-        combined = sorted(cash_gen_listings + cash_conv_listings, key=lambda x: x.price)
-        base_price = combined[2].price if len(combined) >= 3 else combined[-1].price
-        return base_price, "Combined_CashGen_CashConv"
+    # Compute stats for each competitor
+    cc_mode, cc_freq, cc_low, cc_high = get_stats(cc_listings)
+    cg_mode, cg_freq, cg_low, cg_high = get_stats(cg_listings)
 
-    # Case 2: Fallback to individual competitors
-    for competitor in competitor_priority:
-        qs = CompetitorListing.objects.filter(
-            market_item=market_item, competitor=competitor, is_active=True
-        )
-        qs = qs.order_by("id") if competitor == "CEX" else qs.order_by("price")
+    return {
+        "CashConverters": {
+            "mode": cc_mode,
+            "frequency": cc_freq,
+            "low": cc_low,
+            "high": cc_high,
+        },
+        "CashGenerator": {
+            "mode": cg_mode,
+            "frequency": cg_freq,
+            "low": cg_low,
+            "high": cg_high,
+        }
+    }
 
-        if qs.exists():
-            listings = list(qs)
-            if competitor == "CEX":
-                base_price = listings[0].price * 0.85
-            else:
-                base_price = listings[2].price if len(listings) >= 3 else listings[-1].price
-            return base_price, competitor
-
-    return None, None
 
 def round_down_to_even(value):
     """Round down to the nearest even integer."""
@@ -231,6 +244,7 @@ def get_selling_and_buying_price(request):
         if not category or not model:
             return JsonResponse({"success": False, "error": "Category and model are required."})
 
+        # Build search term and get market item
         search_term = build_search_term(model, category, attributes)
         market_item = get_market_item(search_term)
         print("Searching for:", search_term, "Found:", market_item)
@@ -238,16 +252,21 @@ def get_selling_and_buying_price(request):
         if not market_item:
             return JsonResponse({"success": False, "error": "No matching market item found."})
 
+        # Get competitor price stats
+        competitor_stats = get_competitor_price_stats(market_item)
+
         # Get most specific CeX pricing rule
         cex_rule = get_most_specific_cex_rule(category_id, subcategory_id, model_id)
 
         if not market_item.cex_sale_price:
             return JsonResponse({"success": False, "error": "No CeX sale price available for this item."})
 
+        # Compute final prices
         selling_price, buying_start, buying_end, cex_buying_price, cex_selling_price, cex_url = compute_prices_from_cex_rule(
             market_item, cex_rule
         )
 
+        # Return response including competitor stats
         return JsonResponse({
             "success": True,
             "search_term": search_term,
@@ -257,6 +276,7 @@ def get_selling_and_buying_price(request):
             "cex_buying_price": cex_buying_price,
             "cex_selling_price": cex_selling_price,
             "cex_url": cex_url,
+            "competitor_stats": competitor_stats  # <-- added
         })
 
     except ValueError as e:
@@ -264,6 +284,7 @@ def get_selling_and_buying_price(request):
     except Exception as e:
         import traceback; traceback.print_exc()
         return JsonResponse({"success": False, "error": str(e)}, status=500)
+
 
 
 

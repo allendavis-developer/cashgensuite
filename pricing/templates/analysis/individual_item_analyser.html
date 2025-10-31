@@ -1288,7 +1288,7 @@ function renderAttributes(attributes) {
       wrapper.style.alignItems = 'center';
 
       const select = document.createElement('select');
-      select.id = `attr_${attr.id}`;
+      select.id = `attr_${attr.name}`;
       select.classList.add('input-field');
       select.style.flex = '1';
       select.innerHTML = `<option value="" selected>-- Select ${attr.label} (optional) --</option>`;
@@ -1316,7 +1316,7 @@ function renderAttributes(attributes) {
     } else {
       const input = document.createElement('input');
       input.type = attr.field_type === 'number' ? 'number' : 'text';
-      input.id = `attr_${attr.id}`;
+      input.id = `attr_${attr.name}`;
       input.classList.add('input-field');
       inputGroup.appendChild(label);
       inputGroup.appendChild(input);

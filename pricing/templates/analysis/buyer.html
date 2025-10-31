@@ -52,6 +52,7 @@
 }
 .modal-btn:hover { background-color: #e0e0e0; }
 
+
 /* Quantity Input (modern inline style) */
 .qty-input {
   width: 80px;
@@ -427,8 +428,20 @@ function createCategoryTable(categoryId, categoryName, attributes) {
   const table = document.createElement('table');
   table.className = 'item-table';
   const thead = document.createElement('thead');
-  const columns = ['Subcategory', 'Model', ...attributes.map(a => a.name), 'Item Name', 'CEX Price', 'CEX - Discount', 'Buying In Range', 'Margin', 'Quantity', 'Actions'];
-  
+  const columns = [
+    'Subcategory', 
+    'Model', 
+    ...attributes.map(a => a.name), 
+    'Item Name', 
+    'CEX Price', 
+    'CEX - Discount',
+    'CashConverters Mode',
+    'CashGenerator Mode',
+    'Buying In Range', 
+    'Margin', 
+    'Quantity', 
+    'Actions'
+  ];  
   thead.innerHTML = `<tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr>`;
   
   const tbody = document.createElement('tbody');
@@ -464,11 +477,15 @@ async function addItemToTable() {
   const tbody = createCategoryTable(catId, catName, currentAttributes);
   if (tbody.querySelector('.placeholder')) tbody.innerHTML = '';
 
-  // Convert currentAttributes to flat dict
+  // Collect attributes dynamically from the modal
   const attributesPayload = {};
-  currentAttributes.forEach(a => {
-    attributesPayload[a.name] = document.getElementById(`attr_${a.id}`)?.value || '';
+  currentAttributes.forEach(attr => {
+      const input = attributesContainer.querySelector(`#attr_${attr.id}`);
+      attributesPayload[attr.name] = input ? input.value : '—'; // fallback if empty
   });
+
+  console.log(attributesPayload)
+
 
   // Generate item name via API
   let itemName = '—';
@@ -501,9 +518,9 @@ async function addItemToTable() {
   cells.push(`<td>${model}</td>`);
 
   // 2️⃣ Attributes
-  currentAttributes.forEach(a => {
-    const val = document.getElementById(`attr_${a.id}`)?.value || '—';
-    cells.push(`<td>${val}</td>`);
+  currentAttributes.forEach(attr => {
+      const val = attributesPayload[attr.name]; // always use the freshly collected values
+      cells.push(`<td>${val}</td>`);
   });
 
   // 3️⃣ Item Name
@@ -515,7 +532,14 @@ async function addItemToTable() {
   // 5️⃣ Selling Price
   cells.push(`<td>—</td>`);
 
-  // 6️⃣ Buying Range
+  // 6️⃣ CC Mode
+  cells.push(`<td class="cc-mode">—</td>`);
+
+  // 7️⃣ CG Mode
+  cells.push(`<td class="cg-mode">—</td>`);
+
+
+  // 8 Buying Range
   cells.push(`
     <td>
       <div class="buying-range-cell">
@@ -526,10 +550,10 @@ async function addItemToTable() {
     </td>
   `);
 
-  // 7️⃣ Margin
+  // 9 Margin
   cells.push(`<td>—</td>`);
 
-  // 8️⃣ Quantity
+  // 10 Quantity
   cells.push(`<td>${createQuantityCell().innerHTML}</td>`);
 
   // Set innerHTML all at once
@@ -549,6 +573,7 @@ async function addItemToTable() {
 
   tbody.appendChild(row);
   addItemModal.classList.remove('active');
+  resetModal(); // <-- ensures new inputs for next item
 
   attachQuantityListeners();
 }
@@ -573,11 +598,7 @@ function createActionsCell(row) {
   details.onclick = e => {
     e.preventDefault();
 
-    const attributesPayload = {};
-    currentAttributes.forEach(a => {
-      attributesPayload[a.id] = document.getElementById(`attr_${a.id}`)?.value || '';
-    });
-
+    const attributesPayload = JSON.parse(row.dataset.attributes || '{}');
     const itemName = row.dataset.itemName || 'Unnamed Item';
 
     const query = new URLSearchParams({
@@ -590,6 +611,7 @@ function createActionsCell(row) {
 
     window.open('/item-buying-analyser/?' + query.toString(), '_blank');
   };
+
 
 
   analyse.onclick = async e => {
@@ -681,7 +703,7 @@ async function updatePriceCells(row, category, model, attributes) {
     const priceResult = await priceResponse.json();
     if (!priceResult.success) throw new Error(priceResult.error || 'Failed to get selling price');
 
-    const priceCell = row.querySelector('td:nth-last-child(5)'); // Selling Price
+    const priceCell = row.querySelector('td:nth-last-child(7)'); // Selling Price
     const buyCell = row.querySelector('td:nth-last-child(4)');   // Buying Range
     const marginCell = row.querySelector('td:nth-last-child(3)'); // Margin
     const cexCell = row.querySelector('.cex-price');              // CEX Price
@@ -691,9 +713,34 @@ async function updatePriceCells(row, category, model, attributes) {
     const buyingStartPrice = parseFloat(priceResult.buying_start_price);
     const buyingEndPrice = priceResult.buying_end_price;
 
-    console.log(priceResult.cex_selling_price)
-    console.log(priceResult.cex_url)
+    const ccModeCell = row.querySelector('.cc-mode');
+    const cgModeCell = row.querySelector('.cg-mode');
 
+    if (priceResult.competitor_stats) {
+      const ccStats = priceResult.competitor_stats.CashConverters || {};
+        const cgStats = priceResult.competitor_stats.CashGenerator || {};
+
+        // CC Cell: Mode (x listings) + Range
+        if (ccStats.mode != null) {
+            ccModeCell.innerHTML = `
+                £${parseFloat(ccStats.mode).toFixed(2)} (${ccStats.frequency} listings)<br>
+                £${parseFloat(ccStats.low).toFixed(2)} - £${parseFloat(ccStats.high).toFixed(2)}
+            `;
+        } else {
+            ccModeCell.textContent = '—';
+        }
+
+        // CG Cell: Mode (x listings) + Range
+        if (cgStats.mode != null) {
+            cgModeCell.innerHTML = `
+                £${parseFloat(cgStats.mode).toFixed(2)} (${cgStats.frequency} listings)<br>
+                £${parseFloat(cgStats.low).toFixed(2)} - £${parseFloat(cgStats.high).toFixed(2)}
+            `;
+        } else {
+            cgModeCell.textContent = '—';
+        }
+
+    }
 
     priceCell.textContent = `£${sellingPrice.toFixed(2)}`;
     buyCell.querySelector('.buying-value').textContent = `£${buyingStartPrice.toFixed(2)} - £${buyingEndPrice.toFixed(2)}`;
@@ -880,7 +927,7 @@ analyseAllBtn.addEventListener('click', async () => {
         if (row.classList.contains('placeholder')) return;
 
         const buyCell = row.querySelector('td:nth-last-child(4)');
-        const sellingCell = row.querySelector('td:nth-last-child(5)');
+        const sellingCell = row.querySelector('td:nth-last-child(7)');
 
         // Check if selling price or buying range is empty → not analysed
         if (!buyCell.textContent.includes('£') || !sellingCell.textContent.includes('£')) {

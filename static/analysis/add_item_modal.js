@@ -25,6 +25,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   populateCategories();
 
   categoryTomSelect.on('change', () => {
+
+    const categoryId = categoryTomSelect.getValue();
+    if (!categoryId) return; // <-- prevents empty requests
+
     currentAttributes = []; // clear old ones
     attributesContainer.innerHTML = '';
     fetchSubcategories(categoryTomSelect.getValue());
@@ -63,6 +67,47 @@ function initTomSelects() {
 
   
 }
+
+function validateModalInputs() {
+  const category = categoryTomSelect.getValue();
+  const subcategory = subcategoryTomSelect.getValue();
+  const model = modelTomSelect.getValue();
+  let isValid = true;
+  let errorMessages = [];
+
+  if (!category) {
+    isValid = false;
+    errorMessages.push('Please select a category.');
+  }
+  if (!subcategory) {
+    isValid = false;
+    errorMessages.push('Please select a subcategory.');
+  }
+  if (!model) {
+    isValid = false;
+    errorMessages.push('Please select a model.');
+  }
+
+  // Validate dynamic attributes
+  for (const attr of currentAttributes) {
+    const input = document.getElementById(`attr_${attr.id}`);
+    if (!input || input.value.trim() === '') {
+      isValid = false;
+      errorMessages.push(`Please fill the attribute: ${attr.label || attr.name}`);
+      input?.classList.add('input-error'); // optional: highlight empty fields
+    } else {
+      input?.classList.remove('input-error'); // remove highlight if filled
+    }
+  }
+
+  if (!isValid) {
+    alert(errorMessages.join('\n'));
+  }
+
+  return isValid;
+}
+
+
 
 // ========== Preload all categories ==========
 async function preloadData() {
@@ -198,18 +243,19 @@ async function handleAddNewModel(categoryId, subcategoryId) {
 
 // ========== Attributes ==========
 async function loadCategoryAttributes(categoryId) {
+  let data;
   if (cache.attributes[categoryId]) {
-    renderAttributes(cache.attributes[categoryId]);
-    return;
+    data = cache.attributes[categoryId];
+  } else {
+    const res = await fetch(`/api/category_attributes/?category=${categoryId}`);
+    data = await res.json();
+    cache.attributes[categoryId] = data;
   }
 
-  const res = await fetch(`/api/category_attributes/?category=${categoryId}`);
-  const data = await res.json();
-  cache.attributes[categoryId] = data;
-  currentAttributes = data; 
-
+  currentAttributes = data;   //  ensure currentAttributes is always updated
   renderAttributes(data);
 }
+
 
 function renderAttributes(attrs) {
   attributesContainer.innerHTML = attrs.map(attr => `
@@ -233,16 +279,31 @@ function resetModal() {
   modelTomSelect.clear();
   modelTomSelect.clearOptions();
   attributesContainer.innerHTML = '';
+  currentAttributes = []; 
 }
 
-addItemBtn.addEventListener('click', () => {
+addItemBtn.addEventListener('click', async () => {
   resetModal();
   addItemModal.classList.add('active');
   populateCategories();
+
+  // Force load attributes if category is preselected
+  const selectedCategory = categoryTomSelect.getValue();
+  if (selectedCategory) {
+      await loadCategoryAttributes(selectedCategory);
+  }
 });
 
 
 closeAddItemModal.addEventListener('click', () => addItemModal.classList.remove('active'));
 
 
-saveItemBtn.addEventListener('click', addItemToTable);
+saveItemBtn.addEventListener('click', () => {
+  if (!validateModalInputs()) {
+    // stop here, do not close modal or table
+    return;
+  }
+
+  // All inputs are valid, proceed to add the item
+  addItemToTable();
+});
