@@ -13,23 +13,6 @@ urlpatterns = [
     path("scraper/", v.scraper_view, name="scraper"),
     path("buyer/", v.buyer_view, name="buyer"),
 
-    # ------------------ CATEGORY AND GLOBAL RULES --------------------------------
-    path("categories/", v.category_list, name="category_list"),
-    path("categories/add/", v.add_category_view, name="add_category"),
-    path("categories/<int:pk>/", v.category_detail, name="category_detail"),
-    path("categories/<int:pk>/edit/", v.edit_category, name="edit_category"),
-    path("categories/<int:pk>/delete/", v.delete_category, name="delete_category"),
-    path("categories/<int:pk>/manage/", v.manage_category, name="manage_category"),
-
-    path("global-rules/add/", v.add_global_rule, name="add_global_rule"),
-    path("global-rules/<int:pk>/edit/", v.edit_global_rule, name="edit_global_rule"),
-    path("global-rules/<int:pk>/delete/", v.delete_global_rule, name="delete_global_rule"),
-
-    path("rules/add/<int:category_pk>/", v.add_rule, name="add_rule"),
-    path("rules/<int:pk>/edit/", v.edit_rule, name="edit_rule"),
-    path("rules/<int:pk>/delete/", v.delete_rule, name="delete_rule"),
-    path("api/get-match-values/", v.get_match_value_choices, name="get_match_values"),
-
     # ----------------------------- API -----------------------------
     path("bulk-analysis", v.bulk_analysis, name='bulk_analysis'),
     path('save_listing/', v.save_listing, name='save_listing'),
