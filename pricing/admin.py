@@ -136,7 +136,7 @@ class MarketItemForm(forms.ModelForm):
 
 @admin.register(MarketItem)
 class MarketItemAdmin(admin.ModelAdmin):
-    list_display = ('title', 'category', 'model_name', 'last_scraped')
+    list_display = ('title', 'category', 'model_name', 'last_scraped', 'cex_cash_trade_price', 'cex_sale_price', 'cex_url')
     list_filter = ('category',)
     search_fields = ('title',)
     inlines = [CompetitorListingInline]  

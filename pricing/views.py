@@ -135,49 +135,53 @@ def round_down_to_even(value):
     return (int(value) // 2) * 2
 
 import requests
-
-def compute_prices_from_cex_rule(cex_listing, cex_rule=None):
+# TODO: it might be worth batching this in the future with the overnight scraping.
+def fetch_cex_cash_price(stable_id):
     """
-    Compute selling price from CeX listing using the cex_pct rule.
-    Compute buying range: start = 50% of selling, end = CeX cash price if available.
-    If no cex_rule is provided, use CeX price - 20%.
+    Fetch the CeX cash price for a given stable_id.
+    Returns the cash price if found, otherwise None.
+    """
+    if not stable_id:
+        return None
+
+    url = f"https://wss2.cex.uk.webuy.io/v3/boxes/{stable_id}/detail"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/118.0.5993.117 Safari/537.36",
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "Referer": "https://www.cex.uk/",
+    }
+
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        box = data.get("response", {}).get("data", {}).get("boxDetails", [{}])[0]
+        return box.get("cashPrice")
+    except Exception as e:
+        print(f"CeX price lookup failed for {stable_id}: {e}")
+        return None
+
+
+def compute_prices_from_cex_rule(market_item, cex_rule=None):
+    """
+    Compute selling and buying prices from MarketItem using the cex_pct rule.
+    Compute buying range: start = 50% of selling, end = CeX cash price if available, else 67% of selling.
+    If no cex_rule is provided, use 20% less than CeX sale price.
     """
     if cex_rule:
-        selling_price = round(cex_listing.price * cex_rule.cex_pct)
+        selling_price = round(market_item.cex_sale_price * cex_rule.cex_pct)
     else:
-        # fallback: 20% less than CeX price
-        selling_price = round(cex_listing.price * 0.8)
+        selling_price = round(market_item.cex_sale_price * 0.8)
 
     buying_start_price = round(selling_price / 2)
-    buying_end_price = None
-    cex_cash_price = None
-    cex_url = None
+    buying_end_price = market_item.cex_cash_trade_price or round(selling_price * 0.67)
+    cex_url = market_item.cex_url if market_item.cex_url else None
 
-    if cex_listing.stable_id:
-        cex_url = f"https://uk.webuy.com/product-detail?id={cex_listing.stable_id}"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                          "AppleWebKit/537.36 (KHTML, like Gecko) "
-                          "Chrome/118.0.5993.117 Safari/537.36",
-            "Accept": "application/json, text/javascript, */*; q=0.01",
-            "Referer": "https://www.cex.uk/",
-        }
-        try:
-            response = requests.get(
-                f"https://wss2.cex.uk.webuy.io/v3/boxes/{cex_listing.stable_id}/detail",
-                headers=headers,
-                timeout=10
-            )
-            response.raise_for_status()
-            data = response.json()
-            box = data.get("response", {}).get("data", {}).get("boxDetails", [{}])[0]
-            cex_cash_price = box.get("cashPrice")
-        except Exception as e:
-            print(f"CeX price lookup failed: {e}")
+    return selling_price, buying_start_price, buying_end_price, market_item.cex_cash_trade_price, market_item.cex_sale_price, cex_url
 
-    buying_end_price = cex_cash_price if cex_cash_price is not None else round(selling_price * 0.67)
 
-    return selling_price, buying_start_price, buying_end_price, cex_cash_price, cex_listing.price, cex_url
 
 
 def get_most_specific_cex_rule(category, subcategory=None, item_model=None):
@@ -224,25 +228,19 @@ def get_selling_and_buying_price(request):
 
         search_term = build_search_term(model, category, attributes)
         market_item = get_market_item(search_term)
+        print("Searching for:", search_term, "Found:", market_item)
+
         if not market_item:
             return JsonResponse({"success": False, "error": "No matching market item found."})
 
-        # Get first active CEX listing
-        cex_listing = CompetitorListing.objects.filter(
-            competitor="CEX",
-            market_item=market_item,
-            is_active=True
-        ).order_by("id").first()
-
         # Get most specific CeX pricing rule
         cex_rule = get_most_specific_cex_rule(category_id, subcategory_id, model_id)
-        print(cex_listing)
-        print(cex_rule)
-        if not cex_listing:
-            return JsonResponse({"success": False, "error": "No active CeX listing found."})
+
+        if not market_item.cex_sale_price:
+            return JsonResponse({"success": False, "error": "No CeX sale price available for this item."})
 
         selling_price, buying_start, buying_end, cex_buying_price, cex_selling_price, cex_url = compute_prices_from_cex_rule(
-            cex_listing, cex_rule
+            market_item, cex_rule
         )
 
         return JsonResponse({
@@ -487,8 +485,29 @@ def save_scraped_data(request):
         market_item.save()
 
 
-        print(f"✅ Created {len(listings_to_create)} listings, updated {len(listings_to_update)}, "
+        print(f"Created {len(listings_to_create)} listings, updated {len(listings_to_update)}, "
               f"added {len(histories_to_create)} histories")
+
+        # --- Fetch CeX cash price for the first active CEX listing ---
+        cex_listing = CompetitorListing.objects.filter(
+            competitor="CEX",
+            market_item=market_item,
+            is_active=True
+        ).order_by("id").first()
+
+        if cex_listing:
+            # Save the sale price from the first CEX listing
+            market_item.cex_sale_price = cex_listing.price
+            market_item.cex_url = f"https://uk.webuy.com/product-detail?id={cex_listing.stable_id}"
+            if cex_listing.stable_id:
+                cex_cash_trade_price = fetch_cex_cash_price(cex_listing.stable_id)
+                if cex_cash_trade_price is not None:
+                    market_item.cex_cash_trade_price = cex_cash_trade_price
+                    print(f"Updated market_item.cex_cash_trade_price to {cex_cash_trade_price}")
+
+            market_item.save()
+            print(f"Updated market_item.cex_sale_price to {cex_listing.price}")
+
 
         return JsonResponse({
             'success': True,

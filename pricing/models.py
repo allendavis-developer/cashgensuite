@@ -123,7 +123,10 @@ class MarketItem(models.Model):
     last_scraped = models.DateTimeField(blank=True, null=True)
     exclude_keywords = models.JSONField(blank=True, null=True)
     item_model = models.ForeignKey(ItemModel, on_delete=models.SET_NULL, null=True, blank=True, related_name='market_items')
-
+    
+    cex_cash_trade_price = models.FloatField(blank=True, null=True)
+    cex_sale_price = models.FloatField(blank=True, null=True)
+    cex_url = models.CharField(max_length=1048, blank=True, null=True)
 
     # Optional helper property for convenience
     @property

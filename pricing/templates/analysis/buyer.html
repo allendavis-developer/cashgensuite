@@ -427,7 +427,7 @@ function createCategoryTable(categoryId, categoryName, attributes) {
   const table = document.createElement('table');
   table.className = 'item-table';
   const thead = document.createElement('thead');
-  const columns = ['Subcategory', 'Model', ...attributes.map(a => a.name), 'Item Name', 'CEX Price', 'Selling Price', 'Buying In Range', 'Margin', 'Quantity', 'Actions'];
+  const columns = ['Subcategory', 'Model', ...attributes.map(a => a.name), 'Item Name', 'CEX Price', 'CEX - Discount', 'Buying In Range', 'Margin', 'Quantity', 'Actions'];
   
   thead.innerHTML = `<tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr>`;
   
