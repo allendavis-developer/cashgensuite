@@ -18,7 +18,8 @@ from pricing.models import (
     GlobalMarginRule,
     Subcategory,
     ItemModel,
-    CategoryAttribute
+    CategoryAttribute,
+    CEXPricingRule
     )
 
 import json, traceback, re
@@ -135,47 +136,33 @@ def round_down_to_even(value):
 
 import requests
 
-def compute_buying_price(selling_price, category_id, subcategory_id, model_name, market_item):
-    """Compute the buying price using margin data and CeX cash price if available."""
-    effective_margin, category_obj, subcategory_obj, rule_matches = get_effective_margin(
-        category_id=category_id,
-        subcategory_id=subcategory_id,
-        model_name=model_name
-    )
+def compute_prices_from_cex_rule(cex_listing, cex_rule=None):
+    """
+    Compute selling price from CeX listing using the cex_pct rule.
+    Compute buying range: start = 50% of selling, end = CeX cash price if available.
+    If no cex_rule is provided, use CeX price - 20%.
+    """
+    if cex_rule:
+        selling_price = round(cex_listing.price * cex_rule.cex_pct)
+    else:
+        # fallback: 20% less than CeX price
+        selling_price = round(cex_listing.price * 0.8)
 
-    buying_price = round(selling_price * effective_margin)
-    margin_info = {
-        "base_margin": category_obj.base_margin,
-        "effective_margin": effective_margin,
-        "rules_applied": rule_matches,
-        "source": "margin_rule",
-    }
-
+    buying_start_price = round(selling_price / 2)
+    buying_end_price = None
     cex_cash_price = None
     cex_url = None
 
-    # Try to adjust using live CeX cash price if a CeX listing exists
-    try:
-        # Get the first competitor listing for this market item (by insertion order)
-        cex_listing = CompetitorListing.objects.filter(
-            competitor="CEX",
-            market_item=market_item,
-            is_active=True
-        ).order_by("id").first()
-
-        print(cex_listing)
-
-        if cex_listing and cex_listing.stable_id:
-            cex_url = f"https://uk.webuy.com/product-detail?id={cex_listing.stable_id}"
-            
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                              "AppleWebKit/537.36 (KHTML, like Gecko) "
-                              "Chrome/118.0.5993.117 Safari/537.36",
-                "Accept": "application/json, text/javascript, */*; q=0.01",
-                "Referer": "https://www.cex.uk/",
-            }
-
+    if cex_listing.stable_id:
+        cex_url = f"https://uk.webuy.com/product-detail?id={cex_listing.stable_id}"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/118.0.5993.117 Safari/537.36",
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "Referer": "https://www.cex.uk/",
+        }
+        try:
             response = requests.get(
                 f"https://wss2.cex.uk.webuy.io/v3/boxes/{cex_listing.stable_id}/detail",
                 headers=headers,
@@ -183,18 +170,41 @@ def compute_buying_price(selling_price, category_id, subcategory_id, model_name,
             )
             response.raise_for_status()
             data = response.json()
-
             box = data.get("response", {}).get("data", {}).get("boxDetails", [{}])[0]
             cex_cash_price = box.get("cashPrice")
-            print(cex_cash_price)
+        except Exception as e:
+            print(f"CeX price lookup failed: {e}")
 
-    except Exception as e:
-        print(f"CeX price lookup failed: {e}")
+    buying_end_price = cex_cash_price if cex_cash_price is not None else round(selling_price * 0.67)
 
-    # If CeX cash price exists, use it as the final buying_end_price
-    buying_end_price = cex_cash_price if cex_cash_price is not None else buying_price * 1.10
+    return selling_price, buying_start_price, buying_end_price, cex_cash_price, cex_listing.price, cex_url
 
-    return buying_price, margin_info, cex_cash_price, cex_url, buying_end_price
+
+def get_most_specific_cex_rule(category, subcategory=None, item_model=None):
+    """
+    Returns the most specific active CEX pricing rule for the given parameters.
+    Priority:
+    1. item_model + subcategory + category
+    2. subcategory + category
+    3. category only
+    """
+    rules = CEXPricingRule.objects.filter(category=category, is_active=True)
+    
+    # Filter by item_model if provided
+    if item_model:
+        rule = rules.filter(item_model=item_model, subcategory=subcategory).first()
+        if rule:
+            return rule
+
+    # Filter by subcategory if provided
+    if subcategory:
+        rule = rules.filter(subcategory=subcategory, item_model__isnull=True).first()
+        if rule:
+            return rule
+
+    # Fallback to category only
+    rule = rules.filter(subcategory__isnull=True, item_model__isnull=True).first()
+    return rule
 
 
 
@@ -202,52 +212,56 @@ def compute_buying_price(selling_price, category_id, subcategory_id, model_name,
 def get_selling_and_buying_price(request):
     try:
         data = json.loads(request.body)
-        category = data.get("category")
         category_id = data.get("categoryId")
         subcategory_id = data.get("subcategoryId")
+        model_id = data.get("modelId")
         model = data.get("model")
+        category = data.get("category")
         attributes = data.get("attributes", {})
 
         if not category or not model:
             return JsonResponse({"success": False, "error": "Category and model are required."})
 
         search_term = build_search_term(model, category, attributes)
-
         market_item = get_market_item(search_term)
         if not market_item:
             return JsonResponse({"success": False, "error": "No matching market item found."})
 
-        base_price, used_competitor = determine_base_price(market_item)
-        if base_price is None:
-            return JsonResponse({
-                "success": True,
-                "search_term": search_term,
-                "selling_price": None,
-                "message": "No listings found for any competitor."
-            })
+        # Get first active CEX listing
+        cex_listing = CompetitorListing.objects.filter(
+            competitor="CEX",
+            market_item=market_item,
+            is_active=True
+        ).order_by("id").first()
 
-        selling_price = round_down_to_even(base_price)
-        buying_price, margin_info, cex_cash_price, cex_url, buying_end_price = compute_buying_price(
-                selling_price, category_id, subcategory_id, model, market_item
-            )
+        # Get most specific CeX pricing rule
+        cex_rule = get_most_specific_cex_rule(category_id, subcategory_id, model_id)
+        print(cex_listing)
+        print(cex_rule)
+        if not cex_listing:
+            return JsonResponse({"success": False, "error": "No active CeX listing found."})
+
+        selling_price, buying_start, buying_end, cex_buying_price, cex_selling_price, cex_url = compute_prices_from_cex_rule(
+            cex_listing, cex_rule
+        )
 
         return JsonResponse({
             "success": True,
             "search_term": search_term,
             "selling_price": selling_price,
-            "buying_price": buying_price,
-            "buying_end_price": buying_end_price,  # <-- final price to display/pay
-            "margin_info": margin_info,
-            "cex_cash_price": cex_cash_price,
+            "buying_start_price": buying_start,
+            "buying_end_price": buying_end,
+            "cex_buying_price": cex_buying_price,
+            "cex_selling_price": cex_selling_price,
             "cex_url": cex_url,
         })
-
 
     except ValueError as e:
         return JsonResponse({"success": False, "error": str(e)}, status=404)
     except Exception as e:
         import traceback; traceback.print_exc()
         return JsonResponse({"success": False, "error": str(e)}, status=500)
+
 
 
 

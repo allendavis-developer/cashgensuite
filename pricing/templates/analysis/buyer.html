@@ -427,7 +427,7 @@ function createCategoryTable(categoryId, categoryName, attributes) {
   const table = document.createElement('table');
   table.className = 'item-table';
   const thead = document.createElement('thead');
-  const columns = ['Subcategory', 'Model', ...attributes.map(a => a.name), 'Item Name', 'Selling Price', 'Buying In Range', 'Margin', 'Quantity', 'Actions'];
+  const columns = ['Subcategory', 'Model', ...attributes.map(a => a.name), 'Item Name', 'CEX Price', 'Selling Price', 'Buying In Range', 'Margin', 'Quantity', 'Actions'];
   
   thead.innerHTML = `<tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr>`;
   
@@ -492,17 +492,31 @@ async function addItemToTable() {
     console.error("Error generating item name:", error);
   }
 
-  // Build row
+  // Build row cells in correct order
   const row = document.createElement('tr');
-  row.innerHTML = `<td>${subcategory}</td><td>${model}</td>`;
-  
+  const cells = [];
+
+  // 1️⃣ Subcategory & Model
+  cells.push(`<td>${subcategory}</td>`);
+  cells.push(`<td>${model}</td>`);
+
+  // 2️⃣ Attributes
   currentAttributes.forEach(a => {
-    row.insertAdjacentHTML('beforeend', `<td>${document.getElementById(`attr_${a.id}`)?.value || '—'}</td>`);
+    const val = document.getElementById(`attr_${a.id}`)?.value || '—';
+    cells.push(`<td>${val}</td>`);
   });
 
-  row.insertAdjacentHTML('beforeend', `
-    <td>${itemName}</td>
-    <td>—</td>
+  // 3️⃣ Item Name
+  cells.push(`<td>${itemName}</td>`);
+
+  // 4️⃣ CEX Price BEFORE Selling Price
+  cells.push(`<td class="cex-price">—</td>`);
+
+  // 5️⃣ Selling Price
+  cells.push(`<td>—</td>`);
+
+  // 6️⃣ Buying Range
+  cells.push(`
     <td>
       <div class="buying-range-cell">
         <span class="buying-value">—</span>
@@ -510,9 +524,19 @@ async function addItemToTable() {
         <button class="qty-btn decrease-buying">−</button>
       </div>
     </td>
-    <td>—</td>
-    <td>${createQuantityCell().innerHTML}</td>
   `);
+
+  // 7️⃣ Margin
+  cells.push(`<td>—</td>`);
+
+  // 8️⃣ Quantity
+  cells.push(`<td>${createQuantityCell().innerHTML}</td>`);
+
+  // Set innerHTML all at once
+  row.innerHTML = cells.join('');
+
+  // Append actions cell
+  row.appendChild(createActionsCell(row));
 
   // Store metadata
   row.dataset.categoryId = catId;
@@ -523,13 +547,10 @@ async function addItemToTable() {
   row.dataset.itemName = itemName;
   row.dataset.subcategoryName = subcategory;
 
-
-  row.appendChild(createActionsCell(row));
   tbody.appendChild(row);
   addItemModal.classList.remove('active');
 
   attachQuantityListeners();
-
 }
 
 function createQuantityCell() {
@@ -652,6 +673,7 @@ async function updatePriceCells(row, category, model, attributes) {
             categoryId: row.dataset.categoryId,
             subcategoryId: row.dataset.subcategoryId,
             model,
+            modelId: row.dataset.modelId,
             attributes
         })
     });
@@ -659,15 +681,19 @@ async function updatePriceCells(row, category, model, attributes) {
     const priceResult = await priceResponse.json();
     if (!priceResult.success) throw new Error(priceResult.error || 'Failed to get selling price');
 
-    const priceCell = row.querySelector('td:nth-last-child(5)');
-    const buyCell = row.querySelector('td:nth-last-child(4)');
-    const marginCell = row.querySelector('td:nth-last-child(3)');
+    const priceCell = row.querySelector('td:nth-last-child(5)'); // Selling Price
+    const buyCell = row.querySelector('td:nth-last-child(4)');   // Buying Range
+    const marginCell = row.querySelector('td:nth-last-child(3)'); // Margin
+    const cexCell = row.querySelector('.cex-price');              // CEX Price
+
 
     const sellingPrice = parseFloat(priceResult.selling_price);
-    const buyingStartPrice = parseFloat(priceResult.buying_price);
+    const buyingStartPrice = parseFloat(priceResult.buying_start_price);
     const buyingEndPrice = priceResult.buying_end_price;
 
-    console.log(priceResult.cex_cash_price);
+    console.log(priceResult.cex_selling_price)
+    console.log(priceResult.cex_url)
+
 
     priceCell.textContent = `£${sellingPrice.toFixed(2)}`;
     buyCell.querySelector('.buying-value').textContent = `£${buyingStartPrice.toFixed(2)} - £${buyingEndPrice.toFixed(2)}`;
@@ -675,6 +701,12 @@ async function updatePriceCells(row, category, model, attributes) {
     buyCell.dataset.buyMax = buyingEndPrice;
     attachBuyingAdjustListeners();
 
+    // CEX price link
+    if (priceResult.cex_selling_price && priceResult.cex_url) {
+        cexCell.innerHTML = `<a href="${priceResult.cex_url}" target="_blank">£${parseFloat(priceResult.cex_selling_price).toFixed(2)}</a>`;
+    } else {
+        cexCell.textContent = '—';
+    }
 
     const maxMargin = ((sellingPrice - buyingStartPrice) / sellingPrice) * 100;
     const minMargin = ((sellingPrice - buyingEndPrice) / sellingPrice) * 100;
