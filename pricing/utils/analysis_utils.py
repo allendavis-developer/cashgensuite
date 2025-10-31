@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.utils import timezone
 
-from pricing.models import MarketItem, CompetitorListing, PriceAnalysis, InventoryItem
+from pricing.models import MarketItem, CompetitorListing, InventoryItem
 from .competitor_utils import calculate_competitor_count, get_competitor_data
 from .ai_utils import generate_price_analysis
 

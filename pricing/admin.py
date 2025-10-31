@@ -11,7 +11,6 @@ from .models import (
     MarketItem,
     CompetitorListing,
     CompetitorListingHistory,  # NEW
-    PriceAnalysis,
     MarginCategory,
     MarginRule,
     GlobalMarginRule,
@@ -134,33 +133,6 @@ class MarketItemForm(forms.ModelForm):
                 subcategory=self.instance.subcategory
             )
 
-class ItemModelAttributeValueInlineFromMarketItem(admin.StackedInline):
-    model = ItemModelAttributeValue
-    extra = 0
-    can_delete = False
-    verbose_name = "Model Attribute"
-    verbose_name_plural = "Model Attributes"
-
-    # Only allow editing if there is a parent object with a model
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        if hasattr(self, 'parent_object') and self.parent_object.item_model:
-            return qs.filter(item_model=self.parent_object.item_model).order_by('attribute__order')
-        return qs.none()
-
-    def has_add_permission(self, request, obj=None):
-        # No adding from MarketItemAdmin
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        # No deletion from MarketItemAdmin
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        # Optional: allow editing values from MarketItemAdmin
-        return obj and obj.model is not None
-
-
 
 @admin.register(MarketItem)
 class MarketItemAdmin(admin.ModelAdmin):
@@ -228,6 +200,7 @@ class SubcategoryAdmin(admin.ModelAdmin):
         return obj.models.count()
     model_count.short_description = 'Models'
 
+
 class ItemModelAttributeValueForm(forms.ModelForm):
     class Meta:
         model = ItemModelAttributeValue
@@ -289,6 +262,7 @@ class ItemModelAttributeValueInline(admin.StackedInline):
         # Default: show all fields (for new items without attribute selected yet)
         return base_fields + ['value_text', 'value_number', 'value_boolean']
 
+
 @admin.register(ItemModel)
 class ItemModelAdmin(admin.ModelAdmin):
     list_display = ('name', 'get_category', 'subcategory')
@@ -323,29 +297,6 @@ class InventoryItemInline(admin.TabularInline):
     can_delete = False
 
 
-@admin.register(PawnShopAgreement)
-class PawnShopAgreementAdmin(admin.ModelAdmin):
-    list_display = ("agreement_number", "customer", "created_date", "expiry_date", "created_by")
-    search_fields = ("agreement_number", "customer", "created_by")
-    inlines = [InventoryItemInline]
-
-
-@admin.register(PriceAnalysis)
-class PriceAnalysisAdmin(admin.ModelAdmin):
-    list_display = ("item", "suggested_price", "confidence", "created_at")
-    list_filter = ("confidence", "created_at")
-    search_fields = ("item__title", "reasoning")
-    ordering = ("-created_at",)
-    readonly_fields = ("created_at",)
-
-
-class PriceAnalysisInline(admin.TabularInline):
-    model = PriceAnalysis
-    extra = 0
-    readonly_fields = ("reasoning", "suggested_price", "confidence", "created_at")
-    can_delete = False
-
-
 @admin.register(InventoryItem)
 class InventoryItemAdmin(admin.ModelAdmin):
     list_display = (
@@ -359,7 +310,6 @@ class InventoryItemAdmin(admin.ModelAdmin):
     )
     list_filter = ("status", "category")
     search_fields = ("title", "serial_number")
-    inlines = [PriceAnalysisInline]
 
 
 @admin.register(MarginRule)

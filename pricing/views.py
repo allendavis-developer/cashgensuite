@@ -58,30 +58,6 @@ def bulk_analysis(request):
     return render(request, 'analysis/bulk_analysis.html')
 
 
-
-@require_GET
-def price_analysis_detail(request, analysis_id):
-    analysis = get_object_or_404(PriceAnalysis.objects.select_related("item"), pk=analysis_id)
-
-    competitor_data = get_competitor_data(analysis.item.title, include_url=True)
-    competitor_lines = competitor_data.split("\n") if competitor_data else []
-
-    return JsonResponse({
-        "success": True,
-        "analysis_id": analysis.id,
-        "item_title": analysis.item.title,
-        "suggested_price": analysis.suggested_price,
-        "reasoning": analysis.reasoning,
-        "confidence": analysis.confidence,
-        "created_at": analysis.created_at,
-        "competitor_data": competitor_lines,
-        "competitor_count": len(competitor_lines),
-        "item_description": analysis.item.description,   # <-- add this
-        "serial_number": analysis.item.serial_number,     # <-- add this
-        "cost_price": analysis.cost_price,
-    })
-
-
 @require_POST
 def check_existing_items(request):
     try:

@@ -235,17 +235,6 @@ class InventoryItem(models.Model):
         return f"{self.title} ({self.status})"
 
 
-class PriceAnalysis(models.Model):
-    item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE, related_name="price_analyses")
-    reasoning = models.TextField()
-    suggested_price = models.DecimalField(max_digits=10, decimal_places=2)#
-    cost_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # <-- new field
-    confidence = models.PositiveIntegerField(default=0)  # 0-100%
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Analysis for {self.item.title} - £{self.suggested_price}"
-
 
 # -- Web listing
 class Listing(models.Model):
