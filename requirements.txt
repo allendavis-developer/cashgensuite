@@ -5,6 +5,7 @@ playwright
 django
 psycopg2-binary
 django-multiselectfield
+django-autocomplete-light
 
 # HTTP requests
 requests

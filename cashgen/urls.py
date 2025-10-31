@@ -54,6 +54,12 @@ urlpatterns = [
     path('api/add_subcategory/', v.add_subcategory, name='api-add-subcategory'),
     path('api/add_model/', v.add_model, name='api-add-model'),
     path('api/add_attribute_option/', v.add_attribute_option, name='api-add-attribute-option'),
+
+
+    path('category-autocomplete/', v.CategoryAutocomplete.as_view(), name='category-autocomplete'),
+    path('subcategory-autocomplete/', v.SubcategoryAutocomplete.as_view(), name='subcategory-autocomplete'),
+    path('itemmodel-autocomplete/', v.ItemModelAutocomplete.as_view(), name='itemmodel-autocomplete'),
+
 ]
 
 from django.conf import settings

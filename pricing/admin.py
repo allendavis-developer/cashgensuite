@@ -7,14 +7,14 @@ from .models import (
     ListingSnapshot,
     InventoryItem,
     Category,
-    PawnShopAgreement,
     MarketItem,
     CompetitorListing,
     CompetitorListingHistory,  # NEW
     MarginCategory,
     MarginRule,
     GlobalMarginRule,
-    ItemModelAttributeValue
+    ItemModelAttributeValue,
+    CEXPricingRule
 )
 
 # -------------------------------
@@ -400,3 +400,52 @@ class ListingSnapshotAdmin(admin.ModelAdmin):
     )
     readonly_fields = ("created_at",)
     ordering = ("-created_at",)
+
+
+from dal import autocomplete
+
+class CEXPricingRuleForm(forms.ModelForm):
+    class Meta:
+        model = CEXPricingRule
+        fields = '__all__'
+        widgets = {
+            'category': autocomplete.ModelSelect2(url='category-autocomplete'),
+            'subcategory': autocomplete.ModelSelect2(url='subcategory-autocomplete', forward=['category']),
+            'item_model': autocomplete.ModelSelect2(url='itemmodel-autocomplete', forward=['subcategory']),
+        }
+
+
+@admin.register(CEXPricingRule)
+class CEXPricingRuleAdmin(admin.ModelAdmin):
+    form = CEXPricingRuleForm
+    list_display = ('__str__', 'category', 'subcategory', 'item_model', 'cex_pct', 'is_active')
+    list_filter = ('is_active', 'category')
+    search_fields = ('category__name', 'subcategory__name', 'item_model__name', 'description')
+    ordering = ('category', 'subcategory', 'item_model',)
+
+class CategoryAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Category.objects.all()
+        if self.q:
+            qs = qs.filter(name__icontains=self.q)
+        return qs
+
+class SubcategoryAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Subcategory.objects.all()
+        category_id = self.forwarded.get('category', None)
+        if category_id:
+            qs = qs.filter(category_id=category_id)
+        if self.q:
+            qs = qs.filter(name__icontains=self.q)
+        return qs
+
+class ItemModelAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = ItemModel.objects.all()
+        subcat_id = self.forwarded.get('subcategory', None)
+        if subcat_id:
+            qs = qs.filter(subcategory_id=subcat_id)
+        if self.q:
+            qs = qs.filter(name__icontains=self.q)
+        return qs

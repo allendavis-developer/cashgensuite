@@ -363,11 +363,10 @@ class CEXPricingRule(models.Model):
 
     cex_pct = models.FloatField(help_text="Percentage of CEX price to sell at, e.g., 0.8 for 80%")
     description = models.CharField(max_length=255, blank=True)
-    order = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
 
     class Meta:
-        ordering = ['category', 'subcategory', 'item_model', 'order']
+        ordering = ['category', 'subcategory', 'item_model']
         unique_together = ('category', 'subcategory', 'item_model')
 
     def __str__(self):

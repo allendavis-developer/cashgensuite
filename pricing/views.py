@@ -13,7 +13,6 @@ from pricing.models import (
     MarketItem, 
     CompetitorListing, 
     CompetitorListingHistory, 
-    PriceAnalysis, 
     Category, 
     MarginRule, 
     GlobalMarginRule,
@@ -1384,3 +1383,30 @@ def buyer_view(request):
             "categories": json.dumps(list(categories.values("id", "name")), cls=DjangoJSONEncoder)
         })
 
+from dal import autocomplete
+class CategoryAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Category.objects.all()
+        if self.q:
+            qs = qs.filter(name__icontains=self.q)
+        return qs
+
+class SubcategoryAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Subcategory.objects.all()
+        category_id = self.forwarded.get('category', None)
+        if category_id:
+            qs = qs.filter(category_id=category_id)
+        if self.q:
+            qs = qs.filter(name__icontains=self.q)
+        return qs
+
+class ItemModelAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = ItemModel.objects.all()
+        subcat_id = self.forwarded.get('subcategory', None)
+        if subcat_id:
+            qs = qs.filter(subcategory_id=subcat_id)
+        if self.q:
+            qs = qs.filter(name__icontains=self.q)
+        return qs
