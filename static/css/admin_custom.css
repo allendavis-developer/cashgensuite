@@ -1,0 +1,187 @@
+/* === FONT === */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+body, input, select, textarea, button {
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* === GLOBAL BACKGROUND / TEXT === */
+body {
+  background-color: #000 !important;
+  color: #fff !important;
+}
+
+/* === HEADERS & TITLES === */
+#header, .module caption, .inline-group h2 {
+  background-color: #111 !important;
+  color: #fff !important;
+  border-bottom: 1px solid #333 !important;
+}
+
+#header {
+  border-bottom: 1px solid #333;
+}
+
+#branding h1, #branding h1 a {
+  color: #fff !important;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+#user-tools {
+  color: #888 !important;
+}
+
+/* === LINKS === */
+a, a:visited {
+  color: #fff !important;
+  text-decoration: underline;
+}
+a:hover {
+  color: #ccc !important;
+}
+
+/* === TABLES === */
+table, .results, .module table {
+  background-color: #111 !important;
+  border: 1px solid #333 !important;
+}
+
+th, td {
+  border-color: #333 !important;
+  color: #ddd !important;
+}
+
+th {
+  background-color: #1a1a1a !important;
+  color: #888 !important;
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+}
+
+/* === FORMS === */
+input, select, textarea {
+  background-color: #1a1a1a !important;
+  border: 1px solid #333 !important;
+  color: #fff !important;
+  border-radius: 4px !important;
+  padding: 8px 10px !important;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #555 !important;
+  background-color: #222 !important;
+  outline: none !important;
+}
+
+/* === BUTTONS === */
+button, input[type=submit], .button, .submit-row input {
+  background-color: #fff !important;
+  color: #000 !important;
+  border: none !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-radius: 4px !important;
+  padding: 0.75rem 1.5rem !important;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out;
+}
+
+button:hover:not(:disabled),
+input[type=submit]:hover:not(:disabled),
+.button:hover:not(:disabled) {
+  background-color: #e6e6e6 !important;
+}
+
+button:disabled,
+input[type=submit]:disabled {
+  background-color: #333 !important;
+  color: #666 !important;
+  cursor: not-allowed;
+}
+
+/* === FIX GO BUTTON ALIGNMENT === */
+.actions .button,
+.actions input[type=submit] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 34px !important;
+  line-height: 1.2 !important;
+  padding: 0 1.25rem !important;
+}
+
+/* === SIDEBAR + TOGGLE === */
+#nav-sidebar {
+  background-color: #111 !important;
+  border-right: 1px solid #333 !important;
+}
+
+#toggle-nav-sidebar {
+  background-color: #111 !important;
+  border: none !important;
+}
+
+#toggle-nav-sidebar:hover {
+  background-color: #222 !important;
+}
+
+/* Sidebar links */
+#nav-sidebar a {
+  color: #ddd !important;
+}
+
+#nav-sidebar a:hover {
+  color: #fff !important;
+  background-color: #1a1a1a !important;
+}
+
+/* === SIDEBAR COLLAPSE/EXPAND ARROW COLOR === */
+#toggle-nav-sidebar,
+#toggle-nav-sidebar span {
+    color: #fff !important;         /* arrow text */
+    background-color: #111 !important; /* button background */
+    border: none !important;          /* remove default border */
+}
+
+/* Hover state */
+#toggle-nav-sidebar:hover,
+#toggle-nav-sidebar:hover span {
+    background-color: #222 !important;
+    color: #ccc !important;
+}
+
+/* === HIDE DARK/LIGHT THEME TOGGLE BUTTON === */
+#user-tools > button {
+    display: none !important;
+}
+
+/* === SCROLLBAR === */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #111;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #444;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: #666;
+}
+
+/* === FILTER, SEARCH BAR, ETC === */
+#changelist-search input {
+  background-color: #1a1a1a !important;
+  color: #fff !important;
+  border: 1px solid #333 !important;
+}
+
+/* === MODULE BACKGROUNDS === */
+.module {
+  background-color: #111 !important;
+  border: 1px solid #333 !important;
+}
