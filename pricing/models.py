@@ -38,6 +38,8 @@ class Category(models.Model):
 
     name = models.CharField(max_length=100, unique=True)
     base_margin = models.FloatField(default=0.0)
+    cex_discount_pct = models.FloatField(default=0.0)
+
     description = models.TextField(blank=True)
     metadata = models.JSONField(blank=True, null=True)
 
@@ -359,3 +361,26 @@ class GlobalMarginRule(models.Model):
     def __str__(self):
         sign = '+' if self.adjustment >= 0 else ''
         return f"Global {self.rule_type}: {self.match_value} ({sign}{self.adjustment * 100:.1f}%)"
+
+
+class CEXPricingRule(models.Model):
+    """
+    Defines what % of competitor (CEX) price we sell an item for.
+    Granularity: Category > Subcategory > ItemModel
+    """
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='cex_rules')
+    subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, blank=True, null=True, related_name='cex_rules')
+    item_model = models.ForeignKey(ItemModel, on_delete=models.CASCADE, blank=True, null=True, related_name='cex_rules')
+
+    cex_pct = models.FloatField(help_text="Percentage of CEX price to sell at, e.g., 0.8 for 80%")
+    description = models.CharField(max_length=255, blank=True)
+    order = models.IntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['category', 'subcategory', 'item_model', 'order']
+        unique_together = ('category', 'subcategory', 'item_model')
+
+    def __str__(self):
+        target = self.item_model or self.subcategory or self.category
+        return f"{target} - {self.cex_pct*100:.1f}%"
