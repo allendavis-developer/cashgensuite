@@ -49,6 +49,19 @@ function initTomSelects() {
     placeholder: 'Select model...', 
     create: false 
   });
+
+  // Attach the "Add new model" behavior ONCE
+  modelTomSelect.on('change', async (value) => {
+    if (value === '__new__') {
+      const categoryId = categoryTomSelect.getValue();
+      const subcategoryId = subcategoryTomSelect.getValue();
+      if (categoryId && subcategoryId) {
+        await handleAddNewModel(categoryId, subcategoryId);
+      }
+    }
+  });
+
+  
 }
 
 // ========== Preload all categories ==========
@@ -121,12 +134,7 @@ async function fetchModels() {
   cache.models[key] = data;
   renderModels(data);
 
-  // Attach “Add new model” behavior
-  modelTomSelect.on('change', async (value) => {
-    if (value === '__new__') {
-      await handleAddNewModel(categoryId, subcategoryId);
-    }
-  });
+ 
 
 }
 
