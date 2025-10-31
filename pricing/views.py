@@ -282,19 +282,6 @@ def item_buying_analyser_view(request):
     return render(request, "analysis/item_buying_analyser.html", {"prefilled_data": prefilled_data, "categories": categories})
 
 
-# Note: This is technically not in the home page right now
-def inventory_free_stock_view(request):
-    inventory_items = (
-        InventoryItem.objects
-        .filter(status="free_stock")
-        .select_related("agreement", "market_item")
-        .prefetch_related(
-            Prefetch("market_item__listings")
-        )
-    )
-    return render(request, "deprecated/inventory_free_stock.html", {"inventory_items": inventory_items})
-
-
 @csrf_exempt
 @require_POST
 def buying_range_analysis(request):
