@@ -94,52 +94,56 @@ def get_market_item(search_term):
 
 from collections import Counter
 
+from collections import Counter
+
 def get_competitor_price_stats(market_item):
     """Determine competitor price statistics including frequency, mode, and range."""
-    
+
     def get_stats(listings):
-        """Return mode, frequency, low, high for a list of listings."""
+        """Return mode, frequency, low, high, total for a list of listings."""
         if not listings:
-            return None, 0, None, None
+            return None, 0, None, None, 0
         
         prices = [l.price for l in listings]
         price_counts = Counter(prices)
         mode_price = price_counts.most_common(1)[0][0]  # Most frequent price
-        frequency = len(listings)
+        mode_count = price_counts[mode_price]           # how many listings share that mode price
         low = min(prices)
         high = max(prices)
-        return mode_price, frequency, low, high
+        total = len(listings)
+        return mode_price, mode_count, low, high, total
 
-    # Fetch active listings for CC and CG
+    # Fetch active listings for each competitor
     cc_listings = list(
         CompetitorListing.objects.filter(
             market_item=market_item, competitor="CashConverters", is_active=True
         ).order_by("price")
     )
-    
     cg_listings = list(
         CompetitorListing.objects.filter(
             market_item=market_item, competitor="CashGenerator", is_active=True
         ).order_by("price")
     )
 
-    # Compute stats for each competitor
-    cc_mode, cc_freq, cc_low, cc_high = get_stats(cc_listings)
-    cg_mode, cg_freq, cg_low, cg_high = get_stats(cg_listings)
+    # Compute stats for each
+    cc_mode, cc_mode_count, cc_low, cc_high, cc_total = get_stats(cc_listings)
+    cg_mode, cg_mode_count, cg_low, cg_high, cg_total = get_stats(cg_listings)
 
     return {
         "CashConverters": {
             "mode": cc_mode,
-            "frequency": cc_freq,
+            "frequency": cc_mode_count,     # number of listings at the modal price
             "low": cc_low,
             "high": cc_high,
+            "total_listings": cc_total,     # total active listings
         },
         "CashGenerator": {
             "mode": cg_mode,
-            "frequency": cg_freq,
+            "frequency": cg_mode_count,
             "low": cg_low,
             "high": cg_high,
-        }
+            "total_listings": cg_total,
+        },
     }
 
 
@@ -180,7 +184,7 @@ def fetch_cex_cash_price(stable_id):
 def compute_prices_from_cex_rule(market_item, cex_rule=None):
     """
     Compute selling and buying prices from MarketItem using the cex_pct rule.
-    Compute buying range: start = 50% of selling, end = CeX cash price if available, else 67% of selling.
+    Compute buying range: start = 50% of selling, end = CeX cash price if available, else 50% of selling.
     If no cex_rule is provided, use 20% less than CeX sale price.
     """
     if cex_rule:
@@ -189,9 +193,9 @@ def compute_prices_from_cex_rule(market_item, cex_rule=None):
         selling_price = round(market_item.cex_sale_price * 0.8)
 
     buying_start_price = round(selling_price / 2)
-    buying_end_price = market_item.cex_cash_trade_price or round(selling_price * 0.67)
+    buying_end_price = market_item.cex_cash_trade_price or round(selling_price * 0.5)
 
-    # sometimes buying start price is greater than the cex price so this will that issue
+    # sometimes buying start price is greater than the cex price so this will that issue so lets just times cex price by 80%
     if buying_start_price > buying_end_price:
         buying_start_price = round(buying_end_price * 0.8) 
 

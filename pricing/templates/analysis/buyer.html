@@ -444,7 +444,7 @@ function createCategoryTable(categoryId, categoryName, attributes) {
     'CEX Price',
     'Suggested RRP',
     'CEX Cash Offer',
-    'Current Offer (+/−)',
+    'Current Offer',
     'Margin',
     'Actions'
   ];
@@ -682,18 +682,26 @@ async function updatePriceCells(row, category, model, attributes) {
     cexCell.textContent = '—';
   }
 
-  // Competitor stats
   if (priceResult.competitor_stats) {
-    const updateModeCell = (cell, stats) => {
-      if (stats.mode != null) {
-        cell.innerHTML = `£${parseFloat(stats.mode).toFixed(2)} (${stats.frequency} listings)<br>£${parseFloat(stats.low).toFixed(2)} - £${parseFloat(stats.high).toFixed(2)}`;
-      } else {
-        cell.textContent = '—';
-      }
-    };
-    updateModeCell(row.querySelector('.cc-mode'), priceResult.competitor_stats.CashConverters || {});
-    updateModeCell(row.querySelector('.cg-mode'), priceResult.competitor_stats.CashGenerator || {});
-  }
+  const updateModeCell = (cell, stats) => {
+    if (stats.mode != null) {
+      const totalListings = stats.total_listings ?? 0; // 
+      const listingsText = totalListings
+        ? `${stats.frequency}/${totalListings} listings`
+        : `${stats.frequency} listings`;
+
+      cell.innerHTML = `
+        £${parseFloat(stats.mode).toFixed(2)} (${listingsText})<br>
+        £${parseFloat(stats.low).toFixed(2)} - £${parseFloat(stats.high).toFixed(2)}
+      `;
+    } else {
+      cell.textContent = '—';
+    }
+  };
+
+  updateModeCell(row.querySelector('.cc-mode'), priceResult.competitor_stats.CashConverters || {});
+  updateModeCell(row.querySelector('.cg-mode'), priceResult.competitor_stats.CashGenerator || {});
+}
 
   // Margin
   const margin = sellingPrice > 0
@@ -708,31 +716,37 @@ async function updatePriceCells(row, category, model, attributes) {
 
 function adjustBuying(td, percentChange) {
   const baseMin = parseFloat(td.dataset.baseBuyMin);
-  const baseMax = parseFloat(td.dataset.baseBuyMax);
   let currentAdjust = parseFloat(td.dataset.adjustPercent) || 0;
 
+  // Limit adjustment range to ±50%
   currentAdjust = Math.min(Math.max(currentAdjust + percentChange, -50), 50);
   td.dataset.adjustPercent = currentAdjust;
 
+  // Calculate new buying range
   const factor = 1 + currentAdjust / 100;
   const newMin = baseMin * factor;
-  const newMax = baseMax * factor;
 
+  // Update dataset and displayed value
   td.dataset.buyMin = newMin;
-  td.dataset.buyMax = newMax;
   td.querySelector('.buying-value').textContent = `£${newMin.toFixed(2)}`;
 
+  // Recalculate margin for the row
   const row = td.closest('tr');
-  const selling = parseFloat(row.querySelector('td:nth-last-child(5)').textContent.replace(/[£,]/g, '')) || 0;
+  const sellingPrice = parseFloat(
+    row.querySelector('.suggested-rrp')?.textContent.replace(/[£,]/g, '')
+  ) || 0;
 
-  if (selling > 0) {
-    const maxMargin = ((selling - newMin) / selling) * 100;
-    const minMargin = ((selling - newMax) / selling) * 100;
-    row.querySelector('td:nth-last-child(3)').textContent = `${maxMargin.toFixed(1)}% - ${minMargin.toFixed(1)}%`;
+  const marginCell = row.querySelector('.margin');
+  if (sellingPrice > 0) {
+    const margin = ((sellingPrice - newMin) / sellingPrice) * 100;
+    marginCell.textContent = `${margin.toFixed(1)}%`;
+  } else {
+    marginCell.textContent = '—';
   }
 
   updateSummary();
 }
+
 
 
 function updateSummary() {
