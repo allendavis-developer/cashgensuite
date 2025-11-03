@@ -165,7 +165,7 @@
   position: sticky;
   top: 0;
   background-color: #1a1a1a;  /* same as table header bg */
-  z-index: 2;                /* ensures header stays on top */
+  z-index: 1;                /* ensures header stays on top */
 }
 
 
@@ -562,6 +562,12 @@
     .add-btn:hover {
       background-color: #555;
     }
+
+    /* Ensure modal is always on top */
+  #add-modal {
+    z-index: 9999 !important;
+  }
+
 
 
 
