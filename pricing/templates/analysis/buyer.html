@@ -129,6 +129,16 @@
   box-shadow: 0 0 0 1px #666 !important;
 }
 
+.starting-offer, .cex-offer {
+  text-align: center;
+  color: #0f0;
+  font-weight: 600;
+}
+.cex-offer {
+  color: #4da6ff;
+}
+
+
 
 /* Modal */
 .modal {
@@ -374,7 +384,7 @@
   <div id="tablesContainer"></div>  
   <div id="summaryContainer" style="padding: 16px; color: #fff;">
     <h3>Summary</h3>
-    <p>Total Buying Price Range: <span id="totalBuying">£0.00 - £0.00</span></p>
+    <p>Total Buying Price: <span id="totalBuying">£0.00 - £0.00</span></p>
     <p>Total Selling Price: <span id="totalSelling">£0.00</span></p>
   </div>
 
@@ -424,8 +434,15 @@ function createCategoryTable(categoryId, categoryName, attributes) {
 
   const table = document.createElement('table');
   table.className = 'item-table';
-  const columns = ['Subcategory', 'Model', ...attributes.map(a => a.name), 'Item Name', 'CEX Price', 
-    'CEX - Discount', 'CashConverters Mode', 'CashGenerator Mode', 'Buying In Range', 'Margin', 'Quantity', 'Actions'];
+  const columns = [
+  'Subcategory', 'Model', 
+  ...attributes.map(a => a.name),
+  'Item Name', 'CEX Price', 'Suggested RRP',
+  'CashConverters Mode', 'CashGenerator Mode',
+  'Current Offer', 'CEX Offer', // <-- new columns
+  'Margin', 'Quantity', 'Actions'
+];
+
   
   table.innerHTML = `
     <thead><tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr></thead>
@@ -489,11 +506,14 @@ async function addItemToTable() {
     `<td>—</td>`,
     `<td class="cc-mode">—</td>`,
     `<td class="cg-mode">—</td>`,
-    `<td><div class="buying-range-cell">
-      <span class="buying-value">—</span>
-      <button class="qty-btn increase-buying">+</button>
-      <button class="qty-btn decrease-buying">−</button>
-    </div></td>`,
+    `<td class="starting-offer">
+      <div class="buying-range-cell">
+        <button class="qty-btn decrease-buying">−</button>
+        <span class="buying-value">—</span>
+        <button class="qty-btn increase-buying">+</button>
+      </div>
+    </td>`,
+    `<td class="cex-offer">—</td>`,       // new
     `<td>—</td>`,
     `<td><input type="number" class="qty-input" min="1" value="1"></td>`
   ];
@@ -626,12 +646,30 @@ async function updatePriceCells(row, category, model, attributes) {
   const buyingStartPrice = parseFloat(priceResult.buying_start_price);
   const buyingEndPrice = priceResult.buying_end_price;
 
-  row.querySelector('td:nth-last-child(7)').textContent = `£${sellingPrice.toFixed(2)}`;
+  row.querySelector('td:nth-last-child(8)').textContent = `£${sellingPrice.toFixed(2)}`;
   
-  const buyCell = row.querySelector('td:nth-last-child(4)');
-  buyCell.querySelector('.buying-value').textContent = `£${buyingStartPrice.toFixed(2)} - £${buyingEndPrice.toFixed(2)}`;
-  buyCell.dataset.buyMin = buyingStartPrice;
-  buyCell.dataset.buyMax = buyingEndPrice;
+  const cexOfferCell = row.querySelector('.cex-offer');
+  
+  const startingOfferCell = row.querySelector('.starting-offer');
+  const buyVal = startingOfferCell.querySelector('.buying-value');
+  const decreaseBtn = startingOfferCell.querySelector('.decrease-buying');
+  const increaseBtn = startingOfferCell.querySelector('.increase-buying');
+
+  buyVal.textContent = `£${buyingStartPrice.toFixed(2)}`;
+  startingOfferCell.dataset.buyMin = buyingStartPrice;
+  startingOfferCell.dataset.baseBuyMin = buyingStartPrice;
+  startingOfferCell.dataset.adjustPercent = "0";
+
+  cexOfferCell.textContent = `£${buyingEndPrice.toFixed(2)}`;
+  cexOfferCell.dataset.buyMax = buyingEndPrice;
+
+  // Attach button logic right here
+  decreaseBtn.onclick = () => adjustBuying(startingOfferCell, -5);
+  increaseBtn.onclick = () => adjustBuying(startingOfferCell, 5);
+
+  startingOfferCell.dataset.buyMin = buyingStartPrice;
+  cexOfferCell.dataset.buyMax = buyingEndPrice;
+
 
   const cexCell = row.querySelector('.cex-price');
   if (priceResult.cex_selling_price && priceResult.cex_url) {
@@ -652,27 +690,16 @@ async function updatePriceCells(row, category, model, attributes) {
     updateModeCell(row.querySelector('.cg-mode'), priceResult.competitor_stats.CashGenerator || {});
   }
 
-  const maxMargin = ((sellingPrice - buyingStartPrice) / sellingPrice) * 100;
-  const minMargin = ((sellingPrice - buyingEndPrice) / sellingPrice) * 100;
-  row.querySelector('td:nth-last-child(3)').textContent = `${maxMargin.toFixed(1)}% - ${minMargin.toFixed(1)}%`;
+  const margin = sellingPrice > 0
+  ? ((sellingPrice - buyingStartPrice) / sellingPrice) * 100
+  : 0;
 
-  attachBuyingAdjustListeners();
+  row.querySelector('td:nth-last-child(3)').textContent = `${margin.toFixed(1)}%`;
+
   updateSummary();
 }
 
-function attachBuyingAdjustListeners() {
-  document.querySelectorAll('.buying-range-cell').forEach(cell => {
-    const td = cell.closest('td');
-    if (!td.dataset.baseBuyMin) {
-      td.dataset.baseBuyMin = td.dataset.buyMin;
-      td.dataset.baseBuyMax = td.dataset.buyMax;
-      td.dataset.adjustPercent = "0";
-    }
 
-    cell.querySelector('.increase-buying').onclick = () => adjustBuying(td, 5);
-    cell.querySelector('.decrease-buying').onclick = () => adjustBuying(td, -5);
-  });
-}
 
 function adjustBuying(td, percentChange) {
   const baseMin = parseFloat(td.dataset.baseBuyMin);
@@ -688,7 +715,7 @@ function adjustBuying(td, percentChange) {
 
   td.dataset.buyMin = newMin;
   td.dataset.buyMax = newMax;
-  td.querySelector('.buying-value').textContent = `£${newMin.toFixed(2)} - £${newMax.toFixed(2)}`;
+  td.querySelector('.buying-value').textContent = `£${newMin.toFixed(2)}`;
 
   const row = td.closest('tr');
   const selling = parseFloat(row.querySelector('td:nth-last-child(5)').textContent.replace(/[£,]/g, '')) || 0;
@@ -702,28 +729,38 @@ function adjustBuying(td, percentChange) {
   updateSummary();
 }
 
+
 function updateSummary() {
-  let totalBuyingMin = 0, totalBuyingMax = 0, totalSelling = 0, hasItems = false;
+  let totalBuying = 0;
+  let totalSelling = 0;
+  let hasItems = false;
 
   document.querySelectorAll('.item-table tbody tr:not(.placeholder)').forEach(row => {
     hasItems = true;
-    const qty = parseInt(row.querySelector('.qty-input')?.value) || 1;
-    const selling = parseFloat(row.querySelector('td:nth-last-child(5)')?.textContent.replace(/[£,]/g, '')) || 0;
-    const [buyMin, buyMax] = (row.querySelector('td:nth-last-child(4)')?.textContent || '0-0')
-      .replace(/[£,]/g, '').split('-').map(s => parseFloat(s.trim()) || 0);
 
-    totalSelling += selling * qty;
-    totalBuyingMin += buyMin * qty;
-    totalBuyingMax += buyMax * qty;
+    const qty = parseInt(row.querySelector('.qty-input')?.value) || 1;
+
+    // Suggested RRP (the "selling" price)
+    const rrp = parseFloat(row.querySelector('td:nth-last-child(8)')?.textContent.replace(/[£,]/g, '')) || 0;
+
+    // Starting Offer (the "buying" price)
+    const buy = parseFloat(row.querySelector('.starting-offer .buying-value')?.textContent.replace(/[£,]/g, '')) ||
+                parseFloat(row.querySelector('.starting-offer')?.textContent.replace(/[£,]/g, '')) ||
+                0;
+
+    totalSelling += rrp * qty;
+    totalBuying += buy * qty;
   });
 
   const summaryContainer = document.getElementById('summaryContainer');
   summaryContainer.style.display = hasItems ? 'block' : 'none';
+
   if (hasItems) {
-    document.getElementById('totalBuying').textContent = `£${totalBuyingMin.toFixed(2)} - £${totalBuyingMax.toFixed(2)}`;
+    document.getElementById('totalBuying').textContent = `£${totalBuying.toFixed(2)}`;
     document.getElementById('totalSelling').textContent = `£${totalSelling.toFixed(2)}`;
   }
 }
+
 
 async function scrapePricesForRow(row, selectedCompetitors = []) {
   const modelName = row.querySelector('td:nth-child(2)')?.textContent?.trim() || '';
