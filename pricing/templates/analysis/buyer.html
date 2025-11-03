@@ -417,55 +417,35 @@ const addItemBtn = document.getElementById('addItemBtn');
 const tablesContainer = document.getElementById('tablesContainer');
 const categories = {{ categories|safe }};
 
-// Hide summary if no items on initial load
-document.addEventListener('DOMContentLoaded', () => {
-  updateSummary();
-});
+document.addEventListener('DOMContentLoaded', updateSummary);
 
 function createCategoryTable(categoryId, categoryName, attributes) {
   if (categoryTables[categoryId]) return categoryTables[categoryId];
 
   const table = document.createElement('table');
   table.className = 'item-table';
-  const thead = document.createElement('thead');
-  const columns = [
-    'Subcategory', 
-    'Model', 
-    ...attributes.map(a => a.name), 
-    'Item Name', 
-    'CEX Price', 
-    'CEX - Discount',
-    'CashConverters Mode',
-    'CashGenerator Mode',
-    'Buying In Range', 
-    'Margin', 
-    'Quantity', 
-    'Actions'
-  ];  
-  thead.innerHTML = `<tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr>`;
+  const columns = ['Subcategory', 'Model', ...attributes.map(a => a.name), 'Item Name', 'CEX Price', 
+    'CEX - Discount', 'CashConverters Mode', 'CashGenerator Mode', 'Buying In Range', 'Margin', 'Quantity', 'Actions'];
   
-  const tbody = document.createElement('tbody');
-  tbody.innerHTML = `<tr class="placeholder"><td colspan="${columns.length}" style="text-align:center; color:#777;">No items added yet.</td></tr>`;
+  table.innerHTML = `
+    <thead><tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+    <tbody><tr class="placeholder"><td colspan="${columns.length}" style="text-align:center; color:#777;">No items added yet.</td></tr></tbody>
+  `;
   
-  table.append(thead, tbody);
-  tablesContainer.append(Object.assign(document.createElement('h3'), { textContent: categoryName }), table);
-  categoryTables[categoryId] = tbody;
-  return tbody;
+  tablesContainer.append(
+    Object.assign(document.createElement('h3'), { textContent: categoryName }),
+    table
+  );
+  
+  categoryTables[categoryId] = table.querySelector('tbody');
+  return categoryTables[categoryId];
 }
 
-// Attach quantity listeners to all rows
 function attachQuantityListeners() {
-  document.querySelectorAll('.item-table tbody tr').forEach(row => {
-    if (row.classList.contains('placeholder')) return;
-    const qtyInput = row.querySelector('.qty-input');
-    if (!qtyInput) return;
-
-    qtyInput.addEventListener('input', () => {
-      updateSummary();
-    });
+  document.querySelectorAll('.item-table tbody tr:not(.placeholder) .qty-input').forEach(input => {
+    input.addEventListener('input', updateSummary);
   });
 }
-
 
 async function addItemToTable() {
   const catId = modalItemCategory.value;
@@ -477,17 +457,14 @@ async function addItemToTable() {
   const tbody = createCategoryTable(catId, catName, currentAttributes);
   if (tbody.querySelector('.placeholder')) tbody.innerHTML = '';
 
-  // Collect attributes dynamically from the modal
   const attributesPayload = {};
   currentAttributes.forEach(attr => {
-      const input = attributesContainer.querySelector(`#attr_${attr.id}`);
-      attributesPayload[attr.name] = input ? input.value : '—'; // fallback if empty
+    const input = attributesContainer.querySelector(`#attr_${attr.id}`);
+    attributesPayload[attr.name] = input?.value || '—';
   });
 
-  console.log(attributesPayload)
+  console.log(attributesPayload);
 
-
-  // Generate item name via API
   let itemName = '—';
   try {
     const response = await fetch('/api/generate_search_term/', {
@@ -496,123 +473,72 @@ async function addItemToTable() {
         'Content-Type': 'application/json',
         'X-CSRFToken': getCookie('csrftoken')
       },
-      body: JSON.stringify({
-        category: catName,
-        model: model,
-        attributes: attributesPayload
-      })
+      body: JSON.stringify({ category: catName, model, attributes: attributesPayload })
     });
-
-    const result = await response.json();
-    itemName = result.data.generated_search_term;
+    itemName = (await response.json()).data.generated_search_term;
   } catch (error) {
     console.error("Error generating item name:", error);
   }
 
-  // Build row cells in correct order
+  const cells = [
+    `<td>${subcategory}</td>`,
+    `<td>${model}</td>`,
+    ...currentAttributes.map(attr => `<td>${attributesPayload[attr.name]}</td>`),
+    `<td>${itemName}</td>`,
+    `<td class="cex-price">—</td>`,
+    `<td>—</td>`,
+    `<td class="cc-mode">—</td>`,
+    `<td class="cg-mode">—</td>`,
+    `<td><div class="buying-range-cell">
+      <span class="buying-value">—</span>
+      <button class="qty-btn increase-buying">+</button>
+      <button class="qty-btn decrease-buying">−</button>
+    </div></td>`,
+    `<td>—</td>`,
+    `<td><input type="number" class="qty-input" min="1" value="1"></td>`
+  ];
+
   const row = document.createElement('tr');
-  const cells = [];
-
-  // 1️⃣ Subcategory & Model
-  cells.push(`<td>${subcategory}</td>`);
-  cells.push(`<td>${model}</td>`);
-
-  // 2️⃣ Attributes
-  currentAttributes.forEach(attr => {
-      const val = attributesPayload[attr.name]; // always use the freshly collected values
-      cells.push(`<td>${val}</td>`);
-  });
-
-  // 3️⃣ Item Name
-  cells.push(`<td>${itemName}</td>`);
-
-  // 4️⃣ CEX Price BEFORE Selling Price
-  cells.push(`<td class="cex-price">—</td>`);
-
-  // 5️⃣ Selling Price
-  cells.push(`<td>—</td>`);
-
-  // 6️⃣ CC Mode
-  cells.push(`<td class="cc-mode">—</td>`);
-
-  // 7️⃣ CG Mode
-  cells.push(`<td class="cg-mode">—</td>`);
-
-
-  // 8 Buying Range
-  cells.push(`
-    <td>
-      <div class="buying-range-cell">
-        <span class="buying-value">—</span>
-        <button class="qty-btn increase-buying">+</button>
-        <button class="qty-btn decrease-buying">−</button>
-      </div>
-    </td>
-  `);
-
-  // 9 Margin
-  cells.push(`<td>—</td>`);
-
-  // 10 Quantity
-  cells.push(`<td>${createQuantityCell().innerHTML}</td>`);
-
-  // Set innerHTML all at once
   row.innerHTML = cells.join('');
-
-  // Append actions cell
   row.appendChild(createActionsCell(row));
 
-  // Store metadata
-  row.dataset.categoryId = catId;
-  row.dataset.subcategoryId = modalItemSubcategory.value;
-  row.dataset.modelId = modalItemModel.value;
-  row.dataset.categoryName = catName;
-  row.dataset.attributes = JSON.stringify(attributesPayload);
-  row.dataset.itemName = itemName;
-  row.dataset.subcategoryName = subcategory;
+  Object.assign(row.dataset, {
+    categoryId: catId,
+    subcategoryId: modalItemSubcategory.value,
+    modelId: modalItemModel.value,
+    categoryName: catName,
+    attributes: JSON.stringify(attributesPayload),
+    itemName,
+    subcategoryName: subcategory
+  });
 
   tbody.appendChild(row);
   addItemModal.classList.remove('active');
-  resetModal(); // <-- ensures new inputs for next item
-
+  resetModal();
   attachQuantityListeners();
-}
-
-function createQuantityCell() {
-  const td = document.createElement('td');
-  td.innerHTML = `<input type="number" class="qty-input" min="1" value="1">`;
-  return td;
 }
 
 function createActionsCell(row) {
   const td = document.createElement('td');
-  const div = document.createElement('div');
-  div.className = 'actions-links';
-  div.innerHTML = `
+  td.innerHTML = `<div class="actions-links">
     <a href="#" class="details">Details</a>
     <a href="#" class="analyse">Analyse</a>
-    <a href="#" class="remove">Remove</a>`;
+    <a href="#" class="remove">Remove</a>
+  </div>`;
 
-  const [details, analyse, remove] = div.querySelectorAll('a');
+  const [details, analyse, remove] = td.querySelectorAll('a');
 
   details.onclick = e => {
     e.preventDefault();
-
-    const attributesPayload = JSON.parse(row.dataset.attributes || '{}');
-    const itemName = row.dataset.itemName || 'Unnamed Item';
-
     const query = new URLSearchParams({
       categoryId: row.dataset.categoryId,
       subcategoryId: row.dataset.subcategoryId,
       modelId: row.dataset.modelId,
-      attributes: JSON.stringify(attributesPayload),
-      name: itemName
+      attributes: row.dataset.attributes,
+      name: row.dataset.itemName || 'Unnamed Item'
     });
-
     window.open('/item-buying-analyser/?' + query.toString(), '_blank');
   };
-
-
 
   analyse.onclick = async e => {
     e.preventDefault();
@@ -622,162 +548,129 @@ function createActionsCell(row) {
   remove.onclick = e => {
     e.preventDefault();
     const tb = row.parentElement;
-    const colCount = tb.parentElement.querySelectorAll('th').length;
     row.remove();
     if (!tb.children.length) {
+      const colCount = tb.parentElement.querySelectorAll('th').length;
       tb.innerHTML = `<tr class="placeholder"><td colspan="${colCount}" style="text-align:center; color:#777;">No items added yet.</td></tr>`;
     }
     updateSummary();
   };
-    
-  td.append(div);
+
   return td;
 }
 
 async function handleAnalyseClick(row) {
-    const scrapeBtn = row.querySelector('.analyse');
-    scrapeBtn.disabled = true;
-    scrapeBtn.textContent = 'Checking...';
+  const scrapeBtn = row.querySelector('.analyse');
+  scrapeBtn.disabled = true;
+  scrapeBtn.textContent = 'Checking...';
 
-    const category = row.dataset.categoryName;
-    const model = row.querySelector('td:nth-child(2)')?.textContent?.trim() || '';
-    const attributes = JSON.parse(row.dataset.attributes || '{}');
+  const category = row.dataset.categoryName;
+  const model = row.querySelector('td:nth-child(2)')?.textContent?.trim() || '';
+  const attributes = JSON.parse(row.dataset.attributes || '{}');
 
-    try {
-        const checkResponse = await fetch('/api/check_existing_items/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({ category, model, attributes })
-        });
-
-        const checkResult = await checkResponse.json();
-        if (!checkResult.success) throw new Error(checkResult.error || 'Failed to check items');
-
-        if (checkResult.competitor_count > 0) {
-            // Existing data found
-            await updatePriceCells(row, category, model, attributes);
-        } else {
-            // No existing data → scrape
-            let scrapeSources = [];
-            const sourcesResponse = await fetch(`/api/get-scrape-sources-for-category/?category_name=${encodeURIComponent(category)}`);
-            const sourcesResult = await sourcesResponse.json();
-            if (Array.isArray(sourcesResult)) scrapeSources = sourcesResult;
-            if (scrapeSources.length === 0) scrapeSources = ['CEX', 'CashConverters', 'CashGenerator'];
-
-            await scrapePricesForRow(row, scrapeSources);
-
-            // After scraping, immediately calculate price
-            await updatePriceCells(row, category, model, attributes);
-        }
-
-    } catch (error) {
-        console.error('Analyse error:', error);
-        alert('Error during analysis: ' + error.message);
-    } finally {
-        scrapeBtn.disabled = false;
-        scrapeBtn.textContent = 'Analyse';
-    }
-}
-
-// Extracted function to update table cells
-async function updatePriceCells(row, category, model, attributes) {
-    const priceResponse = await fetch('/api/get-selling-and-buying-price/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-            category,
-            categoryId: row.dataset.categoryId,
-            subcategoryId: row.dataset.subcategoryId,
-            model,
-            modelId: row.dataset.modelId,
-            attributes
-        })
+  try {
+    const checkResponse = await fetch('/api/check_existing_items/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({ category, model, attributes })
     });
 
-    const priceResult = await priceResponse.json();
-    if (!priceResult.success) throw new Error(priceResult.error || 'Failed to get selling price');
+    const checkResult = await checkResponse.json();
+    if (!checkResult.success) throw new Error(checkResult.error || 'Failed to check items');
 
-    const priceCell = row.querySelector('td:nth-last-child(7)'); // Selling Price
-    const buyCell = row.querySelector('td:nth-last-child(4)');   // Buying Range
-    const marginCell = row.querySelector('td:nth-last-child(3)'); // Margin
-    const cexCell = row.querySelector('.cex-price');              // CEX Price
-
-
-    const sellingPrice = parseFloat(priceResult.selling_price);
-    const buyingStartPrice = parseFloat(priceResult.buying_start_price);
-    const buyingEndPrice = priceResult.buying_end_price;
-
-    const ccModeCell = row.querySelector('.cc-mode');
-    const cgModeCell = row.querySelector('.cg-mode');
-
-    if (priceResult.competitor_stats) {
-      const ccStats = priceResult.competitor_stats.CashConverters || {};
-        const cgStats = priceResult.competitor_stats.CashGenerator || {};
-
-        // CC Cell: Mode (x listings) + Range
-        if (ccStats.mode != null) {
-            ccModeCell.innerHTML = `
-                £${parseFloat(ccStats.mode).toFixed(2)} (${ccStats.frequency} listings)<br>
-                £${parseFloat(ccStats.low).toFixed(2)} - £${parseFloat(ccStats.high).toFixed(2)}
-            `;
-        } else {
-            ccModeCell.textContent = '—';
-        }
-
-        // CG Cell: Mode (x listings) + Range
-        if (cgStats.mode != null) {
-            cgModeCell.innerHTML = `
-                £${parseFloat(cgStats.mode).toFixed(2)} (${cgStats.frequency} listings)<br>
-                £${parseFloat(cgStats.low).toFixed(2)} - £${parseFloat(cgStats.high).toFixed(2)}
-            `;
-        } else {
-            cgModeCell.textContent = '—';
-        }
-
-    }
-
-    priceCell.textContent = `£${sellingPrice.toFixed(2)}`;
-    buyCell.querySelector('.buying-value').textContent = `£${buyingStartPrice.toFixed(2)} - £${buyingEndPrice.toFixed(2)}`;
-    buyCell.dataset.buyMin = buyingStartPrice;
-    buyCell.dataset.buyMax = buyingEndPrice;
-    attachBuyingAdjustListeners();
-
-    // CEX price link
-    if (priceResult.cex_selling_price && priceResult.cex_url) {
-        cexCell.innerHTML = `<a href="${priceResult.cex_url}" target="_blank">£${parseFloat(priceResult.cex_selling_price).toFixed(2)}</a>`;
+    if (checkResult.competitor_count > 0) {
+      await updatePriceCells(row, category, model, attributes);
     } else {
-        cexCell.textContent = '—';
+      let scrapeSources = [];
+      const sourcesResponse = await fetch(`/api/get-scrape-sources-for-category/?category_name=${encodeURIComponent(category)}`);
+      const sourcesResult = await sourcesResponse.json();
+      if (Array.isArray(sourcesResult)) scrapeSources = sourcesResult;
+      if (scrapeSources.length === 0) scrapeSources = ['CEX', 'CashConverters', 'CashGenerator'];
+
+      await scrapePricesForRow(row, scrapeSources);
+      await updatePriceCells(row, category, model, attributes);
     }
+  } catch (error) {
+    console.error('Analyse error:', error);
+    alert('Error during analysis: ' + error.message);
+  } finally {
+    scrapeBtn.disabled = false;
+    scrapeBtn.textContent = 'Analyse';
+  }
+}
 
-    const maxMargin = ((sellingPrice - buyingStartPrice) / sellingPrice) * 100;
-    const minMargin = ((sellingPrice - buyingEndPrice) / sellingPrice) * 100;
-    marginCell.textContent = `${maxMargin.toFixed(1)}% - ${minMargin.toFixed(1)}%`;
+async function updatePriceCells(row, category, model, attributes) {
+  const priceResponse = await fetch('/api/get-selling-and-buying-price/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify({
+      category,
+      categoryId: row.dataset.categoryId,
+      subcategoryId: row.dataset.subcategoryId,
+      model,
+      modelId: row.dataset.modelId,
+      attributes
+    })
+  });
 
-    updateSummary();
+  const priceResult = await priceResponse.json();
+  if (!priceResult.success) throw new Error(priceResult.error || 'Failed to get selling price');
 
+  const sellingPrice = parseFloat(priceResult.selling_price);
+  const buyingStartPrice = parseFloat(priceResult.buying_start_price);
+  const buyingEndPrice = priceResult.buying_end_price;
+
+  row.querySelector('td:nth-last-child(7)').textContent = `£${sellingPrice.toFixed(2)}`;
+  
+  const buyCell = row.querySelector('td:nth-last-child(4)');
+  buyCell.querySelector('.buying-value').textContent = `£${buyingStartPrice.toFixed(2)} - £${buyingEndPrice.toFixed(2)}`;
+  buyCell.dataset.buyMin = buyingStartPrice;
+  buyCell.dataset.buyMax = buyingEndPrice;
+
+  const cexCell = row.querySelector('.cex-price');
+  if (priceResult.cex_selling_price && priceResult.cex_url) {
+    cexCell.innerHTML = `<a href="${priceResult.cex_url}" target="_blank">£${parseFloat(priceResult.cex_selling_price).toFixed(2)}</a>`;
+  } else {
+    cexCell.textContent = '—';
+  }
+
+  if (priceResult.competitor_stats) {
+    const updateModeCell = (cell, stats) => {
+      if (stats.mode != null) {
+        cell.innerHTML = `£${parseFloat(stats.mode).toFixed(2)} (${stats.frequency} listings)<br>£${parseFloat(stats.low).toFixed(2)} - £${parseFloat(stats.high).toFixed(2)}`;
+      } else {
+        cell.textContent = '—';
+      }
+    };
+    updateModeCell(row.querySelector('.cc-mode'), priceResult.competitor_stats.CashConverters || {});
+    updateModeCell(row.querySelector('.cg-mode'), priceResult.competitor_stats.CashGenerator || {});
+  }
+
+  const maxMargin = ((sellingPrice - buyingStartPrice) / sellingPrice) * 100;
+  const minMargin = ((sellingPrice - buyingEndPrice) / sellingPrice) * 100;
+  row.querySelector('td:nth-last-child(3)').textContent = `${maxMargin.toFixed(1)}% - ${minMargin.toFixed(1)}%`;
+
+  attachBuyingAdjustListeners();
+  updateSummary();
 }
 
 function attachBuyingAdjustListeners() {
   document.querySelectorAll('.buying-range-cell').forEach(cell => {
-    const increaseBtn = cell.querySelector('.increase-buying');
-    const decreaseBtn = cell.querySelector('.decrease-buying');
     const td = cell.closest('td');
-
-    // Store initial range once if not already stored
     if (!td.dataset.baseBuyMin) {
       td.dataset.baseBuyMin = td.dataset.buyMin;
       td.dataset.baseBuyMax = td.dataset.buyMax;
-      td.dataset.adjustPercent = "0"; // current adjustment level
+      td.dataset.adjustPercent = "0";
     }
 
-    increaseBtn.onclick = () => adjustBuying(td, +5);
-    decreaseBtn.onclick = () => adjustBuying(td, -5);
+    cell.querySelector('.increase-buying').onclick = () => adjustBuying(td, 5);
+    cell.querySelector('.decrease-buying').onclick = () => adjustBuying(td, -5);
   });
 }
 
@@ -786,11 +679,9 @@ function adjustBuying(td, percentChange) {
   const baseMax = parseFloat(td.dataset.baseBuyMax);
   let currentAdjust = parseFloat(td.dataset.adjustPercent) || 0;
 
-  // Update adjustment percentage (but clamp to reasonable range)
   currentAdjust = Math.min(Math.max(currentAdjust + percentChange, -50), 50);
   td.dataset.adjustPercent = currentAdjust;
 
-  // Calculate new prices relative to base values
   const factor = 1 + currentAdjust / 100;
   const newMin = baseMin * factor;
   const newMax = baseMax * factor;
@@ -799,44 +690,27 @@ function adjustBuying(td, percentChange) {
   td.dataset.buyMax = newMax;
   td.querySelector('.buying-value').textContent = `£${newMin.toFixed(2)} - £${newMax.toFixed(2)}`;
 
-  // Update margin and summary
   const row = td.closest('tr');
-  const priceCell = row.querySelector('td:nth-last-child(5)');
-  const marginCell = row.querySelector('td:nth-last-child(3)');
-  const selling = parseFloat(priceCell.textContent.replace(/[£,]/g, '')) || 0;
+  const selling = parseFloat(row.querySelector('td:nth-last-child(5)').textContent.replace(/[£,]/g, '')) || 0;
 
   if (selling > 0) {
     const maxMargin = ((selling - newMin) / selling) * 100;
     const minMargin = ((selling - newMax) / selling) * 100;
-    marginCell.textContent = `${maxMargin.toFixed(1)}% - ${minMargin.toFixed(1)}%`;
+    row.querySelector('td:nth-last-child(3)').textContent = `${maxMargin.toFixed(1)}% - ${minMargin.toFixed(1)}%`;
   }
 
   updateSummary();
 }
 
-
 function updateSummary() {
-  let totalBuyingMin = 0;
-  let totalBuyingMax = 0;
-  let totalSelling = 0;
-  let hasItems = false;
+  let totalBuyingMin = 0, totalBuyingMax = 0, totalSelling = 0, hasItems = false;
 
-  document.querySelectorAll('.item-table tbody tr').forEach(row => {
-    if (row.classList.contains('placeholder')) return;
-
+  document.querySelectorAll('.item-table tbody tr:not(.placeholder)').forEach(row => {
     hasItems = true;
-
     const qty = parseInt(row.querySelector('.qty-input')?.value) || 1;
-    const sellingCell = row.querySelector('td:nth-last-child(5)');
-    const buyingCell = row.querySelector('td:nth-last-child(4)');
-
-    if (!sellingCell || !buyingCell) return;
-
-    const selling = parseFloat(sellingCell.textContent.replace(/[£,]/g, '')) || 0;
-    const [buyMin, buyMax] = buyingCell.textContent
-      .replace(/[£,]/g, '')
-      .split('-')
-      .map(s => parseFloat(s.trim()) || 0);
+    const selling = parseFloat(row.querySelector('td:nth-last-child(5)')?.textContent.replace(/[£,]/g, '')) || 0;
+    const [buyMin, buyMax] = (row.querySelector('td:nth-last-child(4)')?.textContent || '0-0')
+      .replace(/[£,]/g, '').split('-').map(s => parseFloat(s.trim()) || 0);
 
     totalSelling += selling * qty;
     totalBuyingMin += buyMin * qty;
@@ -844,25 +718,20 @@ function updateSummary() {
   });
 
   const summaryContainer = document.getElementById('summaryContainer');
+  summaryContainer.style.display = hasItems ? 'block' : 'none';
   if (hasItems) {
-    summaryContainer.style.display = 'block';
     document.getElementById('totalBuying').textContent = `£${totalBuyingMin.toFixed(2)} - £${totalBuyingMax.toFixed(2)}`;
     document.getElementById('totalSelling').textContent = `£${totalSelling.toFixed(2)}`;
-  } else {
-    summaryContainer.style.display = 'none';
   }
 }
-
 
 async function scrapePricesForRow(row, selectedCompetitors = []) {
   const modelName = row.querySelector('td:nth-child(2)')?.textContent?.trim() || '';
   const rawAttributes = JSON.parse(row.dataset.attributes || '{}');
   
-  // Normalize attribute keys
   const attributes = {};
   Object.entries(rawAttributes).forEach(([key, value]) => {
-    const normalizedKey = key.toLowerCase().replace(/\s+/g, '_');
-    attributes[normalizedKey] = value || '';
+    attributes[key.toLowerCase().replace(/\s+/g, '_')] = value || '';
   });
 
   const itemName = row.dataset.itemName || 'Unnamed Item';
@@ -879,7 +748,7 @@ async function scrapePricesForRow(row, selectedCompetitors = []) {
         category: row.dataset.categoryName,
         subcategory: row.dataset.subcategoryName,
         model: modelName,
-        attributes: attributes
+        attributes
       }
     });
 
@@ -898,14 +767,12 @@ async function scrapePricesForRow(row, selectedCompetitors = []) {
         item_name: itemName,
         category: parseInt(row.dataset.categoryId),
         item_model: parseInt(row.dataset.modelId),
-        attributes: attributes,
+        attributes,
         results: response.results
       })
     });
     
     console.log("Saved scraped data to database!");
-
-
   } catch (error) {
     console.error('Scraping error:', error);
     alert('Error running scraper: ' + error.message);
@@ -915,35 +782,24 @@ async function scrapePricesForRow(row, selectedCompetitors = []) {
   }
 }
 
-const analyseAllBtn = document.getElementById('analyseAllBtn');
+document.getElementById('analyseAllBtn').addEventListener('click', async function() {
+  this.disabled = true;
+  this.textContent = 'Analysing...';
 
-analyseAllBtn.addEventListener('click', async () => {
-    analyseAllBtn.disabled = true;
-    analyseAllBtn.textContent = 'Analysing...';
-
-    // Gather all rows that are not placeholder and haven't been analysed
-    const rowsToAnalyse = [];
-    document.querySelectorAll('.item-table tbody tr').forEach(row => {
-        if (row.classList.contains('placeholder')) return;
-
-        const buyCell = row.querySelector('td:nth-last-child(4)');
-        const sellingCell = row.querySelector('td:nth-last-child(7)');
-
-        // Check if selling price or buying range is empty → not analysed
-        if (!buyCell.textContent.includes('£') || !sellingCell.textContent.includes('£')) {
-            rowsToAnalyse.push(row);
-        }
+  const rowsToAnalyse = Array.from(document.querySelectorAll('.item-table tbody tr:not(.placeholder)'))
+    .filter(row => {
+      const buyCell = row.querySelector('td:nth-last-child(4)');
+      const sellingCell = row.querySelector('td:nth-last-child(7)');
+      return !buyCell.textContent.includes('£') || !sellingCell.textContent.includes('£');
     });
 
-    for (let row of rowsToAnalyse) {
-        await handleAnalyseClick(row);
-    }
+  for (let row of rowsToAnalyse) {
+    await handleAnalyseClick(row);
+  }
 
-    analyseAllBtn.disabled = false;
-    analyseAllBtn.textContent = 'Analyse All';
+  this.disabled = false;
+  this.textContent = 'Analyse All';
 });
-
-
 </script>
 
 {% load static %}
