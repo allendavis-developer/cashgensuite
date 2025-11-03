@@ -435,15 +435,21 @@ function createCategoryTable(categoryId, categoryName, attributes) {
   const table = document.createElement('table');
   table.className = 'item-table';
   const columns = [
-  'Subcategory', 'Model', 
-  ...attributes.map(a => a.name),
-  'Item Name', 'CEX Price', 'Suggested RRP',
-  'CashConverters Mode', 'CashGenerator Mode',
-  'Current Offer', 'CEX Offer', // <-- new columns
-  'Margin', 'Quantity', 'Actions'
-];
+    'Quantity',
+    'Subcategory',
+    'Model',
+    ...attributes.map(a => a.name),
+    'CashConverters Mode',
+    'CashGenerator Mode',
+    'CEX Price',
+    'Suggested RRP',
+    'CEX Cash Offer',
+    'Current Offer (+/−)',
+    'Margin',
+    'Actions'
+  ];
 
-  
+
   table.innerHTML = `
     <thead><tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr></thead>
     <tbody><tr class="placeholder"><td colspan="${columns.length}" style="text-align:center; color:#777;">No items added yet.</td></tr></tbody>
@@ -498,25 +504,25 @@ async function addItemToTable() {
   }
 
   const cells = [
+    `<td><input type="number" class="qty-input" min="1" value="1"></td>`,
     `<td>${subcategory}</td>`,
     `<td>${model}</td>`,
     ...currentAttributes.map(attr => `<td>${attributesPayload[attr.name]}</td>`),
-    `<td>${itemName}</td>`,
-    `<td class="cex-price">—</td>`,
-    `<td>—</td>`,
     `<td class="cc-mode">—</td>`,
     `<td class="cg-mode">—</td>`,
+    `<td class="cex-price">—</td>`,
+    `<td class="suggested-rrp">—</td>`,
+    `<td class="cex-offer">—</td>`,
     `<td class="starting-offer">
-      <div class="buying-range-cell">
-        <button class="qty-btn decrease-buying">−</button>
-        <span class="buying-value">—</span>
-        <button class="qty-btn increase-buying">+</button>
-      </div>
+        <div class="buying-range-cell">
+          <button class="qty-btn decrease-buying">−</button>
+          <span class="buying-value">—</span>
+          <button class="qty-btn increase-buying">+</button>
+        </div>
     </td>`,
-    `<td class="cex-offer">—</td>`,       // new
-    `<td>—</td>`,
-    `<td><input type="number" class="qty-input" min="1" value="1"></td>`
+    `<td class="margin">—</td>`
   ];
+
 
   const row = document.createElement('tr');
   row.innerHTML = cells.join('');
@@ -585,7 +591,7 @@ async function handleAnalyseClick(row) {
   scrapeBtn.textContent = 'Checking...';
 
   const category = row.dataset.categoryName;
-  const model = row.querySelector('td:nth-child(2)')?.textContent?.trim() || '';
+  const model = row.querySelector('td:nth-child(3)')?.textContent?.trim() || '';
   const attributes = JSON.parse(row.dataset.attributes || '{}');
 
   try {
@@ -644,33 +650,31 @@ async function updatePriceCells(row, category, model, attributes) {
 
   const sellingPrice = parseFloat(priceResult.selling_price);
   const buyingStartPrice = parseFloat(priceResult.buying_start_price);
-  const buyingEndPrice = priceResult.buying_end_price;
+  const buyingEndPrice = parseFloat(priceResult.buying_end_price);
 
-  row.querySelector('td:nth-last-child(8)').textContent = `£${sellingPrice.toFixed(2)}`;
-  
+  // Suggested RRP
+  row.querySelector('.suggested-rrp').textContent = `£${sellingPrice.toFixed(2)}`;
+
+  // CEX offer
   const cexOfferCell = row.querySelector('.cex-offer');
-  
-  const startingOfferCell = row.querySelector('.starting-offer');
-  const buyVal = startingOfferCell.querySelector('.buying-value');
-  const decreaseBtn = startingOfferCell.querySelector('.decrease-buying');
-  const increaseBtn = startingOfferCell.querySelector('.increase-buying');
-
-  buyVal.textContent = `£${buyingStartPrice.toFixed(2)}`;
-  startingOfferCell.dataset.buyMin = buyingStartPrice;
-  startingOfferCell.dataset.baseBuyMin = buyingStartPrice;
-  startingOfferCell.dataset.adjustPercent = "0";
-
   cexOfferCell.textContent = `£${buyingEndPrice.toFixed(2)}`;
   cexOfferCell.dataset.buyMax = buyingEndPrice;
 
-  // Attach button logic right here
+  // Starting offer (+/-)
+  const startingOfferCell = row.querySelector('.starting-offer');
+  const buyVal = startingOfferCell.querySelector('.buying-value');
+  buyVal.textContent = `£${buyingStartPrice.toFixed(2)}`;
+  startingOfferCell.dataset.buyMin = buyingStartPrice;
+  startingOfferCell.dataset.baseBuyMin = buyingStartPrice;
+  startingOfferCell.dataset.baseBuyMax = buyingEndPrice;
+  startingOfferCell.dataset.adjustPercent = "0";
+
+  const decreaseBtn = startingOfferCell.querySelector('.decrease-buying');
+  const increaseBtn = startingOfferCell.querySelector('.increase-buying');
   decreaseBtn.onclick = () => adjustBuying(startingOfferCell, -5);
   increaseBtn.onclick = () => adjustBuying(startingOfferCell, 5);
 
-  startingOfferCell.dataset.buyMin = buyingStartPrice;
-  cexOfferCell.dataset.buyMax = buyingEndPrice;
-
-
+  // CEX price link
   const cexCell = row.querySelector('.cex-price');
   if (priceResult.cex_selling_price && priceResult.cex_url) {
     cexCell.innerHTML = `<a href="${priceResult.cex_url}" target="_blank">£${parseFloat(priceResult.cex_selling_price).toFixed(2)}</a>`;
@@ -678,6 +682,7 @@ async function updatePriceCells(row, category, model, attributes) {
     cexCell.textContent = '—';
   }
 
+  // Competitor stats
   if (priceResult.competitor_stats) {
     const updateModeCell = (cell, stats) => {
       if (stats.mode != null) {
@@ -690,11 +695,11 @@ async function updatePriceCells(row, category, model, attributes) {
     updateModeCell(row.querySelector('.cg-mode'), priceResult.competitor_stats.CashGenerator || {});
   }
 
+  // Margin
   const margin = sellingPrice > 0
-  ? ((sellingPrice - buyingStartPrice) / sellingPrice) * 100
-  : 0;
-
-  row.querySelector('td:nth-last-child(3)').textContent = `${margin.toFixed(1)}%`;
+    ? ((sellingPrice - buyingStartPrice) / sellingPrice) * 100
+    : 0;
+  row.querySelector('.margin').textContent = `${margin.toFixed(1)}%`;
 
   updateSummary();
 }
@@ -737,24 +742,15 @@ function updateSummary() {
 
   document.querySelectorAll('.item-table tbody tr:not(.placeholder)').forEach(row => {
     hasItems = true;
-
     const qty = parseInt(row.querySelector('.qty-input')?.value) || 1;
-
-    // Suggested RRP (the "selling" price)
-    const rrp = parseFloat(row.querySelector('td:nth-last-child(8)')?.textContent.replace(/[£,]/g, '')) || 0;
-
-    // Starting Offer (the "buying" price)
-    const buy = parseFloat(row.querySelector('.starting-offer .buying-value')?.textContent.replace(/[£,]/g, '')) ||
-                parseFloat(row.querySelector('.starting-offer')?.textContent.replace(/[£,]/g, '')) ||
-                0;
-
+    const rrp = parseFloat(row.querySelector('.suggested-rrp')?.textContent.replace(/[£,]/g, '')) || 0;
+    const buy = parseFloat(row.querySelector('.starting-offer .buying-value')?.textContent.replace(/[£,]/g, '')) || 0;
     totalSelling += rrp * qty;
     totalBuying += buy * qty;
   });
 
   const summaryContainer = document.getElementById('summaryContainer');
   summaryContainer.style.display = hasItems ? 'block' : 'none';
-
   if (hasItems) {
     document.getElementById('totalBuying').textContent = `£${totalBuying.toFixed(2)}`;
     document.getElementById('totalSelling').textContent = `£${totalSelling.toFixed(2)}`;
@@ -762,8 +758,9 @@ function updateSummary() {
 }
 
 
+
 async function scrapePricesForRow(row, selectedCompetitors = []) {
-  const modelName = row.querySelector('td:nth-child(2)')?.textContent?.trim() || '';
+  const modelName = row.querySelector('td:nth-child(3)')?.textContent?.trim() || '';
   const rawAttributes = JSON.parse(row.dataset.attributes || '{}');
   
   const attributes = {};
@@ -825,8 +822,8 @@ document.getElementById('analyseAllBtn').addEventListener('click', async functio
 
   const rowsToAnalyse = Array.from(document.querySelectorAll('.item-table tbody tr:not(.placeholder)'))
     .filter(row => {
-      const buyCell = row.querySelector('td:nth-last-child(4)');
-      const sellingCell = row.querySelector('td:nth-last-child(7)');
+      const buyCell = row.querySelector('td:nth-last-child(3)');
+      const sellingCell = row.querySelector('td:nth-last-child(5)');
       return !buyCell.textContent.includes('£') || !sellingCell.textContent.includes('£');
     });
 
