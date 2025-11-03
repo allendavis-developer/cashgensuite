@@ -25,7 +25,6 @@ from pricing.models import (
 import json, traceback, re
 from decimal import Decimal, InvalidOperation
 
-from pricing.utils.ai_utils import client
 from pricing.utils.ai_utils import call_gemini_sync, generate_price_analysis, generate_bulk_price_analysis
 from pricing.utils.competitor_utils import get_competitor_data
 from pricing.utils.analysis_utils import process_item_analysis, save_analysis_to_db
