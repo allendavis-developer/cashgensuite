@@ -62,6 +62,7 @@ def check_existing_items(request):
     try:
         data = json.loads(request.body)
         category = data.get("category")
+        subcategory = data.get("subcategory")
         model = data.get("model")
         attributes = data.get("attributes", {})
 
@@ -69,8 +70,7 @@ def check_existing_items(request):
             return JsonResponse({"success": False, "error": "Category and model are required."})
 
         # Build search term
-        search_term = build_search_term(model, category, attributes)
-
+        search_term = build_search_term(model, category, subcategory, attributes)
 
         # Get competitor data
         competitor_data = get_competitor_data(search_term, include_url=True)
@@ -242,13 +242,14 @@ def get_selling_and_buying_price(request):
         model_id = data.get("modelId")
         model = data.get("model")
         category = data.get("category")
+        subcategory = data.get("subcategory")
         attributes = data.get("attributes", {})
 
         if not category or not model:
             return JsonResponse({"success": False, "error": "Category and model are required."})
 
         # Build search term and get market item
-        search_term = build_search_term(model, category, attributes)
+        search_term = build_search_term(model, category, subcategory, attributes)
         market_item = get_market_item(search_term)
         print("Searching for:", search_term, "Found:", market_item)
 
@@ -721,6 +722,7 @@ def generate_search_term(request):
         try:
             data = json.loads(request.body)
             category = data.get("category")
+            subcategory = data.get("subcategory") 
             model = data.get("model")
             attributes = data.get("attributes", {})
 
@@ -728,7 +730,7 @@ def generate_search_term(request):
                 return JsonResponse({"success": False, "error": "Category and model are required."}, status=400)
 
             # Build the search term - FIXED: model is the item_name
-            search_term = build_search_term(model, category, attributes)  # ← CHANGED ORDER
+            search_term = build_search_term(model, category, subcategory, attributes)  # ← CHANGED ORDER
             
             print("Model (item_name):", model)
             print("Category:", category)

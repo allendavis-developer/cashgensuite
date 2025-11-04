@@ -496,7 +496,7 @@ async function addItemToTable() {
         'Content-Type': 'application/json',
         'X-CSRFToken': getCookie('csrftoken')
       },
-      body: JSON.stringify({ category: catName, model, attributes: attributesPayload })
+      body: JSON.stringify({ category: catName, subcategory, model, attributes: attributesPayload })
     });
     itemName = (await response.json()).data.generated_search_term;
   } catch (error) {
@@ -591,6 +591,8 @@ async function handleAnalyseClick(row) {
   scrapeBtn.textContent = 'Checking...';
 
   const category = row.dataset.categoryName;
+  const subcategory = row.dataset.subcategoryName;
+
   const model = row.querySelector('td:nth-child(3)')?.textContent?.trim() || '';
   const attributes = JSON.parse(row.dataset.attributes || '{}');
 
@@ -601,7 +603,7 @@ async function handleAnalyseClick(row) {
         'Content-Type': 'application/json',
         'X-CSRFToken': getCookie('csrftoken')
       },
-      body: JSON.stringify({ category, model, attributes })
+      body: JSON.stringify({ category, subcategory: subcategory, model, attributes })
     });
 
     const checkResult = await checkResponse.json();
@@ -639,6 +641,7 @@ async function updatePriceCells(row, category, model, attributes) {
       category,
       categoryId: row.dataset.categoryId,
       subcategoryId: row.dataset.subcategoryId,
+      subcategory: row.dataset.subcategoryName,
       model,
       modelId: row.dataset.modelId,
       attributes
