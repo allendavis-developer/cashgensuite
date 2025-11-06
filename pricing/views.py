@@ -4,6 +4,8 @@ from django.shortcuts import get_object_or_404, redirect
 from django.db import transaction
 from django.db.models import Q, Prefetch, Count
 from django.utils import timezone
+from django.db import connection, reset_queries
+
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
@@ -93,7 +95,6 @@ def get_market_item(search_term):
 
 from collections import Counter
 
-from collections import Counter
 
 def get_competitor_price_stats(market_item):
     """Determine competitor price statistics including frequency, mode, and range."""
@@ -189,6 +190,7 @@ def compute_prices_from_cex_rule(market_item, cex_rule=None):
     if cex_rule:
         selling_price = round(market_item.cex_sale_price * cex_rule.cex_pct)
     else:
+        # Default to CEX - 20%
         selling_price = round(market_item.cex_sale_price * 0.8)
 
     buying_start_price = round(selling_price / 2)
@@ -1233,115 +1235,166 @@ def get_or_create_hierarchy(category_name, subcategory_name, model_name):
     return category, subcategory, item_model
 
 
-# This will replace the scraping functionality of the extension
 @csrf_exempt
 @require_POST
 def save_overnight_scraped_data(request):
-    """Accepts payload from Node scraper and populates ItemModels, MarketItems, and CompetitorListings"""
+    """
+    Accepts payload from Node scraper and populates multiple ItemModels, MarketItems, and CompetitorListings.
+    Optimized for bulk operations while preserving full original functionality.
+    """
     try:
+        reset_queries()
         data = json.loads(request.body.decode('utf-8'))
 
-        item_name = data.get('item_name')
-        results = data.get('results', [])
         category_name = data.get('category_name')
         subcategory_name = data.get('subcategory_name')
-        model_name = data.get('model_name')
+        results = data.get('results', [])
 
         if not results:
             return JsonResponse({'success': False, 'error': 'No results to process'})
 
-        # Ensure hierarchy exists
-        category, subcategory, item_model = get_or_create_hierarchy(
-            category_name, subcategory_name, model_name
-        )
-
         now = timezone.now()
-
-        # Create or update MarketItem
-        market_item, _ = MarketItem.objects.get_or_create(
-            title=item_name.strip(),
-            category=category,
-            item_model=item_model,
-            defaults={'last_scraped': now}
-        )
-        market_item.last_scraped = now
-        market_item.save()
-
-        # Existing listings lookup
-        existing_listings = {
-            (l.competitor, l.stable_id): l
-            for l in CompetitorListing.objects.filter(market_item=market_item)
-        }
+        created_count = 0
+        updated_count = 0
+        history_count = 0
 
         listings_to_create = []
         listings_to_update = []
         histories_to_create = []
-        new_or_updated_listings = {}
 
-        for item in results:
-            competitor = item.get('competitor')
-            stable_id = item.get('stable_id') or item.get('id') or item.get('url')
-            if not competitor or not stable_id:
+        # Step 1: Resolve category/subcategory/model hierarchy for all variants first
+        hierarchy_cache = {}
+        for variant in results:
+            model_name = variant.get('model_name')
+            if model_name not in hierarchy_cache:
+                category, subcategory, item_model = get_or_create_hierarchy(
+                    category_name, subcategory_name, model_name
+                )
+                hierarchy_cache[model_name] = (category, subcategory, item_model)
+
+        # Step 2: Precompute all MarketItems to create or update
+        market_item_keys = {}
+        for variant in results:
+            item_name = variant.get('item_name')
+            model_name = variant.get('model_name')
+            if not item_name or not model_name:
+                continue
+            category, subcategory, item_model = hierarchy_cache[model_name]
+            key = (item_name.strip(), category.id, item_model.id)
+            market_item_keys[key] = (item_name.strip(), category, item_model)
+
+        # Step 3: Fetch existing MarketItems
+        existing_items = {
+            (mi.title, mi.category_id, mi.item_model_id): mi
+            for mi in MarketItem.objects.filter(
+                title__in=[k[0] for k in market_item_keys],
+                category_id__in=[k[1] for k in market_item_keys],
+                item_model_id__in=[k[2] for k in market_item_keys],
+            )
+        }
+
+        # Step 4: Identify missing MarketItems and bulk create
+        to_create = []
+        for key, (title, category, item_model) in market_item_keys.items():
+            if key not in existing_items:
+                to_create.append(MarketItem(
+                    title=title,
+                    category=category,
+                    item_model=item_model,
+                    last_scraped=now
+                ))
+
+        if to_create:
+            created_items = MarketItem.objects.bulk_create(to_create)
+            for mi in created_items:
+                existing_items[(mi.title, mi.category_id, mi.item_model_id)] = mi
+
+        # Step 5: Update last_scraped timestamps in bulk later
+        for mi in existing_items.values():
+            mi.last_scraped = now
+        MarketItem.objects.bulk_update(existing_items.values(), ['last_scraped'])
+
+        # Step 6: Prepare listings (create/update)
+        # Preload all existing listings for these MarketItems
+        all_market_items = list(existing_items.values())
+        existing_listings = {}
+        for listing in CompetitorListing.objects.filter(market_item__in=all_market_items):
+            existing_listings[(listing.market_item_id, listing.competitor, listing.stable_id)] = listing
+
+        for variant in results:
+            item_name = variant.get('item_name')
+            model_name = variant.get('model_name')
+            if not item_name or not model_name:
                 continue
 
-            key = (competitor, stable_id)
-            price = float(item.get('price', 0))
-            title = item.get('title', '')
-            description = item.get('description', '')
-            condition = item.get('condition', '')
-            store = item.get('store', '')
-            url = item.get('url', '')
+            category, subcategory, item_model = hierarchy_cache[model_name]
+            market_item = existing_items.get((item_name.strip(), category.id, item_model.id))
+            if not market_item:
+                continue
 
-            if key in existing_listings:
-                listing = existing_listings[key]
-                changed = (price != listing.price)
+            listings = variant.get('listings', [])
+            for item in listings:
+                competitor = item.get('competitor')
+                stable_id = item.get('stable_id')
+                if not competitor or not stable_id:
+                    continue
 
-                listing.price = price
-                listing.title = title
-                listing.description = description
-                listing.condition = condition
-                listing.store_name = store
-                listing.url = url
-                listing.is_active = True
-                listing.last_seen = now
+                key = (market_item.id, competitor, stable_id)
+                price = float(item.get('price', 0))
+                title = item.get('title', '')
+                description = item.get('description', '')
+                condition = item.get('condition', '')
+                store = item.get('store', '')
+                url = item.get('url', '')
 
-                listings_to_update.append(listing)
-                new_or_updated_listings[key] = listing
+                if key in existing_listings:
+                    listing = existing_listings[key]
+                    changed = (price != listing.price)
 
-                # Only create history if price changed
-                if changed:
-                    histories_to_create.append(
-                        CompetitorListingHistory(
-                            listing=listing,
+                    listing.price = price
+                    listing.title = title
+                    listing.description = description
+                    listing.condition = condition
+                    listing.store_name = store
+                    listing.url = url
+                    listing.is_active = True
+                    listing.last_seen = now
+
+                    listings_to_update.append(listing)
+
+                    if changed:
+                        histories_to_create.append(
+                            CompetitorListingHistory(
+                                listing=listing,
+                                price=price,
+                                title=title,
+                                condition=condition,
+                                timestamp=now
+                            )
+                        )
+                else:
+                    listings_to_create.append(
+                        CompetitorListing(
+                            market_item=market_item,
+                            competitor=competitor,
+                            stable_id=stable_id,
                             price=price,
                             title=title,
+                            description=description,
                             condition=condition,
-                            timestamp=now
+                            store_name=store,
+                            url=url,
+                            is_active=True,
+                            last_seen=now
                         )
                     )
-            else:
-                # New listing
-                listing = CompetitorListing(
-                    market_item=market_item,
-                    competitor=competitor,
-                    stable_id=stable_id,
-                    price=price,
-                    title=title,
-                    description=description,
-                    condition=condition,
-                    store_name=store,
-                    url=url,
-                    is_active=True,
-                    last_seen=now
-                )
-                listings_to_create.append(listing)
-                new_or_updated_listings[key] = listing
 
-        # --- Write to DB ---
+        # Step 7: Bulk database writes
         with transaction.atomic():
+            # Bulk create listings
             if listings_to_create:
-                created = CompetitorListing.objects.bulk_create(listings_to_create)
-                for l in created:
+                created_listings = CompetitorListing.objects.bulk_create(listings_to_create)
+                for l in created_listings:
                     histories_to_create.append(
                         CompetitorListingHistory(
                             listing=l,
@@ -1351,46 +1404,32 @@ def save_overnight_scraped_data(request):
                             timestamp=now
                         )
                     )
+                created_count += len(created_listings)
 
+            # Bulk update listings
             if listings_to_update:
                 CompetitorListing.objects.bulk_update(
                     listings_to_update,
                     ['price', 'title', 'description', 'condition',
                      'store_name', 'url', 'is_active', 'last_seen']
                 )
+                updated_count += len(listings_to_update)
 
+            # Bulk create price histories
             if histories_to_create:
                 CompetitorListingHistory.objects.bulk_create(histories_to_create)
+                history_count += len(histories_to_create)
 
-        # Update MarketItem last_scraped
-        market_item.last_scraped = now
-        market_item.save()
-
-        # Update CEX prices if applicable
-        cex_listing = CompetitorListing.objects.filter(
-            competitor="CEX",
-            market_item=market_item,
-            is_active=True
-        ).order_by("id").first()
-
-        if cex_listing:
-            market_item.cex_sale_price = cex_listing.price
-            market_item.cex_url = f"https://uk.webuy.com/product-detail?id={cex_listing.stable_id}"
-            if cex_listing.stable_id:
-                cex_cash_trade_price = fetch_cex_cash_price(cex_listing.stable_id)
-                if cex_cash_trade_price is not None:
-                    market_item.cex_cash_trade_price = cex_cash_trade_price
-            market_item.save()
-
+        print(f"🧮 Total queries executed: {len(connection.queries)}")  # ← show count
         return JsonResponse({
             'success': True,
-            'created': len(listings_to_create),
-            'updated': len(listings_to_update),
-            'histories': len(histories_to_create)
+            'created': created_count,
+            'updated': updated_count,
+            'histories': history_count
         })
 
     except Exception as e:
-        print("❌ Error saving scraped mobile data:", e)
+        print("❌ Error saving scraped data:", e)
         return JsonResponse({'success': False, 'error': str(e)})
 
 

@@ -1,6 +1,6 @@
 CATEGORY_SEARCH_FORMAT = {
     "smartphones and mobile": ["item_name", "storage"],  
-    "games (discs & cartridges)": ["subcategory", "item_name"]
+    "games (discs/cartridges)": ["subcategory", "item_name"]
     # Add more categories here
 }
 
