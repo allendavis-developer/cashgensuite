@@ -1210,6 +1210,190 @@ def save_listing(request):
         return JsonResponse({"success": False, "error": str(e)}, status=400)
 
 
+def get_or_create_hierarchy(category_name, subcategory_name, model_name):
+    """Ensure Category, Subcategory, ItemModel exist"""
+    category, _ = Category.objects.get_or_create(
+        name__iexact=category_name.strip(),
+        defaults={'name': category_name.strip()}
+    )
+    subcategory, _ = Subcategory.objects.get_or_create(
+        name__iexact=subcategory_name.strip(),
+        defaults={'name': subcategory_name.strip(), 'category': category}
+    )
+    if subcategory.category != category:
+        subcategory.category = category
+        subcategory.save()
+
+    item_model, _ = ItemModel.objects.get_or_create(
+        subcategory=subcategory,
+        name__iexact=model_name.strip(),
+        defaults={'name': model_name.strip()}
+    )
+
+    return category, subcategory, item_model
+
+
+# This will replace the scraping functionality of the extension
+@csrf_exempt
+@require_POST
+def save_overnight_scraped_data(request):
+    """Accepts payload from Node scraper and populates ItemModels, MarketItems, and CompetitorListings"""
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+
+        item_name = data.get('item_name')
+        results = data.get('results', [])
+        category_name = data.get('category_name')
+        subcategory_name = data.get('subcategory_name')
+        model_name = data.get('model_name')
+
+        if not results:
+            return JsonResponse({'success': False, 'error': 'No results to process'})
+
+        # Ensure hierarchy exists
+        category, subcategory, item_model = get_or_create_hierarchy(
+            category_name, subcategory_name, model_name
+        )
+
+        now = timezone.now()
+
+        # Create or update MarketItem
+        market_item, _ = MarketItem.objects.get_or_create(
+            title=item_name.strip(),
+            category=category,
+            item_model=item_model,
+            defaults={'last_scraped': now}
+        )
+        market_item.last_scraped = now
+        market_item.save()
+
+        # Existing listings lookup
+        existing_listings = {
+            (l.competitor, l.stable_id): l
+            for l in CompetitorListing.objects.filter(market_item=market_item)
+        }
+
+        listings_to_create = []
+        listings_to_update = []
+        histories_to_create = []
+        new_or_updated_listings = {}
+
+        for item in results:
+            competitor = item.get('competitor')
+            stable_id = item.get('stable_id') or item.get('id') or item.get('url')
+            if not competitor or not stable_id:
+                continue
+
+            key = (competitor, stable_id)
+            price = float(item.get('price', 0))
+            title = item.get('title', '')
+            description = item.get('description', '')
+            condition = item.get('condition', '')
+            store = item.get('store', '')
+            url = item.get('url', '')
+
+            if key in existing_listings:
+                listing = existing_listings[key]
+                changed = (price != listing.price)
+
+                listing.price = price
+                listing.title = title
+                listing.description = description
+                listing.condition = condition
+                listing.store_name = store
+                listing.url = url
+                listing.is_active = True
+                listing.last_seen = now
+
+                listings_to_update.append(listing)
+                new_or_updated_listings[key] = listing
+
+                # Only create history if price changed
+                if changed:
+                    histories_to_create.append(
+                        CompetitorListingHistory(
+                            listing=listing,
+                            price=price,
+                            title=title,
+                            condition=condition,
+                            timestamp=now
+                        )
+                    )
+            else:
+                # New listing
+                listing = CompetitorListing(
+                    market_item=market_item,
+                    competitor=competitor,
+                    stable_id=stable_id,
+                    price=price,
+                    title=title,
+                    description=description,
+                    condition=condition,
+                    store_name=store,
+                    url=url,
+                    is_active=True,
+                    last_seen=now
+                )
+                listings_to_create.append(listing)
+                new_or_updated_listings[key] = listing
+
+        # --- Write to DB ---
+        with transaction.atomic():
+            if listings_to_create:
+                created = CompetitorListing.objects.bulk_create(listings_to_create)
+                for l in created:
+                    histories_to_create.append(
+                        CompetitorListingHistory(
+                            listing=l,
+                            price=l.price,
+                            title=l.title,
+                            condition=l.condition,
+                            timestamp=now
+                        )
+                    )
+
+            if listings_to_update:
+                CompetitorListing.objects.bulk_update(
+                    listings_to_update,
+                    ['price', 'title', 'description', 'condition',
+                     'store_name', 'url', 'is_active', 'last_seen']
+                )
+
+            if histories_to_create:
+                CompetitorListingHistory.objects.bulk_create(histories_to_create)
+
+        # Update MarketItem last_scraped
+        market_item.last_scraped = now
+        market_item.save()
+
+        # Update CEX prices if applicable
+        cex_listing = CompetitorListing.objects.filter(
+            competitor="CEX",
+            market_item=market_item,
+            is_active=True
+        ).order_by("id").first()
+
+        if cex_listing:
+            market_item.cex_sale_price = cex_listing.price
+            market_item.cex_url = f"https://uk.webuy.com/product-detail?id={cex_listing.stable_id}"
+            if cex_listing.stable_id:
+                cex_cash_trade_price = fetch_cex_cash_price(cex_listing.stable_id)
+                if cex_cash_trade_price is not None:
+                    market_item.cex_cash_trade_price = cex_cash_trade_price
+            market_item.save()
+
+        return JsonResponse({
+            'success': True,
+            'created': len(listings_to_create),
+            'updated': len(listings_to_update),
+            'histories': len(histories_to_create)
+        })
+
+    except Exception as e:
+        print("❌ Error saving scraped mobile data:", e)
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
 def repricer_view(request):
     listings = (
         CompetitorListing.objects

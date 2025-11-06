@@ -128,6 +128,10 @@ class MarketItem(models.Model):
     cex_sale_price = models.FloatField(blank=True, null=True)
     cex_url = models.CharField(max_length=1048, blank=True, null=True)
 
+    class Meta:
+        unique_together = ('category', 'title')
+
+
     # Optional helper property for convenience
     @property
     def model(self):
