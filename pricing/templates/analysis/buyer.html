@@ -470,9 +470,33 @@ function attachQuantityListeners() {
   });
 }
 
+
+let lastSelections = {
+  category: null,
+  subcategory: null
+};
+
+// Global Enter key listener to open modal if not already active
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !addItemModal.classList.contains('active')) {
+    e.preventDefault(); // prevent default Enter behavior
+    resetModal();
+    addItemModal.classList.add('active');
+    populateCategories();
+    categoryTomSelect.focus(); // focus first input
+  }
+});
+
+
 async function addItemToTable() {
   const catId = modalItemCategory.value;
   if (!catId) return alert("Please select a category.");
+
+  
+  // Save last selections so that the modal can be preloaded with that later
+  lastSelections.category = modalItemCategory.value;
+  lastSelections.subcategory = modalItemSubcategory.value;
+
   
   const catName = modalItemCategory.options[modalItemCategory.selectedIndex]?.text;
   const subcategory = modalItemSubcategory.options[modalItemSubcategory.selectedIndex]?.text || '—';

@@ -9,6 +9,7 @@ const attributesContainer = document.getElementById('attributes-container');
 const categoryTables = {};
 let currentAttributes = [];
 let categoryTomSelect, subcategoryTomSelect, modelTomSelect;
+let attributeTomSelects = {}; // Store TomSelect instances for attributes
 
 // ========== Local Cache ==========
 const cache = {
@@ -17,6 +18,9 @@ const cache = {
   models: {},        // {categoryId_subcatId: [modelData]}
   attributes: {}     // {categoryId: [attrs]}
 };
+
+
+
 
 // ========== Initialize ==========
 document.addEventListener('DOMContentLoaded', async () => {
@@ -54,6 +58,13 @@ function initTomSelects() {
     create: false 
   });
 
+  [categoryTomSelect, subcategoryTomSelect, modelTomSelect].forEach(ts => {
+  ts.on('item_add', () => {
+    ts.control_input.value = ts.control_input.value.trim();
+  });
+});
+
+
   // Attach the "Add new model" behavior ONCE
   modelTomSelect.on('change', async (value) => {
     if (value === '__new__') {
@@ -65,7 +76,119 @@ function initTomSelects() {
     }
   });
 
-  
+  // Setup navigation after TomSelect initialization
+  setupTomSelectNavigation();
+}
+
+let isInitializing = false;
+
+function setupTomSelectNavigation() {
+  // Category -> Subcategory
+  categoryTomSelect.on('item_add', () => {
+    setTimeout(() => {
+      if (isInitializing) return;
+      
+      subcategoryTomSelect.focus();
+      subcategoryTomSelect.open();
+    }, 50);
+  });
+
+  // Subcategory -> Model
+  subcategoryTomSelect.on('item_add', () => {
+    setTimeout(() => {
+      if (isInitializing) return;
+
+      modelTomSelect.focus();
+      modelTomSelect.open();
+    }, 50);
+  });
+
+  // Model -> First attribute or Save
+  modelTomSelect.on('item_add', (value) => {
+    if (value === '__new__') return; // Don't navigate if adding new model
+    
+    setTimeout(() => {
+      if (currentAttributes.length > 0) {
+        const firstAttrTs = attributeTomSelects[currentAttributes[0].id];
+        if (firstAttrTs) {
+          firstAttrTs.focus();
+          firstAttrTs.open();
+        } else {
+          const firstAttrInput = document.getElementById(`attr_${currentAttributes[0].id}`);
+          if (firstAttrInput) {
+            firstAttrInput.focus();
+          }
+        }
+      } else {
+        saveItemBtn.focus();
+      }
+    }, 50);
+  });
+
+  // Handle Enter key in TomSelect dropdowns
+  [categoryTomSelect, subcategoryTomSelect, modelTomSelect].forEach((ts) => {
+    ts.on('dropdown_close', () => {
+      // When dropdown closes with a value selected, trigger item_add naturally
+    });
+  });
+
+  // Add keyboard handler for the control input
+  categoryTomSelect.control_input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && categoryTomSelect.getValue()) {
+      e.preventDefault();
+      categoryTomSelect.blur();
+    }
+  });
+
+  subcategoryTomSelect.control_input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && subcategoryTomSelect.getValue()) {
+      e.preventDefault();
+      subcategoryTomSelect.blur();
+    }
+  });
+
+  modelTomSelect.control_input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && modelTomSelect.getValue()) {
+      e.preventDefault();
+      modelTomSelect.blur();
+    }
+  });
+}
+
+function setupAttributeNavigation(attrId, attrIndex) {
+  const attrTs = attributeTomSelects[attrId];
+  if (!attrTs) return;
+
+  // Navigate to next attribute or save button
+  attrTs.on('item_add', () => {
+    setTimeout(() => {
+      if (attrIndex < currentAttributes.length - 1) {
+        // Move to next attribute
+        const nextAttr = currentAttributes[attrIndex + 1];
+        const nextTs = attributeTomSelects[nextAttr.id];
+        if (nextTs) {
+          nextTs.focus();
+          nextTs.open();
+        } else {
+          const nextInput = document.getElementById(`attr_${nextAttr.id}`);
+          if (nextInput) {
+            nextInput.focus();
+          }
+        }
+      } else {
+        // Last attribute, focus save button
+        saveItemBtn.focus();
+      }
+    }, 50);
+  });
+
+  // Handle Enter key
+  attrTs.control_input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && attrTs.getValue()) {
+      e.preventDefault();
+      attrTs.blur();
+    }
+  });
 }
 
 function validateModalInputs() {
@@ -90,13 +213,33 @@ function validateModalInputs() {
 
   // Validate dynamic attributes
   for (const attr of currentAttributes) {
-    const input = document.getElementById(`attr_${attr.id}`);
-    if (!input || input.value.trim() === '') {
+    const attrTs = attributeTomSelects[attr.id];
+    let value;
+    
+    if (attrTs) {
+      value = attrTs.getValue();
+    } else {
+      const input = document.getElementById(`attr_${attr.id}`);
+      value = input ? input.value.trim() : '';
+    }
+    
+    if (!value) {
       isValid = false;
       errorMessages.push(`Please fill the attribute: ${attr.label || attr.name}`);
-      input?.classList.add('input-error'); // optional: highlight empty fields
+      
+      if (attrTs) {
+        attrTs.wrapper.classList.add('input-error');
+      } else {
+        const input = document.getElementById(`attr_${attr.id}`);
+        input?.classList.add('input-error');
+      }
     } else {
-      input?.classList.remove('input-error'); // remove highlight if filled
+      if (attrTs) {
+        attrTs.wrapper.classList.remove('input-error');
+      } else {
+        const input = document.getElementById(`attr_${attr.id}`);
+        input?.classList.remove('input-error');
+      }
     }
   }
 
@@ -258,17 +401,71 @@ async function loadCategoryAttributes(categoryId) {
 
 
 function renderAttributes(attrs) {
-  attributesContainer.innerHTML = attrs.map(attr => `
+  // Destroy existing TomSelect instances
+  Object.values(attributeTomSelects).forEach(ts => {
+    if (ts && ts.destroy) {
+      ts.destroy();
+    }
+  });
+  attributeTomSelects = {};
+
+  attributesContainer.innerHTML = attrs.map((attr, index) => `
     <div class="input-group">
       <label>${attr.label || attr.name}</label>
       ${attr.field_type === 'select'
-        ? `<select id="attr_${attr.id}" class="input-field">
-            <option value="">-- Select ${attr.label || attr.name} --</option>
-            ${(attr.options || []).map(o => `<option value="${o}">${o}</option>`).join('')}
-          </select>`
+        ? `<select id="attr_${attr.id}" class="input-field"></select>`
         : `<input type="${attr.field_type === 'number' ? 'number' : 'text'}" id="attr_${attr.id}" class="input-field">`}
     </div>
   `).join('');
+
+  // Initialize TomSelect for select attributes
+  attrs.forEach((attr, index) => {
+    if (attr.field_type === 'select') {
+      const selectElement = document.getElementById(`attr_${attr.id}`);
+      if (selectElement) {
+        const ts = new TomSelect(`#attr_${attr.id}`, {
+          placeholder: `Select ${attr.label || attr.name}...`,
+          create: false,
+          options: (attr.options || []).map(opt => ({ value: opt, text: opt })),
+        });
+        
+        attributeTomSelects[attr.id] = ts;
+        setupAttributeNavigation(attr.id, index);
+      }
+    }
+  });
+
+  // Setup Enter key navigation for text/number inputs
+  attrs.forEach((attr, index) => {
+    if (attr.field_type !== 'select') {
+      const input = document.getElementById(`attr_${attr.id}`);
+      if (input) {
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            
+            if (index < attrs.length - 1) {
+              // Move to next attribute
+              const nextAttr = attrs[index + 1];
+              const nextTs = attributeTomSelects[nextAttr.id];
+              if (nextTs) {
+                nextTs.focus();
+                nextTs.open();
+              } else {
+                const nextInput = document.getElementById(`attr_${nextAttr.id}`);
+                if (nextInput) {
+                  nextInput.focus();
+                }
+              }
+            } else {
+              // Last attribute, click save
+              saveItemBtn.click();
+            }
+          }
+        });
+      }
+    }
+  });
 }
 
 // ========== UI & Event Handlers ==========
@@ -279,7 +476,15 @@ function resetModal() {
   modelTomSelect.clear();
   modelTomSelect.clearOptions();
   attributesContainer.innerHTML = '';
-  currentAttributes = []; 
+  currentAttributes = [];
+  
+  // Destroy attribute TomSelects
+  Object.values(attributeTomSelects).forEach(ts => {
+    if (ts && ts.destroy) {
+      ts.destroy();
+    }
+  });
+  attributeTomSelects = {};
 }
 
 addItemBtn.addEventListener('click', async () => {
@@ -287,7 +492,26 @@ addItemBtn.addEventListener('click', async () => {
   addItemModal.classList.add('active');
   populateCategories();
 
-  // Force load attributes if category is preselected
+  if (lastSelections.category) {
+      // Set initialization flag
+      isInitializing = true;
+
+    categoryTomSelect.setValue(lastSelections.category);
+    await fetchSubcategories(lastSelections.category);
+
+    if (lastSelections.subcategory) {
+        subcategoryTomSelect.setValue(String(lastSelections.subcategory), true);
+
+        await fetchModels();
+    }
+
+    modelTomSelect.focus(); // Focus model if last selections exist
+    modelTomSelect.open();
+  } else {
+    // No last category, focus category
+    categoryTomSelect.focus(); 
+  }
+
   const selectedCategory = categoryTomSelect.getValue();
   if (selectedCategory) {
       await loadCategoryAttributes(selectedCategory);
@@ -306,4 +530,12 @@ saveItemBtn.addEventListener('click', () => {
 
   // All inputs are valid, proceed to add the item
   addItemToTable();
+});
+
+// Handle Enter on Save button
+saveItemBtn.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    saveItemBtn.click();
+  }
 });
