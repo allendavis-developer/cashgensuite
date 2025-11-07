@@ -183,26 +183,60 @@ def fetch_cex_cash_price(stable_id):
 
 def compute_prices_from_cex_rule(market_item, cex_rule=None):
     """
-    Compute selling and buying prices from MarketItem using the cex_pct rule.
-    Compute buying range: start = 50% of selling, end = CeX cash price if available, else 50% of selling.
-    If no cex_rule is provided, use 20% less than CeX sale price.
+    Fetch latest CEX prices for a given MarketItem and compute selling and buying prices.
+    
+    Updates market_item.cex_sale_price, market_item.cex_cash_trade_price, and market_item.cex_url.
+    
+    Selling price:
+        - If cex_rule provided: cex_sale_price * cex_rule.cex_pct
+        - Otherwise: cex_sale_price * 0.8 (default 20% discount)
+    
+    Buying price range:
+        - start = 50% of selling price
+        - end = CeX cash price if available, else 50% of selling price
+        - Ensure start <= end
     """
+    from django.db import transaction
+
+    # --- Fetch first active CEX listing for this item ---
+    cex_listing = CompetitorListing.objects.filter(
+        competitor="CEX",
+        market_item=market_item,
+        is_active=True
+    ).order_by("id").first()
+
+    if cex_listing:
+        # Always update the market_item fields
+        market_item.cex_sale_price = cex_listing.price
+        market_item.cex_url = f"https://uk.webuy.com/product-detail?id={cex_listing.stable_id}" if cex_listing.stable_id else None
+
+        # Fetch CEX cash trade price
+        cex_cash_trade_price = None
+        if cex_listing.stable_id:
+            try:
+                cex_cash_trade_price = fetch_cex_cash_price(cex_listing.stable_id)
+            except Exception as e:
+                print(f"⚠️ Failed to fetch CEX cash price for {cex_listing.stable_id}: {e}")
+        
+        market_item.cex_cash_trade_price = cex_cash_trade_price
+        market_item.save(update_fields=["cex_sale_price", "cex_cash_trade_price", "cex_url"])
+
+    # --- Compute selling price ---
+    sale_price = market_item.cex_sale_price or 0
     if cex_rule:
-        selling_price = round(market_item.cex_sale_price * cex_rule.cex_pct)
+        selling_price = round(sale_price * cex_rule.cex_pct)
     else:
-        # Default to CEX - 20%
-        selling_price = round(market_item.cex_sale_price * 0.8)
+        selling_price = round(sale_price * 0.8)
 
+    # --- Compute buying range ---
     buying_start_price = round(selling_price / 2)
-    buying_end_price = market_item.cex_cash_trade_price or round(selling_price * 0.5)
+    buying_end_price = market_item.cex_cash_trade_price or round(selling_price / 2)
 
-    # sometimes buying start price is greater than the cex price so this will that issue so lets just times cex price by 80%
     if buying_start_price > buying_end_price:
-        buying_start_price = round(buying_end_price * 0.8) 
+        buying_start_price = round(buying_end_price * 0.8)
 
-    cex_url = market_item.cex_url if market_item.cex_url else None
+    return selling_price, buying_start_price, buying_end_price, market_item.cex_cash_trade_price, market_item.cex_sale_price, market_item.cex_url
 
-    return selling_price, buying_start_price, buying_end_price, market_item.cex_cash_trade_price, market_item.cex_sale_price, cex_url
 
 
 
@@ -263,9 +297,6 @@ def get_selling_and_buying_price(request):
 
         # Get most specific CeX pricing rule
         cex_rule = get_most_specific_cex_rule(category_id, subcategory_id, model_id)
-
-        if not market_item.cex_sale_price:
-            return JsonResponse({"success": False, "error": "No CeX sale price available for this item."})
 
         # Compute final prices
         selling_price, buying_start, buying_end, cex_buying_price, cex_selling_price, cex_url = compute_prices_from_cex_rule(
@@ -520,25 +551,25 @@ def save_scraped_data(request):
         print(f"Created {len(listings_to_create)} listings, updated {len(listings_to_update)}, "
               f"added {len(histories_to_create)} histories")
 
-        # --- Fetch CeX cash price for the first active CEX listing ---
-        cex_listing = CompetitorListing.objects.filter(
-            competitor="CEX",
-            market_item=market_item,
-            is_active=True
-        ).order_by("id").first()
+        # # --- Fetch CeX cash price for the first active CEX listing ---
+        # cex_listing = CompetitorListing.objects.filter(
+        #     competitor="CEX",
+        #     market_item=market_item,
+        #     is_active=True
+        # ).order_by("id").first()
 
-        if cex_listing:
-            # Save the sale price from the first CEX listing
-            market_item.cex_sale_price = cex_listing.price
-            market_item.cex_url = f"https://uk.webuy.com/product-detail?id={cex_listing.stable_id}"
-            if cex_listing.stable_id:
-                cex_cash_trade_price = fetch_cex_cash_price(cex_listing.stable_id)
-                if cex_cash_trade_price is not None:
-                    market_item.cex_cash_trade_price = cex_cash_trade_price
-                    print(f"Updated market_item.cex_cash_trade_price to {cex_cash_trade_price}")
+        # if cex_listing:
+        #     # Save the sale price from the first CEX listing
+        #     market_item.cex_sale_price = cex_listing.price
+        #     market_item.cex_url = f"https://uk.webuy.com/product-detail?id={cex_listing.stable_id}"
+        #     if cex_listing.stable_id:
+        #         cex_cash_trade_price = fetch_cex_cash_price(cex_listing.stable_id)
+        #         if cex_cash_trade_price is not None:
+        #             market_item.cex_cash_trade_price = cex_cash_trade_price
+        #             print(f"Updated market_item.cex_cash_trade_price to {cex_cash_trade_price}")
 
-            market_item.save()
-            print(f"Updated market_item.cex_sale_price to {cex_listing.price}")
+        #     market_item.save()
+        #     print(f"Updated market_item.cex_sale_price to {cex_listing.price}")
 
 
         return JsonResponse({
@@ -1271,38 +1302,51 @@ def ensure_hierarchy(category_name, subcategory_name, results):
 
     return hierarchy_cache
 
+import time
+
 @csrf_exempt
 @require_POST
 def save_overnight_scraped_data(request):
-    """
-    Accepts payload from Node scraper and populates multiple ItemModels, MarketItems, and CompetitorListings.
-    Optimized for bulk operations while preserving full original functionality.
-    """
+    """Accepts payload from Node scraper and populates ItemModels, MarketItems, and CompetitorListings."""
+    start_time = time.time()
+    section_start = start_time
+    print("🚀 [START] save_overnight_scraped_data")
+
     try:
         reset_queries()
-        data = json.loads(request.body.decode('utf-8'))
 
-        print(data)
+        # ---------------------------------------------------------------
+        # Step 0: Parse incoming JSON
+        # ---------------------------------------------------------------
+        print("📥 Parsing request JSON...")
+        data = json.loads(request.body.decode('utf-8'))
         category_name = data.get('category_name')
         subcategory_name = data.get('subcategory_name')
         results = data.get('results', [])
+        print(f"📦 Loaded JSON with {len(results)} result variants in {time.time() - section_start:.2f}s")
 
         if not results:
             return JsonResponse({'success': False, 'error': 'No results to process'})
 
         now = timezone.now()
-        created_count = 0
-        updated_count = 0
-        history_count = 0
-
+        created_count = updated_count = history_count = 0
         listings_to_create = []
         listings_to_update = []
         histories_to_create = []
 
-        # Step 1: Resolve category/subcategory/model hierarchy for all variants first
+        # ---------------------------------------------------------------
+        # Step 1: Resolve hierarchy (Category → Subcategory → ItemModel)
+        # ---------------------------------------------------------------
+        section_start = time.time()
+        print("📚 Resolving hierarchy...")
         hierarchy_cache = ensure_hierarchy(category_name, subcategory_name, results)
+        print(f"✅ Hierarchy resolved for {len(hierarchy_cache)} models in {time.time() - section_start:.2f}s")
 
-        # Step 2: Precompute all MarketItems to create or update
+        # ---------------------------------------------------------------
+        # Step 2: Precompute MarketItem keys
+        # ---------------------------------------------------------------
+        section_start = time.time()
+        print("🧮 Precomputing MarketItems...")
         market_item_keys = {}
         for variant in results:
             item_name = variant.get('item_name')
@@ -1312,8 +1356,13 @@ def save_overnight_scraped_data(request):
             category, subcategory, item_model = hierarchy_cache[model_name]
             key = (item_name.strip(), category.id, item_model.id)
             market_item_keys[key] = (item_name.strip(), category, item_model)
+        print(f"✅ Prepared {len(market_item_keys)} MarketItem keys in {time.time() - section_start:.2f}s")
 
+        # ---------------------------------------------------------------
         # Step 3: Fetch existing MarketItems
+        # ---------------------------------------------------------------
+        section_start = time.time()
+        print("🔍 Fetching existing MarketItems...")
         q_filter = Q()
         for title, category, item_model in market_item_keys.values():
             q_filter |= Q(title=title, category=category)
@@ -1322,9 +1371,12 @@ def save_overnight_scraped_data(request):
             (mi.title, mi.category_id, mi.item_model_id): mi
             for mi in MarketItem.objects.filter(q_filter)
         }
+        print(f"✅ Found {len(existing_items)} existing MarketItems in {time.time() - section_start:.2f}s")
 
-
-        # Step 4: Identify missing MarketItems and bulk create
+        # ---------------------------------------------------------------
+        # Step 4: Create missing MarketItems
+        # ---------------------------------------------------------------
+        section_start = time.time()
         to_create = []
         for key, (title, category, item_model) in market_item_keys.items():
             if key not in existing_items:
@@ -1336,22 +1388,36 @@ def save_overnight_scraped_data(request):
                 ))
 
         if to_create:
+            print(f"🆕 Creating {len(to_create)} new MarketItems...")
             created_items = MarketItem.objects.bulk_create(to_create)
             for mi in created_items:
                 existing_items[(mi.title, mi.category_id, mi.item_model_id)] = mi
+        print(f"✅ MarketItems created in {time.time() - section_start:.2f}s")
 
-        # Step 5: Update last_scraped timestamps in bulk later
+        # ---------------------------------------------------------------
+        # Step 5: Update last_scraped timestamps
+        # ---------------------------------------------------------------
+        section_start = time.time()
         for mi in existing_items.values():
             mi.last_scraped = now
         MarketItem.objects.bulk_update(existing_items.values(), ['last_scraped'])
+        print(f"🕓 Updated last_scraped for {len(existing_items)} MarketItems in {time.time() - section_start:.2f}s")
 
+        # ---------------------------------------------------------------
         # Step 6: Prepare listings (create/update)
-        # Preload all existing listings for these MarketItems
+        # ---------------------------------------------------------------
+        section_start = time.time()
+        print("💾 Preparing CompetitorListings...")
         all_market_items = list(existing_items.values())
-        existing_listings = {}
-        for listing in CompetitorListing.objects.filter(market_item__in=all_market_items):
-            existing_listings[(listing.market_item_id, listing.competitor, listing.stable_id)] = listing
 
+        existing_listings = {
+            (listing.market_item_id, listing.competitor, listing.stable_id): listing
+            for listing in CompetitorListing.objects.filter(market_item__in=all_market_items)
+        }
+        print(f"✅ Loaded {len(existing_listings)} existing listings in {time.time() - section_start:.2f}s")
+
+        # Process variants
+        section_start = time.time()
         for variant in results:
             item_name = variant.get('item_name')
             model_name = variant.get('model_name')
@@ -1381,7 +1447,6 @@ def save_overnight_scraped_data(request):
                 if key in existing_listings:
                     listing = existing_listings[key]
                     changed = (price != listing.price)
-
                     listing.price = price
                     listing.title = title
                     listing.description = description
@@ -1390,7 +1455,6 @@ def save_overnight_scraped_data(request):
                     listing.url = url
                     listing.is_active = True
                     listing.last_seen = now
-
                     listings_to_update.append(listing)
 
                     if changed:
@@ -1419,10 +1483,14 @@ def save_overnight_scraped_data(request):
                             last_seen=now
                         )
                     )
+        print(f"✅ Processed all listings in {time.time() - section_start:.2f}s")
 
-        # Step 7: Bulk database writes
+        # ---------------------------------------------------------------
+        # Step 7: Bulk database writes (atomic)
+        # ---------------------------------------------------------------
+        section_start = time.time()
+        print("💾 Committing bulk database operations...")
         with transaction.atomic():
-            # Bulk create listings
             if listings_to_create:
                 created_listings = CompetitorListing.objects.bulk_create(listings_to_create)
                 for l in created_listings:
@@ -1437,83 +1505,93 @@ def save_overnight_scraped_data(request):
                     )
                 created_count += len(created_listings)
 
-            # Bulk update listings
             if listings_to_update:
                 CompetitorListing.objects.bulk_update(
                     listings_to_update,
-                    ['price', 'title', 'description', 'condition',
-                     'store_name', 'url', 'is_active', 'last_seen']
+                    ['price', 'title', 'description', 'condition', 'store_name', 'url', 'is_active', 'last_seen']
                 )
                 updated_count += len(listings_to_update)
 
-            # Bulk create price histories
             if histories_to_create:
                 CompetitorListingHistory.objects.bulk_create(histories_to_create)
                 history_count += len(histories_to_create)
+        print(f"✅ Bulk write complete in {time.time() - section_start:.2f}s")
 
-        # Step 8: Post-processing Update CEX prices for relevant MarketItems (after listings are created) 
-        # TODO: THIS SHOULD BE DONE IN THE SCRAPING STEP
-        try:
-            # Get all active CEX listings (now they exist)
-            cex_listings = CompetitorListing.objects.filter(
-                competitor="CEX",
-                is_active=True,
-                market_item__in=existing_items.values()
-            ).order_by("id")
+        # ---------------------------------------------------------------
+        # Step 8: Post-processing (CEX updates)
+        # ---------------------------------------------------------------
+        section_start = time.time()
+        print("🧩 Starting CEX post-processing...")
+        # try:
+        #     cex_listings = CompetitorListing.objects.filter(
+        #         competitor="CEX",
+        #         is_active=True,
+        #         market_item__in=existing_items.values()
+        #     ).order_by("id")
 
-            cex_by_item = {}
-            for listing in cex_listings:
-                if listing.market_item_id not in cex_by_item:
-                    cex_by_item[listing.market_item_id] = listing
+        #     print(f"🔍 Loaded {cex_listings.count()} CEX listings in {time.time() - section_start:.2f}s")
 
-            items_to_update = []
-            for market_item in existing_items.values():
-                cex_listing = cex_by_item.get(market_item.id)
-                if not cex_listing:
-                    continue
+        #     cex_by_item = {listing.market_item_id: listing for listing in cex_listings}
+        #     items_to_update = []
+        #     t_loop_start = time.time()
 
-                updated = False
+        #     for market_item in existing_items.values():
+        #         cex_listing = cex_by_item.get(market_item.id)
+        #         if not cex_listing:
+        #             continue
 
-                # Update missing fields
-                if not market_item.cex_sale_price:
-                    market_item.cex_sale_price = cex_listing.price
-                    updated = True
+        #         updated = False
+        #         if not market_item.cex_sale_price:
+        #             market_item.cex_sale_price = cex_listing.price
+        #             updated = True
+        #         if not market_item.cex_url and cex_listing.stable_id:
+        #             market_item.cex_url = f"https://uk.webuy.com/product-detail?id={cex_listing.stable_id}"
+        #             updated = True
+        #         if not market_item.cex_cash_trade_price and cex_listing.stable_id:
+        #             try:
+        #                 fetch_start = time.time()
+        #                 cex_cash_trade_price = fetch_cex_cash_price(cex_listing.stable_id)
+        #                 fetch_dur = time.time() - fetch_start
+        #                 print(f"⏳ Fetched cash price for {cex_listing.stable_id} in {fetch_dur:.2f}s")
+        #                 if cex_cash_trade_price is not None:
+        #                     market_item.cex_cash_trade_price = cex_cash_trade_price
+        #                     updated = True
+        #             except Exception as e:
+        #                 print(f"⚠️ Failed CEX fetch for {cex_listing.stable_id}: {e}")
+        #                 continue
+        #         if updated:
+        #             items_to_update.append(market_item)
 
-                if not market_item.cex_url and cex_listing.stable_id:
-                    market_item.cex_url = f"https://uk.webuy.com/product-detail?id={cex_listing.stable_id}"
-                    updated = True
+        #     print(f"🕒 Finished CEX loop in {time.time() - t_loop_start:.2f}s")
 
-                if not market_item.cex_cash_trade_price and cex_listing.stable_id:
-                    cex_cash_trade_price = fetch_cex_cash_price(cex_listing.stable_id)
-                    if cex_cash_trade_price is not None:
-                        market_item.cex_cash_trade_price = cex_cash_trade_price
-                        updated = True
+        #     if items_to_update:
+        #         MarketItem.objects.bulk_update(
+        #             items_to_update,
+        #             ["cex_sale_price", "cex_cash_trade_price", "cex_url"]
+        #         )
+        #         print(f"✅ Updated {len(items_to_update)} MarketItems with CEX data.")
+        # except Exception as e:
+        #     print(f"⚠️ Error updating CEX data post-save: {e}")
+        print(f"🧩 CEX post-processing done in {time.time() - section_start:.2f}s")
 
-                if updated:
-                    items_to_update.append(market_item)
+        # ---------------------------------------------------------------
+        # Wrap up
+        # ---------------------------------------------------------------
+        total_time = time.time() - start_time
+        print(f"🧮 Total queries executed: {len(connection.queries)}")
+        print(f"🏁 [END] save_overnight_scraped_data completed in {total_time:.2f}s")
 
-            if items_to_update:
-                MarketItem.objects.bulk_update(
-                    items_to_update,
-                    ["cex_sale_price", "cex_cash_trade_price", "cex_url"]
-                )
-                print(f"✅ Updated {len(items_to_update)} MarketItems with CEX data.")
-
-        except Exception as e:
-            print("⚠️ Error updating CEX data post-save:", e)
-        
-        print(f"🧮 Total queries executed: {len(connection.queries)}")  # ← show count
         return JsonResponse({
             'success': True,
             'created': created_count,
             'updated': updated_count,
-            'histories': history_count
+            'histories': history_count,
+            'duration_seconds': round(total_time, 2)
         })
 
     except Exception as e:
-        print("❌ Error saving scraped data:", e)
+        print(f"❌ Fatal error in save_overnight_scraped_data: {e}")
         return JsonResponse({'success': False, 'error': str(e)})
-
 
 def repricer_view(request):
     listings = (
