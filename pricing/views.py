@@ -1212,28 +1212,64 @@ def save_listing(request):
         return JsonResponse({"success": False, "error": str(e)}, status=400)
 
 
-def get_or_create_hierarchy(category_name, subcategory_name, model_name):
-    """Ensure Category, Subcategory, ItemModel exist"""
-    category, _ = Category.objects.get_or_create(
-        name__iexact=category_name.strip(),
-        defaults={'name': category_name.strip()}
-    )
-    subcategory, _ = Subcategory.objects.get_or_create(
-        name__iexact=subcategory_name.strip(),
-        defaults={'name': subcategory_name.strip(), 'category': category}
-    )
-    if subcategory.category != category:
+def ensure_hierarchy(category_name, subcategory_name, results):
+    """
+    Optimized hierarchy setup — prefetch + bulk create missing Category/Subcategory/ItemModel.
+    Returns hierarchy_cache: {model_name: (category, subcategory, item_model)}.
+    """
+    category_name = category_name.strip()
+    subcategory_name = subcategory_name.strip()
+    model_names = {r.get('model_name', '').strip() for r in results if r.get('model_name')}
+    now = timezone.now()
+
+    # --- Prefetch existing category/subcategory ---
+    categories = {
+        c.name.lower(): c
+        for c in Category.objects.filter(name__iexact=category_name)
+    }
+    subcategories = {
+        s.name.lower(): s
+        for s in Subcategory.objects.filter(name__iexact=subcategory_name)
+    }
+
+    # --- Ensure category ---
+    category = categories.get(category_name.lower())
+    if not category:
+        category = Category.objects.create(name=category_name)
+        categories[category_name.lower()] = category
+
+    # --- Ensure subcategory ---
+    subcategory = subcategories.get(subcategory_name.lower())
+    if not subcategory:
+        subcategory = Subcategory.objects.create(name=subcategory_name, category=category)
+        subcategories[subcategory_name.lower()] = subcategory
+    elif subcategory.category_id != category.id:
         subcategory.category = category
-        subcategory.save()
+        subcategory.save(update_fields=['category'])
 
-    item_model, _ = ItemModel.objects.get_or_create(
-        subcategory=subcategory,
-        name__iexact=model_name.strip(),
-        defaults={'name': model_name.strip()}
-    )
+    # --- Preload item models for this subcategory ---
+    existing_models = {
+        m.name.lower(): m
+        for m in ItemModel.objects.filter(subcategory=subcategory, name__in=model_names)
+    }
 
-    return category, subcategory, item_model
+    # --- Bulk create missing ones ---
+    missing_models = [
+        ItemModel(subcategory=subcategory, name=m)
+        for m in model_names if m.lower() not in existing_models
+    ]
+    if missing_models:
+        ItemModel.objects.bulk_create(missing_models)
+        for m in missing_models:
+            existing_models[m.name.lower()] = m
 
+    # --- Build hierarchy cache ---
+    hierarchy_cache = {
+        m_name: (category, subcategory, existing_models[m_name.lower()])
+        for m_name in model_names
+    }
+
+    return hierarchy_cache
 
 @csrf_exempt
 @require_POST
@@ -1246,6 +1282,7 @@ def save_overnight_scraped_data(request):
         reset_queries()
         data = json.loads(request.body.decode('utf-8'))
 
+        print(data)
         category_name = data.get('category_name')
         subcategory_name = data.get('subcategory_name')
         results = data.get('results', [])
@@ -1263,14 +1300,7 @@ def save_overnight_scraped_data(request):
         histories_to_create = []
 
         # Step 1: Resolve category/subcategory/model hierarchy for all variants first
-        hierarchy_cache = {}
-        for variant in results:
-            model_name = variant.get('model_name')
-            if model_name not in hierarchy_cache:
-                category, subcategory, item_model = get_or_create_hierarchy(
-                    category_name, subcategory_name, model_name
-                )
-                hierarchy_cache[model_name] = (category, subcategory, item_model)
+        hierarchy_cache = ensure_hierarchy(category_name, subcategory_name, results)
 
         # Step 2: Precompute all MarketItems to create or update
         market_item_keys = {}
@@ -1284,14 +1314,15 @@ def save_overnight_scraped_data(request):
             market_item_keys[key] = (item_name.strip(), category, item_model)
 
         # Step 3: Fetch existing MarketItems
+        q_filter = Q()
+        for title, category, item_model in market_item_keys.values():
+            q_filter |= Q(title=title, category=category)
+
         existing_items = {
             (mi.title, mi.category_id, mi.item_model_id): mi
-            for mi in MarketItem.objects.filter(
-                title__in=[k[0] for k in market_item_keys],
-                category_id__in=[k[1] for k in market_item_keys],
-                item_model_id__in=[k[2] for k in market_item_keys],
-            )
+            for mi in MarketItem.objects.filter(q_filter)
         }
+
 
         # Step 4: Identify missing MarketItems and bulk create
         to_create = []
@@ -1420,6 +1451,57 @@ def save_overnight_scraped_data(request):
                 CompetitorListingHistory.objects.bulk_create(histories_to_create)
                 history_count += len(histories_to_create)
 
+        # Step 8: Post-processing Update CEX prices for relevant MarketItems (after listings are created) 
+        # TODO: THIS SHOULD BE DONE IN THE SCRAPING STEP
+        try:
+            # Get all active CEX listings (now they exist)
+            cex_listings = CompetitorListing.objects.filter(
+                competitor="CEX",
+                is_active=True,
+                market_item__in=existing_items.values()
+            ).order_by("id")
+
+            cex_by_item = {}
+            for listing in cex_listings:
+                if listing.market_item_id not in cex_by_item:
+                    cex_by_item[listing.market_item_id] = listing
+
+            items_to_update = []
+            for market_item in existing_items.values():
+                cex_listing = cex_by_item.get(market_item.id)
+                if not cex_listing:
+                    continue
+
+                updated = False
+
+                # Update missing fields
+                if not market_item.cex_sale_price:
+                    market_item.cex_sale_price = cex_listing.price
+                    updated = True
+
+                if not market_item.cex_url and cex_listing.stable_id:
+                    market_item.cex_url = f"https://uk.webuy.com/product-detail?id={cex_listing.stable_id}"
+                    updated = True
+
+                if not market_item.cex_cash_trade_price and cex_listing.stable_id:
+                    cex_cash_trade_price = fetch_cex_cash_price(cex_listing.stable_id)
+                    if cex_cash_trade_price is not None:
+                        market_item.cex_cash_trade_price = cex_cash_trade_price
+                        updated = True
+
+                if updated:
+                    items_to_update.append(market_item)
+
+            if items_to_update:
+                MarketItem.objects.bulk_update(
+                    items_to_update,
+                    ["cex_sale_price", "cex_cash_trade_price", "cex_url"]
+                )
+                print(f"✅ Updated {len(items_to_update)} MarketItems with CEX data.")
+
+        except Exception as e:
+            print("⚠️ Error updating CEX data post-save:", e)
+        
         print(f"🧮 Total queries executed: {len(connection.queries)}")  # ← show count
         return JsonResponse({
             'success': True,
