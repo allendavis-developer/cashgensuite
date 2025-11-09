@@ -151,35 +151,6 @@ def round_down_to_even(value):
     """Round down to the nearest even integer."""
     return (int(value) // 2) * 2
 
-import requests
-# TODO: it might be worth batching this in the future with the overnight scraping.
-def fetch_cex_cash_price(stable_id):
-    """
-    Fetch the CeX cash price for a given stable_id.
-    Returns the cash price if found, otherwise None.
-    """
-    if not stable_id:
-        return None
-
-    url = f"https://wss2.cex.uk.webuy.io/v3/boxes/{stable_id}/detail"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                      "AppleWebKit/537.36 (KHTML, like Gecko) "
-                      "Chrome/118.0.5993.117 Safari/537.36",
-        "Accept": "application/json, text/javascript, */*; q=0.01",
-        "Referer": "https://www.cex.uk/",
-    }
-
-    try:
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        box = data.get("response", {}).get("data", {}).get("boxDetails", [{}])[0]
-        return box.get("cashPrice")
-    except Exception as e:
-        print(f"CeX price lookup failed for {stable_id}: {e}")
-        return None
-
 
 def compute_prices_from_cex_rule(market_item, cex_rule=None):
     """
@@ -196,7 +167,6 @@ def compute_prices_from_cex_rule(market_item, cex_rule=None):
         - end = CeX cash price if available, else 50% of selling price
         - Ensure start <= end
     """
-    from django.db import transaction
 
     # --- Fetch first active CEX listing for this item ---
     cex_listing = CompetitorListing.objects.filter(
@@ -205,24 +175,8 @@ def compute_prices_from_cex_rule(market_item, cex_rule=None):
         is_active=True
     ).order_by("id").first()
 
-    if cex_listing:
-        # Always update the market_item fields
-        market_item.cex_sale_price = cex_listing.price
-        market_item.cex_url = f"https://uk.webuy.com/product-detail?id={cex_listing.stable_id}" if cex_listing.stable_id else None
-
-        # Fetch CEX cash trade price
-        cex_cash_trade_price = None
-        if cex_listing.stable_id:
-            try:
-                cex_cash_trade_price = fetch_cex_cash_price(cex_listing.stable_id)
-            except Exception as e:
-                print(f"⚠️ Failed to fetch CEX cash price for {cex_listing.stable_id}: {e}")
-        
-        market_item.cex_cash_trade_price = cex_cash_trade_price
-        market_item.save(update_fields=["cex_sale_price", "cex_cash_trade_price", "cex_url"])
-
     # --- Compute selling price ---
-    sale_price = market_item.cex_sale_price or 0
+    sale_price = cex_listing.price or 0
     if cex_rule:
         selling_price = round(sale_price * cex_rule.cex_pct)
     else:
@@ -230,12 +184,12 @@ def compute_prices_from_cex_rule(market_item, cex_rule=None):
 
     # --- Compute buying range ---
     buying_start_price = round(selling_price / 2)
-    buying_end_price = market_item.cex_cash_trade_price or round(selling_price / 2)
+    buying_end_price = cex_listing.trade_cash_price or round(selling_price / 2)
 
     if buying_start_price > buying_end_price:
         buying_start_price = round(buying_end_price * 0.8)
 
-    return selling_price, buying_start_price, buying_end_price, market_item.cex_cash_trade_price, market_item.cex_sale_price, market_item.cex_url
+    return selling_price, buying_start_price, buying_end_price, cex_listing.trade_cash_price, cex_listing.price, cex_listing.url
 
 
 
@@ -1438,6 +1392,12 @@ def save_overnight_scraped_data(request):
 
                 key = (market_item.id, competitor, stable_id)
                 price = float(item.get('price', 0))
+            
+                trade_voucher = item.get('tradeVoucher')
+                trade_cash = item.get('tradeCash')
+                
+                print(item)
+
                 title = item.get('title', '')
                 description = item.get('description', '')
                 condition = item.get('condition', '')
@@ -1446,8 +1406,17 @@ def save_overnight_scraped_data(request):
 
                 if key in existing_listings:
                     listing = existing_listings[key]
-                    changed = (price != listing.price)
+
+                    changed = (
+                        price != listing.price or
+                        trade_voucher != listing.trade_voucher_price or
+                        trade_cash != listing.trade_cash_price
+                    )
+
                     listing.price = price
+                    listing.trade_voucher_price = trade_voucher
+                    listing.trade_cash_price = trade_cash
+
                     listing.title = title
                     listing.description = description
                     listing.condition = condition
@@ -1462,6 +1431,8 @@ def save_overnight_scraped_data(request):
                             CompetitorListingHistory(
                                 listing=listing,
                                 price=price,
+                                trade_voucher_price=trade_voucher,
+                                trade_cash_price=trade_cash,
                                 title=title,
                                 condition=condition,
                                 timestamp=now
@@ -1474,6 +1445,8 @@ def save_overnight_scraped_data(request):
                             competitor=competitor,
                             stable_id=stable_id,
                             price=price,
+                            trade_voucher_price=trade_voucher,
+                            trade_cash_price=trade_cash,
                             title=title,
                             description=description,
                             condition=condition,
@@ -1483,6 +1456,8 @@ def save_overnight_scraped_data(request):
                             last_seen=now
                         )
                     )
+
+
         print(f"✅ Processed all listings in {time.time() - section_start:.2f}s")
 
         # ---------------------------------------------------------------
@@ -1498,81 +1473,39 @@ def save_overnight_scraped_data(request):
                         CompetitorListingHistory(
                             listing=l,
                             price=l.price,
+                            trade_voucher_price=l.trade_voucher_price,
+                            trade_cash_price=l.trade_cash_price,
                             title=l.title,
                             condition=l.condition,
                             timestamp=now
                         )
                     )
+
                 created_count += len(created_listings)
 
             if listings_to_update:
                 CompetitorListing.objects.bulk_update(
                     listings_to_update,
-                    ['price', 'title', 'description', 'condition', 'store_name', 'url', 'is_active', 'last_seen']
+                    [
+                        'price',
+                        'trade_voucher_price',
+                        'trade_cash_price',
+                        'title',
+                        'description',
+                        'condition',
+                        'store_name',
+                        'url',
+                        'is_active',
+                        'last_seen'
+                    ]
                 )
+
                 updated_count += len(listings_to_update)
 
             if histories_to_create:
                 CompetitorListingHistory.objects.bulk_create(histories_to_create)
                 history_count += len(histories_to_create)
         print(f"✅ Bulk write complete in {time.time() - section_start:.2f}s")
-
-        # ---------------------------------------------------------------
-        # Step 8: Post-processing (CEX updates)
-        # ---------------------------------------------------------------
-        section_start = time.time()
-        print("🧩 Starting CEX post-processing...")
-        # try:
-        #     cex_listings = CompetitorListing.objects.filter(
-        #         competitor="CEX",
-        #         is_active=True,
-        #         market_item__in=existing_items.values()
-        #     ).order_by("id")
-
-        #     print(f"🔍 Loaded {cex_listings.count()} CEX listings in {time.time() - section_start:.2f}s")
-
-        #     cex_by_item = {listing.market_item_id: listing for listing in cex_listings}
-        #     items_to_update = []
-        #     t_loop_start = time.time()
-
-        #     for market_item in existing_items.values():
-        #         cex_listing = cex_by_item.get(market_item.id)
-        #         if not cex_listing:
-        #             continue
-
-        #         updated = False
-        #         if not market_item.cex_sale_price:
-        #             market_item.cex_sale_price = cex_listing.price
-        #             updated = True
-        #         if not market_item.cex_url and cex_listing.stable_id:
-        #             market_item.cex_url = f"https://uk.webuy.com/product-detail?id={cex_listing.stable_id}"
-        #             updated = True
-        #         if not market_item.cex_cash_trade_price and cex_listing.stable_id:
-        #             try:
-        #                 fetch_start = time.time()
-        #                 cex_cash_trade_price = fetch_cex_cash_price(cex_listing.stable_id)
-        #                 fetch_dur = time.time() - fetch_start
-        #                 print(f"⏳ Fetched cash price for {cex_listing.stable_id} in {fetch_dur:.2f}s")
-        #                 if cex_cash_trade_price is not None:
-        #                     market_item.cex_cash_trade_price = cex_cash_trade_price
-        #                     updated = True
-        #             except Exception as e:
-        #                 print(f"⚠️ Failed CEX fetch for {cex_listing.stable_id}: {e}")
-        #                 continue
-        #         if updated:
-        #             items_to_update.append(market_item)
-
-        #     print(f"🕒 Finished CEX loop in {time.time() - t_loop_start:.2f}s")
-
-        #     if items_to_update:
-        #         MarketItem.objects.bulk_update(
-        #             items_to_update,
-        #             ["cex_sale_price", "cex_cash_trade_price", "cex_url"]
-        #         )
-        #         print(f"✅ Updated {len(items_to_update)} MarketItems with CEX data.")
-        # except Exception as e:
-        #     print(f"⚠️ Error updating CEX data post-save: {e}")
-        print(f"🧩 CEX post-processing done in {time.time() - section_start:.2f}s")
 
         # ---------------------------------------------------------------
         # Wrap up
@@ -1592,6 +1525,7 @@ def save_overnight_scraped_data(request):
     except Exception as e:
         print(f"❌ Fatal error in save_overnight_scraped_data: {e}")
         return JsonResponse({'success': False, 'error': str(e)})
+
 
 def repricer_view(request):
     listings = (

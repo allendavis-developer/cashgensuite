@@ -24,10 +24,9 @@ from .models import (
 class CompetitorListingHistoryInline(admin.TabularInline):
     model = CompetitorListingHistory
     extra = 0
-    readonly_fields = ("price", "title", "condition", "timestamp")
+    readonly_fields = ("price", "trade_voucher_price", "trade_cash_price", "title", "condition", "timestamp")
     ordering = ("-timestamp",)
     can_delete = False
-
 
 class CompetitorListingInline(admin.TabularInline):
     model = CompetitorListing
@@ -38,6 +37,8 @@ class CompetitorListingInline(admin.TabularInline):
         "stable_id",
         "title",
         "price",
+        "trade_voucher_price",
+        "trade_cash_price",
         "url",
         "condition",
         "description",
@@ -50,6 +51,8 @@ class CompetitorListingInline(admin.TabularInline):
         "stable_id",
         "title",
         "price",
+        "trade_voucher_price",
+        "trade_cash_price",
         "url",
         "condition",
         "is_active",
@@ -58,6 +61,13 @@ class CompetitorListingInline(admin.TabularInline):
     show_change_link = True
     can_delete = False
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        # Prefetch the market_item and its related item_model with subcategory
+        return qs.select_related(
+            'market_item__category',
+            'market_item__item_model__subcategory__category'
+        )
 
 @admin.register(CompetitorListing)
 class CompetitorListingAdmin(admin.ModelAdmin):
@@ -66,6 +76,8 @@ class CompetitorListingAdmin(admin.ModelAdmin):
         "market_item",
         "title",
         "price",
+        "trade_voucher_price",
+        "trade_cash_price",
         "store_name",
         "is_active",
         "last_seen",
@@ -79,6 +91,8 @@ class CompetitorListingAdmin(admin.ModelAdmin):
         "store_name",
         "title",
         "price",
+        "trade_voucher_price",
+        "trade_cash_price",
         "url",
         "condition",
         "description",
@@ -99,47 +113,22 @@ from .models import (
     MarketItem, Category, CategoryAttribute, Subcategory, ItemModel
 )
 
-class MarketItemForm(forms.ModelForm):
-    class Meta:
-        model = MarketItem
-        fields = '__all__'
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        
-        # If category is set, filter models to only that category
-        if 'category' in self.data:
-            try:
-                category_id = int(self.data.get('category'))
-                self.fields['model'].queryset = ItemModel.objects.filter(category_id=category_id)
-            except (ValueError, TypeError):
-                pass
-        elif self.instance.pk and self.instance.category:
-            self.fields['model'].queryset = ItemModel.objects.filter(category=self.instance.category)
-        else:
-            self.fields['model'].queryset = ItemModel.objects.none()
-        
-        # If subcategory is also set, filter further
-        if 'subcategory' in self.data:
-            try:
-                subcategory_id = int(self.data.get('subcategory'))
-                self.fields['model'].queryset = self.fields['model'].queryset.filter(
-                    subcategory_id=subcategory_id
-                )
-            except (ValueError, TypeError):
-                pass
-        elif self.instance.pk and self.instance.subcategory:
-            self.fields['model'].queryset = self.fields['model'].queryset.filter(
-                subcategory=self.instance.subcategory
-            )
-
-
 @admin.register(MarketItem)
 class MarketItemAdmin(admin.ModelAdmin):
-    list_display = ('title', 'category', 'model_name', 'last_scraped', 'cex_cash_trade_price', 'cex_sale_price', 'cex_url')
+    list_display = ('title', 'category', 'model_name', 'last_scraped')
     list_filter = ('category',)
     search_fields = ('title',)
-    inlines = [CompetitorListingInline]  
+    inlines = [CompetitorListingInline]
+    
+    # Use autocomplete for item_model to avoid loading thousands of options
+    autocomplete_fields = ['item_model']
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related(
+            'category',
+            'item_model__subcategory__category'
+        )
 
     def model_name(self, obj):
         if obj.item_model:

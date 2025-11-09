@@ -124,10 +124,6 @@ class MarketItem(models.Model):
     exclude_keywords = models.JSONField(blank=True, null=True)
     item_model = models.ForeignKey(ItemModel, on_delete=models.SET_NULL, null=True, blank=True, related_name='market_items')
     
-    cex_cash_trade_price = models.FloatField(blank=True, null=True)
-    cex_sale_price = models.FloatField(blank=True, null=True)
-    cex_url = models.CharField(max_length=1048, blank=True, null=True)
-
     class Meta:
         unique_together = ('category', 'title')
 
@@ -159,6 +155,9 @@ class CompetitorListing(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     condition = models.CharField(max_length=255, blank=True, null=True)
+    trade_voucher_price = models.FloatField(blank=True, null=True)
+    trade_cash_price = models.FloatField(blank=True, null=True)
+
     price = models.FloatField()
     is_active = models.BooleanField(default=True)
     last_seen = models.DateTimeField(auto_now=True)
@@ -173,6 +172,9 @@ class CompetitorListing(models.Model):
 class CompetitorListingHistory(models.Model):
     listing = models.ForeignKey(CompetitorListing, on_delete=models.CASCADE, related_name="history")
     price = models.FloatField()
+    trade_voucher_price = models.FloatField(blank=True, null=True)
+    trade_cash_price = models.FloatField(blank=True, null=True)
+
     title = models.CharField(max_length=255)
     condition = models.CharField(max_length=255, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
