@@ -38,7 +38,6 @@ class Category(models.Model):
 
     name = models.CharField(max_length=100, unique=True)
     base_margin = models.FloatField(default=0.0)
-    cex_discount_pct = models.FloatField(default=0.0)
 
     description = models.TextField(blank=True)
     metadata = models.JSONField(blank=True, null=True)

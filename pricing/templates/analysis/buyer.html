@@ -642,7 +642,7 @@ async function handleAnalyseClick(row) {
       if (Array.isArray(sourcesResult)) scrapeSources = sourcesResult;
       if (scrapeSources.length === 0) scrapeSources = ['CEX', 'CashConverters', 'CashGenerator'];
 
-      await scrapePricesForRow(row, scrapeSources);
+      {% comment %} await scrapePricesForRow(row, scrapeSources); {% endcomment %}
       await updatePriceCells(row, category, model, attributes);
     }
   } catch (error) {
@@ -704,7 +704,7 @@ async function updatePriceCells(row, category, model, attributes) {
   // CEX price link
   const cexCell = row.querySelector('.cex-price');
   if (priceResult.cex_selling_price && priceResult.cex_url) {
-    cexCell.innerHTML = `<a href="https://uk.webuy.com/${priceResult.cex_url}" target="_blank">£${parseFloat(priceResult.cex_selling_price).toFixed(2)}</a>`;
+    cexCell.innerHTML = `<a href="${priceResult.cex_url}" target="_blank">£${parseFloat(priceResult.cex_selling_price).toFixed(2)}</a>`;
   } else {
     cexCell.textContent = '—';
   }
