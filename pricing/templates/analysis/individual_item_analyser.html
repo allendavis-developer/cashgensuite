@@ -1164,6 +1164,7 @@ async function maybeCheckExistingItems() {
             },
             body: JSON.stringify({
                 category: data.categoryName,
+                subcategory: data.subcategoryName,
                 model: data.modelName,
                 attributes: data.attributes  // optional, empty object if none
             })
@@ -1247,6 +1248,7 @@ async function fetchGeneratedSearchTerm() {
             },
             body: JSON.stringify({
                 category: data.categoryName,
+                subcategory: data.subcategoryName,
                 model: data.modelName,
                 attributes: data.attributes
             })

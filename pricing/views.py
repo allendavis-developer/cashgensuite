@@ -713,6 +713,8 @@ def generate_search_term(request):
             model = data.get("model")
             attributes = data.get("attributes", {})
 
+            print(data)
+
             if not category or not model:
                 return JsonResponse({"success": False, "error": "Category and model are required."}, status=400)
 
