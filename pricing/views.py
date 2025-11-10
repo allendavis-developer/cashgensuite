@@ -1259,6 +1259,18 @@ def ensure_hierarchy(category_name, subcategory_name, results):
     return hierarchy_cache
 
 import time
+from django.db import IntegrityError
+
+
+def chunked_bulk_create(model, objects, batch_size=500):
+    for i in range(0, len(objects), batch_size):
+        model.objects.bulk_create(objects[i:i+batch_size], ignore_conflicts=True)
+
+def chunked_bulk_update(model, objects, fields, batch_size=500):
+    for i in range(0, len(objects), batch_size):
+        model.objects.bulk_update(objects[i:i+batch_size], fields)
+
+
 
 @csrf_exempt
 @require_POST
@@ -1398,7 +1410,6 @@ def save_overnight_scraped_data(request):
                 trade_voucher = item.get('tradeVoucher')
                 trade_cash = item.get('tradeCash')
                 
-                print(item)
 
                 title = item.get('title', '')
                 description = item.get('description', '')
@@ -1441,6 +1452,9 @@ def save_overnight_scraped_data(request):
                             )
                         )
                 else:
+                    print(f"🆕 Creating new listing: market_item={market_item.id} ({market_item.title}), "
+                        f"competitor={competitor}, stable_id={stable_id}")
+
                     listings_to_create.append(
                         CompetitorListing(
                             market_item=market_item,
@@ -1469,43 +1483,36 @@ def save_overnight_scraped_data(request):
         print("💾 Committing bulk database operations...")
         with transaction.atomic():
             if listings_to_create:
-                created_listings = CompetitorListing.objects.bulk_create(listings_to_create)
-                for l in created_listings:
-                    histories_to_create.append(
-                        CompetitorListingHistory(
-                            listing=l,
-                            price=l.price,
-                            trade_voucher_price=l.trade_voucher_price,
-                            trade_cash_price=l.trade_cash_price,
-                            title=l.title,
-                            condition=l.condition,
-                            timestamp=now
-                        )
-                    )
+                print(f"💾 Attempting to bulk create {len(listings_to_create)} listings...")
+                try:
+                    print(f"💾 Creating {len(listings_to_create)} listings in chunks...")
+                    chunked_bulk_create(CompetitorListing, listings_to_create, batch_size=200)
+                except IntegrityError as e:
+                    print(f"❌ DUPLICATE ERROR: {e}")
+                    print(f"📊 Stats: market_items={len(existing_items)}, "
+                        f"existing_listings={len(existing_listings)}, "
+                        f"to_create={len(listings_to_create)}")
+                    
+                    # Find the duplicate
+                    for listing in listings_to_create:
+                        key = (listing.market_item_id, listing.competitor, listing.stable_id)
+                        if key in existing_listings:
+                            print(f"🔍 FOUND DUPLICATE IN TO_CREATE LIST: {key}")
 
-                created_count += len(created_listings)
 
             if listings_to_update:
-                CompetitorListing.objects.bulk_update(
-                    listings_to_update,
-                    [
-                        'price',
-                        'trade_voucher_price',
-                        'trade_cash_price',
-                        'title',
-                        'description',
-                        'condition',
-                        'store_name',
-                        'url',
-                        'is_active',
-                        'last_seen'
-                    ]
-                )
+                print(f"📝 Updating {len(listings_to_update)} listings in chunks...")
+                chunked_bulk_update(CompetitorListing, listings_to_update, [
+                    'price', 'trade_voucher_price', 'trade_cash_price',
+                    'title', 'description', 'condition', 'store_name',
+                    'url', 'is_active', 'last_seen'
+                ])
+
 
                 updated_count += len(listings_to_update)
 
             if histories_to_create:
-                CompetitorListingHistory.objects.bulk_create(histories_to_create)
+                chunked_bulk_create(CompetitorListingHistory, histories_to_create, batch_size=200)
                 history_count += len(histories_to_create)
         print(f"✅ Bulk write complete in {time.time() - section_start:.2f}s")
 

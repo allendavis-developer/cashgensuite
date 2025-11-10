@@ -677,15 +677,15 @@ async function updatePriceCells(row, category, model, attributes) {
 
   const sellingPrice = parseFloat(priceResult.selling_price);
   const buyingStartPrice = parseFloat(priceResult.buying_start_price);
-  const buyingEndPrice = parseFloat(priceResult.buying_end_price);
+  const cexOfferCashPrice = parseFloat(priceResult.cex_buying_price);
 
   // Suggested RRP
   row.querySelector('.suggested-rrp').textContent = `£${sellingPrice.toFixed(2)}`;
 
   // CEX offer
   const cexOfferCell = row.querySelector('.cex-offer');
-  cexOfferCell.textContent = `£${buyingEndPrice.toFixed(2)}`;
-  cexOfferCell.dataset.buyMax = buyingEndPrice;
+  cexOfferCell.textContent = `£${cexOfferCashPrice.toFixed(2)}`;
+  cexOfferCell.dataset.buyMax = cexOfferCashPrice;
 
   // Starting offer (+/-)
   const startingOfferCell = row.querySelector('.starting-offer');
@@ -693,7 +693,7 @@ async function updatePriceCells(row, category, model, attributes) {
   buyVal.textContent = `£${buyingStartPrice.toFixed(2)}`;
   startingOfferCell.dataset.buyMin = buyingStartPrice;
   startingOfferCell.dataset.baseBuyMin = buyingStartPrice;
-  startingOfferCell.dataset.baseBuyMax = buyingEndPrice;
+  startingOfferCell.dataset.baseBuyMax = cexOfferCashPrice;
   startingOfferCell.dataset.adjustPercent = "0";
 
   const decreaseBtn = startingOfferCell.querySelector('.decrease-buying');
