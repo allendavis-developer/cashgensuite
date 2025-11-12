@@ -124,7 +124,7 @@ class MarketItem(models.Model):
     item_model = models.ForeignKey(ItemModel, on_delete=models.SET_NULL, null=True, blank=True, related_name='market_items')
     
     class Meta:
-        unique_together = ('category', 'title')
+        unique_together = ('category', 'title', 'item_model')
 
 
     # Optional helper property for convenience

@@ -12,6 +12,8 @@ urlpatterns = [
     path("scraper/", v.scraper_view, name="scraper"),
     path("buyer/", v.buyer_view, name="buyer"),
 
+    
+
     # ----------------------------- API -----------------------------
     path("bulk-analysis", v.bulk_analysis, name='bulk_analysis'),
     path('save_listing/', v.save_listing, name='save_listing'),
@@ -20,9 +22,9 @@ urlpatterns = [
     path('admin/get-models/', v.get_models, name='get_models'),
 
     path("api/generate_search_term/", v.generate_search_term, name="generate_search_term"),
+    path("api/save_input/", v.save_input, name="save_input"),
 
     path("api/buying-range-analysis/", v.buying_range_analysis, name="buying_range_analysis"),
-    path('api/negotiation-step/', v.negotiation_step, name='negotiation-step'),
     path('api/subcategorys/', v.subcategorys, name='api-subcategorys'),
     path('api/models/', v.models, name='api-models'),
     path('api/category_attributes/', v.category_attributes, name='api-category-attributes'),

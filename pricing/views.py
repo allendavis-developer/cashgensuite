@@ -30,7 +30,7 @@ from decimal import Decimal, InvalidOperation
 from pricing.utils.ai_utils import call_gemini_sync, generate_price_analysis, generate_bulk_price_analysis
 from pricing.utils.competitor_utils import get_competitor_data
 from pricing.utils.analysis_utils import process_item_analysis, save_analysis_to_db
-from pricing.utils.search_term import build_search_term
+from pricing.utils.search_term import build_search_term, get_model_variants
 from pricing.utils.pricing import get_effective_margin
 
 
@@ -741,359 +741,56 @@ def generate_search_term(request):
 
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
-
-# TODO: Move this to somewhere else, shouldn't be in your view.
-class CompetitorAnalyzer:
-    """Analyzes competitor data to generate strategic references"""
-    
-    @staticmethod
-    def analyze(competitors):
-        """
-        Extract useful statistics from competitor data.
-        Returns dict with highest, lowest, median, average, range_str, etc.
-        """
-        if not competitors:
-            return None
-        
-        prices = [c.get("price", 0) for c in competitors if c.get("price", 0) > 0]
-        if not prices:
-            return None
-        
-        sorted_prices = sorted(prices)
-        shops = [c.get("competitor", "Competitor") for c in competitors]
-        
-        return {
-            'highest': max(prices),
-            'lowest': min(prices),
-            'average': sum(prices) / len(prices),
-            'median': sorted_prices[len(sorted_prices) // 2],
-            'second_highest': sorted_prices[-2] if len(sorted_prices) > 1 else sorted_prices[-1],
-            'range_str': f"£{min(prices):.2f}-£{max(prices):.2f}",
-            'highest_shop': shops[prices.index(max(prices))] if shops else "Competitor",
-            'count': len(prices),
-            'all_prices': sorted_prices
-        }
-    
-    @staticmethod
-    def format_reference(competitors, context="opening"):
-        """Generate context-appropriate competitor reference with specific shop names and prices"""
-        stats = CompetitorAnalyzer.analyze(competitors)
-        
-        if not stats:
-            return "• Mention that Cash Generator and Cash Converters sell similar items and you need to compete with them."
-        
-        # Get individual shop prices for specific callouts
-        shop_prices = {}
-        for comp in competitors:
-            shop = comp.get("competitor", "")
-            price = comp.get("price", 0)
-            if shop and price > 0:
-                if shop not in shop_prices:
-                    shop_prices[shop] = []
-                shop_prices[shop].append(price)
-        
-        # Average prices per shop if multiple listings
-        shop_averages = {shop: sum(prices)/len(prices) for shop, prices in shop_prices.items()}
-        
-        if context == "opening":
-            # Use highest as strong anchor with specific shop
-            return f"• Reference that {stats['highest_shop']} sells similar items at around £{stats['highest']:.2f}."
-        
-        elif context == "explanation":
-            # List specific competitors and their prices
-            if len(shop_averages) == 1:
-                shop, price = list(shop_averages.items())[0]
-                return f"• Show them that {shop} sells similar items at £{price:.2f}, and explain you need to compete with them."
-            elif len(shop_averages) >= 2:
-                shop_list = ", ".join([f"{shop} at £{price:.2f}" for shop, price in sorted(shop_averages.items(), key=lambda x: x[1], reverse=True)])
-                return f"• Show them specific competitor prices: {shop_list}. Explain you need to compete with these shops."
-            else:
-                return f"• Explain competitor pricing ranges from {stats['range_str']} and you need to stay competitive."
-        
-        elif context == "mid":
-            # Show 1-2 specific competitors
-            if len(shop_averages) >= 2:
-                sorted_shops = sorted(shop_averages.items(), key=lambda x: x[1], reverse=True)
-                top_two = sorted_shops[:2]
-                shop_refs = " and ".join([f"{shop} at £{price:.2f}" for shop, price in top_two])
-                return f"• Reference that {shop_refs}. Remind them you need to compete with these prices."
-            elif len(shop_averages) == 1:
-                shop, price = list(shop_averages.items())[0]
-                return f"• Mention that {shop} sells similar items at £{price:.2f} and you're pricing to compete."
-            else:
-                return f"• Reference competitor pricing at {stats['range_str']}."
-        
-        elif context == "maximum":
-            # Show top competitor pricing
-            if len(shop_averages) >= 1:
-                highest_shop, highest_price = max(shop_averages.items(), key=lambda x: x[1])
-                return f"• Point out that top competitor pricing (like {highest_shop} at £{highest_price:.2f}) factors into your maximum."
-            else:
-                return f"• Reference top competitor pricing around £{stats['second_highest']:.2f}."
-        
-        return f"• Mention competitor pricing ranges from {stats['range_str']}."
-
-
-class NegotiationTemplates:
-    """Enhanced negotiation templates with data-driven competitor references"""
-
-    @staticmethod
-    def get_opening_response(item_name, next_offer, competitors):
-        """Opening response - always use highest competitor as anchor"""
-        comp_ref = CompetitorAnalyzer.format_reference(competitors, context="opening")
-        
-        lines = [
-            f"• Greet customer and acknowledge the {item_name}",
-            comp_ref,
-            "• Explain you offer around a quarter of brand new value for quick cash purchases",
-            f"• Present your opening offer of **£{next_offer:.2f}**",
-            "• Mention there's room to negotiate"
-        ]
-        
-        return lines
-
-    @staticmethod
-    def get_explanation_response(item_name, current_offer, competitors):
-        """Detailed explanation when customer asks 'why' - show full data"""
-        comp_ref = CompetitorAnalyzer.format_reference(competitors, context="explanation")
-        
-        lines = [
-            "• Acknowledge their question positively",
-            comp_ref,
-            "• Explain you base offers on roughly a quarter of brand new value",
-            "• Mention the costs: refurb, testing, storage time",
-            "• Be transparent: explain you typically sell at about slightly less than   double what you pay",
-            f"• Reiterate the current offer is **£{current_offer:.2f}**",
-            "• Emphasise you're giving cash today while being realistic"
-        ]
-        
-        return lines
-
-    @staticmethod
-    def get_mid_negotiation_response(item_name, next_offer, last_offer, competitors):
-        """Mid-negotiation response when customer rejects - use median pricing"""
-        comp_ref = CompetitorAnalyzer.format_reference(competitors, context="mid")
-        increase = next_offer - last_offer
-        
-        lines = [
-            "• Show empathy and willingness to work with them",
-            comp_ref,
-            "• Remind them about refurb, testing, and time to sell costs",
-            f"• Present your increased offer of **£{next_offer:.2f}** (up £{increase:.2f})",
-            "• Frame it as meeting them partway"
-        ]
-        
-        return lines
-
-    @staticmethod
-    def get_maximum_response(item_name, next_offer, competitors):
-        """Maximum offer response - use 2nd highest competitor, full transparency"""
-        comp_ref = CompetitorAnalyzer.format_reference(competitors, context="maximum")
-        
-        lines = [
-            f"• Thank them for working with you on the {item_name}",
-            comp_ref,
-            "• Be completely transparent: explain you'd sell at roughly double to cover overheads",
-            f"• Present your absolute maximum of **£{next_offer:.2f}**",
-            "• Emphasize this is as high as you can go, ask if they can agree"
-        ]
-        
-        return lines
-
-    @staticmethod
-    def get_accept_response(final_offer):
-        """Customer accepted the offer"""
-        return [
-            f"• Express enthusiasm and confirm the deal at **£{final_offer:.2f}** cash",
-            "• Thank them for working with you and frame it as fair for both sides"
-        ]
-
-    @staticmethod
-    def get_decline_response():
-        """Customer declined at maximum - polite close"""
-        return [
-            "• Be understanding and non-pushy",
-            "• Let them know the offer stands if they change their mind",
-            "• Encourage them to shop around and return if interested"
-        ]
-
-    @staticmethod
-    def get_customer_reply_options(next_offer):
-        """Generate the 3 button options for customer"""
-        return [
-            f"Yes — I'll take £{next_offer:.2f}",
-            "No — that's too low",
-            "Why — how did you price that?"
-        ]
-
-
-def detect_intent(customer_text):
-    """Detect intent from button text only"""
-    if not customer_text:
-        return None
-    
-    txt = customer_text.lower()
-    
-    if "yes" in txt and "take" in txt:
-        return "accept"
-    if "why" in txt and "how" in txt:
-        return "ask_reason"
-    if "no" in txt and "too low" in txt:
-        return "reject_low"
-    
-    # Default fallback
-    return "reject_low"
-
-
-def determine_increment(last_offer, max_price):
-    """
-    Determine realistic negotiation increments based on item value.
-    Increments scale with price to feel natural.
-    """
-    price_range = max_price - last_offer
-
-    # Scale increments by item value
-    if max_price < 30:
-        base = 2
-    elif max_price < 80:
-        base = 5
-    elif max_price < 150:
-        base = 10
-    elif max_price < 400:
-        base = 20
-    elif max_price < 1000:
-        base = 25
-    else:
-        base = 50
-
-    # Never exceed remaining gap
-    increment = min(base, price_range)
-    
-    return round(increment)
-
-
 @csrf_exempt
-@require_POST
-def negotiation_step(request):
-    """
-    Enhanced Cash Generator Negotiation Engine
-    - Data-driven competitor references
-    - Transparent pricing explanation
-    - Simple 3-button interaction (Yes/No/Why)
-    """
-    try:
-        data = json.loads(request.body)
-        item_name = (data.get("item_name") or "").strip()
-        buying_range = data.get("buying_range") or {}
-        competitors = data.get("selected_competitor_rows") or []
-        conversation_history = data.get("conversation_history") or []
+def save_input(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request'}, status=400)
 
-        print(competitors)
+    data = json.loads(request.body)
+    field = data.get('field')
+    value = data.get('value')
+    print(f"Received update: {field} = {value}")
 
-        if not item_name or not buying_range:
-            return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
+    response_data = {'status': 'ok'}
 
-        min_price = float(buying_range.get("min", 0))
-        max_price = float(buying_range.get("max", 0))
+    # -------------------------------------------------------
+    # When the user selects a model, find variants dynamically
+    # -------------------------------------------------------
+    if field == 'model':
+        try:
+            model_id = int(value)
+            item_model = ItemModel.objects.get(pk=model_id)
+        except (ValueError, ItemModel.DoesNotExist):
+            print(f"⚠️ Invalid model id: {value}")
+            return JsonResponse(response_data)
 
-        if min_price <= 0 or max_price <= 0 or min_price > max_price:
-            return JsonResponse({"success": False, "error": "Invalid buying range"}, status=400)
+        market_items = (
+            MarketItem.objects
+            .filter(item_model=item_model)
+            .select_related('category', 'item_model')
+        )
 
-        # --- Determine latest customer intent ---
-        intent = None
-        if conversation_history:
-            latest_customer_text = conversation_history[-1].get("customer", "")
-            intent = detect_intent(latest_customer_text)
+        print(f"📦 Found {market_items.count()} MarketItems for {item_model}:")
+        for mi in market_items:
+            print(f"   - {mi.id}: {mi.title} [{mi.category.name if mi.category else 'No category'}]")
 
-        # --- Offer progression ---
-        last_offer = None
-        at_maximum = False
-        next_offer = float(min_price)
-
-        if conversation_history:
-            last_offer = conversation_history[-1].get("assistant_offer")
-            last_offer = float(last_offer) if last_offer is not None else None
-
-        # Determine next offer based on intent
-        if intent == "accept" and last_offer is not None:
-            # Customer accepted - freeze at last offer
-            next_offer = last_offer
-            at_maximum = True
-        elif intent == "ask_reason" and last_offer is not None:
-            # Customer asking why - keep same offer
-            next_offer = last_offer
-        elif last_offer is None:
-            # First interaction - start at minimum
-            next_offer = float(min_price)
-        else:
-            # Customer rejected - increment offer
-            gap = max_price - last_offer
-            if gap > 0:
-                increment = determine_increment(last_offer, max_price)
-                increment = min(increment, gap)
-                next_offer = last_offer + increment
-            else:
-                next_offer = last_offer
-            
-            # Check if we've reached maximum
-            at_maximum = (next_offer >= max_price)
-            next_offer = min(next_offer, max_price)
-
-        # Calculate progress for UI
-        progress = round(((next_offer - min_price) / (max_price - min_price) * 100), 1) if max_price > min_price else 100.0
-
-        # --- Build response lines based on state ---
-        if not conversation_history:
-            # Opening response
-            response_lines = NegotiationTemplates.get_opening_response(item_name, next_offer, competitors)
-        
-        elif intent == "accept":
-            # Customer accepted
-            response_lines = NegotiationTemplates.get_accept_response(next_offer)
-        
-        elif intent == "ask_reason":
-            # Customer asked why
-            response_lines = NegotiationTemplates.get_explanation_response(item_name, next_offer, competitors)
-        
-        elif intent == "reject_low":
-            if at_maximum:
-                # At maximum - final offer
-                response_lines = NegotiationTemplates.get_maximum_response(item_name, next_offer, competitors)
-            else:
-                # Mid-negotiation - increment and explain
-                response_lines = NegotiationTemplates.get_mid_negotiation_response(item_name, next_offer, last_offer, competitors)
-        
-        else:
-            # Fallback (shouldn't happen)
-            response_lines = [f"• Current offer: **£{next_offer:.2f}**"]
-
-        # Prepare customer reply options
-        customer_replies = NegotiationTemplates.get_customer_reply_options(next_offer)
-
-        # Convert to HTML for frontend
-        formatted_response_html = "<br>".join(response_lines)
-
-        response_data = {
-            "your_response": formatted_response_html,
-            "your_response_bullets": response_lines,
-            "customer_reply_options": customer_replies,
-            "suggested_offer": f"£{next_offer:.2f}",
-            "at_maximum": at_maximum,
-            "negotiation_progress": progress,
-            "intent_detected": intent
+        # Attributes defined for this ItemModel
+        attrs = {
+            av.attribute.name: av.get_display_value()
+            for av in item_model.attribute_values.select_related('attribute')
         }
+        print(f"Attributes for {item_model.name}: {attrs}")
 
-        return JsonResponse({
-            "success": True, 
-            "ai_response": response_data, 
-            "at_maximum": at_maximum
-        })
+        # -------------------------------------------------------
+        # 🧩 Build and return variant options for this model
+        # -------------------------------------------------------
+        variants = get_model_variants(item_model)
+        print(f"🧩 Variants for {item_model.name}: {variants}")
 
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return JsonResponse({"success": False, "error": str(e)}, status=500)
+        # Send them back to the frontend so it can filter dropdowns
+        response_data["variants"] = variants
 
+    return JsonResponse(response_data)
 
 @csrf_exempt
 def save_listing(request):
@@ -1318,7 +1015,7 @@ def save_overnight_scraped_data(request):
         market_item_keys = {}
         for variant in results:
             item_name = variant.get('item_name')
-            model_name = variant.get('model_name')
+            model_name = variant.get('model_name', '').strip()
             if not item_name or not model_name:
                 continue
             category, subcategory, item_model = hierarchy_cache[model_name]
@@ -1452,9 +1149,6 @@ def save_overnight_scraped_data(request):
                             )
                         )
                 else:
-                    print(f"🆕 Creating new listing: market_item={market_item.id} ({market_item.title}), "
-                        f"competitor={competitor}, stable_id={stable_id}")
-
                     listings_to_create.append(
                         CompetitorListing(
                             market_item=market_item,
@@ -1486,7 +1180,7 @@ def save_overnight_scraped_data(request):
                 print(f"💾 Attempting to bulk create {len(listings_to_create)} listings...")
                 try:
                     print(f"💾 Creating {len(listings_to_create)} listings in chunks...")
-                    chunked_bulk_create(CompetitorListing, listings_to_create, batch_size=200)
+                    chunked_bulk_create(CompetitorListing, listings_to_create, batch_size=50)
                 except IntegrityError as e:
                     print(f"❌ DUPLICATE ERROR: {e}")
                     print(f"📊 Stats: market_items={len(existing_items)}, "
@@ -1506,13 +1200,13 @@ def save_overnight_scraped_data(request):
                     'price', 'trade_voucher_price', 'trade_cash_price',
                     'title', 'description', 'condition', 'store_name',
                     'url', 'is_active', 'last_seen'
-                ])
+                ], batch_size=100)
 
 
                 updated_count += len(listings_to_update)
 
             if histories_to_create:
-                chunked_bulk_create(CompetitorListingHistory, histories_to_create, batch_size=200)
+                chunked_bulk_create(CompetitorListingHistory, histories_to_create, batch_size=100)
                 history_count += len(histories_to_create)
         print(f"✅ Bulk write complete in {time.time() - section_start:.2f}s")
 

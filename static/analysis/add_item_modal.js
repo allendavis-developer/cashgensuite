@@ -36,7 +36,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     currentAttributes = []; // clear old ones
     attributesContainer.innerHTML = '';
     fetchSubcategories(categoryTomSelect.getValue());
-    loadCategoryAttributes(categoryTomSelect.getValue());
   });
 
   subcategoryTomSelect.on('change', fetchModels);
@@ -74,6 +73,18 @@ function initTomSelects() {
         await handleAddNewModel(categoryId, subcategoryId);
       }
     }
+  });
+
+  categoryTomSelect.on('change', (value) => {
+    if (value) sendFieldUpdate('category', value);
+  });
+
+  subcategoryTomSelect.on('change', (value) => {
+    if (value) sendFieldUpdate('subcategory', value);
+  });
+
+  modelTomSelect.on('change', (value) => {
+    if (value && value !== '__new__') sendFieldUpdate('model', value);
   });
 
   // Setup navigation after TomSelect initialization
@@ -321,9 +332,6 @@ async function fetchModels() {
   const data = await res.json();
   cache.models[key] = data;
   renderModels(data);
-
- 
-
 }
 
 function renderModels(data) {
@@ -383,20 +391,38 @@ async function handleAddNewModel(categoryId, subcategoryId) {
   }
 }
 
+async function sendFieldUpdate(fieldName, value) {
+  try {
+    const res = await fetch('/api/save_input/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+      },
+      body: JSON.stringify({ field: fieldName, value }),
+    });
 
-// ========== Attributes ==========
-async function loadCategoryAttributes(categoryId) {
-  let data;
-  if (cache.attributes[categoryId]) {
-    data = cache.attributes[categoryId];
-  } else {
-    const res = await fetch(`/api/category_attributes/?category=${categoryId}`);
-    data = await res.json();
-    cache.attributes[categoryId] = data;
+    const data = await res.json();
+
+    // 🔥 Handle model variants dynamically
+    if (fieldName === 'model' && data.variants) {
+      console.log('Received variants from backend:', data.variants);
+
+      // Build attribute data array in same shape as category attributes
+      const attrs = Object.keys(data.variants).map((attrName, idx) => ({
+        id: `model_${attrName}`,         // pseudo-ID
+        name: attrName,
+        label: attrName.charAt(0).toUpperCase() + attrName.slice(1),
+        field_type: 'select',
+        options: data.variants[attrName],
+      }));
+
+      currentAttributes = attrs;
+      renderAttributes(attrs);
+    }
+  } catch (err) {
+    console.error(`Failed to send ${fieldName}:`, err);
   }
-
-  currentAttributes = data;   //  ensure currentAttributes is always updated
-  renderAttributes(data);
 }
 
 
@@ -431,9 +457,13 @@ function renderAttributes(attrs) {
         
         attributeTomSelects[attr.id] = ts;
         setupAttributeNavigation(attr.id, index);
+        ts.on('change', (value) => {
+          if (value) sendFieldUpdate(attr.name || attr.label || `attr_${attr.id}`, value);
+        });
       }
     }
   });
+
 
   // Setup Enter key navigation for text/number inputs
   attrs.forEach((attr, index) => {
@@ -466,6 +496,8 @@ function renderAttributes(attrs) {
       }
     }
   });
+
+  
 }
 
 // ========== UI & Event Handlers ==========
@@ -512,10 +544,6 @@ addItemBtn.addEventListener('click', async () => {
     categoryTomSelect.focus(); 
   }
 
-  const selectedCategory = categoryTomSelect.getValue();
-  if (selectedCategory) {
-      await loadCategoryAttributes(selectedCategory);
-  }
 });
 
 
