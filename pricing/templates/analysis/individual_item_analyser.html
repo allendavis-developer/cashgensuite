@@ -1272,62 +1272,98 @@ async function fetchGeneratedSearchTerm() {
 // --------------------
 
 
+// Update renderAttributes function
 function renderAttributes(attributes) {
-  const container = document.getElementById('attributes-container');
-  container.innerHTML = '';
+    const container = document.getElementById('attributes-container');
+    container.innerHTML = '';
 
-  attributes.forEach(attr => {
-    const inputGroup = document.createElement('div');
-    inputGroup.classList.add('input-group');
-
-    const label = document.createElement('label');
-    label.textContent = attr.label || attr.name;
-
-    if (attr.field_type === 'select') {
-      const wrapper = document.createElement('div');
-      wrapper.style.display = 'flex';
-      wrapper.style.gap = '0.5rem';
-      wrapper.style.alignItems = 'center';
-
-      const select = document.createElement('select');
-      select.id = `attr_${attr.name}`;
-      select.classList.add('input-field');
-      select.style.flex = '1';
-      select.innerHTML = `<option value="" selected>-- Select ${attr.label} (optional) --</option>`;
-      (attr.options || []).forEach(opt => {
-        const o = document.createElement('option');
-        o.value = opt;
-        o.textContent = opt;
-        select.appendChild(o);
-      });
-
-      const addBtn = document.createElement('button');
-      addBtn.type = 'button';
-      addBtn.classList.add('add-btn');
-      addBtn.textContent = '+';
-      addBtn.onclick = () =>
-        openAddModal('attribute_option', {
-          attributeId: attr.id,
-          selectElement: select
-        });
-
-      wrapper.appendChild(select);
-      wrapper.appendChild(addBtn);
-      inputGroup.appendChild(label);
-      inputGroup.appendChild(wrapper);
-    } else {
-      const input = document.createElement('input');
-      input.type = attr.field_type === 'number' ? 'number' : 'text';
-      input.id = `attr_${attr.name}`;
-      input.classList.add('input-field');
-      inputGroup.appendChild(label);
-      inputGroup.appendChild(input);
+    if (!attributes || attributes.length === 0) {
+        return;
     }
 
-    container.appendChild(inputGroup);
-  });
+    attributes.forEach((attr, index) => {
+        const inputGroup = document.createElement('div');
+        inputGroup.classList.add('input-group');
 
+        const label = document.createElement('label');
+        label.textContent = attr.label || attr.name;
+
+        if (attr.field_type === 'select') {
+            const wrapper = document.createElement('div');
+            wrapper.style.display = 'flex';
+            wrapper.style.gap = '0.5rem';
+            wrapper.style.alignItems = 'center';
+
+            const select = document.createElement('select');
+            select.id = `attr_${attr.name}`;
+            select.classList.add('input-field');
+            select.style.flex = '1';
+            select.innerHTML = `<option value="" selected>-- Select ${attr.label} (optional) --</option>`;
+            
+            (attr.options || []).forEach(opt => {
+                const o = document.createElement('option');
+                o.value = opt;
+                o.textContent = opt;
+                select.appendChild(o);
+            });
+
+            // Add change listener to update search term and check existing items
+            select.addEventListener('change', () => {
+                fetchGeneratedSearchTerm();
+                maybeCheckExistingItems();
+            });
+
+            // Optional: Add button to suggest valid combinations
+            const addBtn = document.createElement('button');
+            addBtn.type = 'button';
+            addBtn.classList.add('add-btn');
+            addBtn.textContent = '?';
+            addBtn.title = 'Show valid combinations';
+            addBtn.onclick = () => showValidCombinations(attr.name);
+
+            wrapper.appendChild(select);
+            wrapper.appendChild(addBtn);
+            inputGroup.appendChild(label);
+            inputGroup.appendChild(wrapper);
+        } else {
+            const input = document.createElement('input');
+            input.type = attr.field_type === 'number' ? 'number' : 'text';
+            input.id = `attr_${attr.name}`;
+            input.classList.add('input-field');
+            
+            input.addEventListener('input', () => {
+                fetchGeneratedSearchTerm();
+                maybeCheckExistingItems();
+            });
+            
+            inputGroup.appendChild(label);
+            inputGroup.appendChild(input);
+        }
+
+        container.appendChild(inputGroup);
+        
+        // Setup Enter key navigation
+        const inputElement = inputGroup.querySelector('input, select');
+        if (inputElement) {
+            inputElement.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    
+                    if (index < attributes.length - 1) {
+                        const nextAttr = attributes[index + 1];
+                        const nextInput = document.getElementById(`attr_${nextAttr.name}`);
+                        if (nextInput) {
+                            nextInput.focus();
+                        }
+                    } else {
+                        document.getElementById('scrape-btn').focus();
+                    }
+                }
+            });
+        }
+    });
 }
+
 
 
 document.getElementById('category').addEventListener('change', async (e) => {
@@ -1385,19 +1421,68 @@ document.getElementById('subcategory').addEventListener('change', async (e) => {
     addNewBtn.disabled = false
 });
 
+// Update the model change listener to use the save_input API
 document.getElementById('model').addEventListener('change', async (e) => {
-  
+    const modelId = e.target.value;
+    
     // Clear competitor table
     updateCompetitorData([], 0);
+    
+    // Send model selection to backend - this will return variants
+    await sendFieldUpdate('model', modelId);
+    
+    // Generate search term after attributes are rendered
     fetchGeneratedSearchTerm();
-
-    const categoryId = document.getElementById('category').value;
-    loadCategoryAttributes(categoryId);
-
-    // Check existing items based on category + model
+    
+    // Check existing items
     maybeCheckExistingItems();
-
 });
+
+
+// TODO: DUPLICATED IN add_item_modal.js
+// Update sendFieldUpdate to handle model variants
+async function sendFieldUpdate(fieldName, value) {
+    try {
+        const res = await fetch('/api/save_input/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({ field: fieldName, value }),
+        });
+
+        const data = await res.json();
+        console.log('Backend response:', data);
+
+        // Handle model selection and variants
+        if (fieldName === 'model' && data.variants) {
+            console.log('Received variants from backend:', data.variants);
+
+            // Build attribute objects from variants
+            const attrs = Object.keys(data.variants).map((attrName, idx) => ({
+                id: `model_${attrName}_${idx}`,
+                name: attrName,
+                label: attrName.charAt(0).toUpperCase() + attrName.slice(1).replace(/_/g, ' '),
+                field_type: 'select',
+                options: data.variants[attrName] || []
+            }));
+
+            // Render the model-specific attributes
+            renderAttributes(attrs);
+            
+            // Store combinations if provided
+            if (data.combinations) {
+                window.modelCombinations = data.combinations;
+                console.log('Stored attribute combinations:', data.combinations);
+            }
+        }
+    } catch (err) {
+        console.error(`Failed to send ${fieldName}:`, err);
+    }
+}
+
+
 
 // Listen for both user and programmatic changes (like the prefiller)
 const attrContainer = document.getElementById('attributes-container');
