@@ -36,6 +36,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     currentAttributes = []; // clear old ones
     attributesContainer.innerHTML = '';
     fetchSubcategories(categoryTomSelect.getValue());
+    loadCategoryAttributes(categoryTomSelect.getValue());
+
   });
 
   subcategoryTomSelect.on('change', fetchModels);
@@ -403,26 +405,43 @@ async function sendFieldUpdate(fieldName, value) {
     });
 
     const data = await res.json();
+    console.log('Backend response:', data);
 
-    // 🔥 Handle model variants dynamically
+    // Handle model selection and variants
     if (fieldName === 'model' && data.variants) {
       console.log('Received variants from backend:', data.variants);
 
-      // Build attribute data array in same shape as category attributes
+      // Build attribute objects like the old category attributes
       const attrs = Object.keys(data.variants).map((attrName, idx) => ({
-        id: `model_${attrName}`,         // pseudo-ID
+        id: `model_${attrName}`,       // pseudo-ID
         name: attrName,
         label: attrName.charAt(0).toUpperCase() + attrName.slice(1),
         field_type: 'select',
         options: data.variants[attrName],
       }));
 
+      // Update currentAttributes and render
       currentAttributes = attrs;
       renderAttributes(attrs);
     }
   } catch (err) {
     console.error(`Failed to send ${fieldName}:`, err);
   }
+}
+
+
+async function loadCategoryAttributes(categoryId) {
+  let data;
+  if (cache.attributes[categoryId]) {
+    data = cache.attributes[categoryId];
+  } else {
+    const res = await fetch(`/api/category_attributes/?category=${categoryId}`);
+    data = await res.json();
+    cache.attributes[categoryId] = data;
+  }
+
+  currentAttributes = data;   //  ensure currentAttributes is always updated
+  renderAttributes(data);
 }
 
 
@@ -543,6 +562,12 @@ addItemBtn.addEventListener('click', async () => {
     // No last category, focus category
     categoryTomSelect.focus(); 
   }
+
+    const selectedCategory = categoryTomSelect.getValue();
+  if (selectedCategory) {
+      await loadCategoryAttributes(selectedCategory);
+  }
+
 
 });
 

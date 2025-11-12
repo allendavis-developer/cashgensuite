@@ -3,7 +3,9 @@ CATEGORY_SEARCH_FORMAT = {
     "games (discs/cartridges)": ["subcategory", "item_name"],
     "gaming consoles": ["item_name", "storage", "condition"],
     "laptops": ["item_name", "ram", "storage",],
-    "tablets": ["item_name", "storage",]
+    "tablets": ["item_name", "storage",],
+    "televisions": ["item_name", "size",]
+
 
     # Add more categories here
 }
@@ -37,44 +39,34 @@ def build_search_term(item_name, category, subcategory=None, attributes=None):
     return search_term
 
 def get_model_variants(item_model):
-    """
-    For a given ItemModel, parse MarketItem titles to extract distinct attribute
-    variants based purely on CATEGORY_SEARCH_FORMAT order (no hardcoding).
-    """
     category_name = item_model.category.name.lower() if item_model.category else ""
     format_fields = CATEGORY_SEARCH_FORMAT.get(category_name, ["item_name"])
     relevant_attrs = [f for f in format_fields if f not in ("item_name", "subcategory")]
 
-    print(f"➡️ Building variants for model: {item_model}")
-    print(f"Category: {category_name}")
-    print(f"Relevant attributes: {relevant_attrs}")
-
     variants = {attr: set() for attr in relevant_attrs}
+    combinations = []  # <--- NEW: store attribute combinations
 
     market_items = MarketItem.objects.filter(item_model=item_model)
     base_name = item_model.name.lower().strip()
 
     for mi in market_items:
         title = mi.title.lower().strip()
-
-        # Remove the base model name from the beginning of the title if present
-        if title.startswith(base_name):
-            remainder = title[len(base_name):].strip()
-        else:
-            # try to remove partial overlap (fallback)
-            remainder = title.replace(base_name, "").strip()
-
-        # Split by spaces to get attribute chunks
+        remainder = title[len(base_name):].strip() if title.startswith(base_name) else title
         parts = remainder.split()
-        # Match them to the expected attributes in order
+
+        combo = {}
         for i, attr in enumerate(relevant_attrs):
             if i < len(parts):
                 value = parts[i].strip()
                 if value and value != "—":
                     variants[attr].add(value)
+                    combo[attr] = value
+        if combo:
+            combinations.append(combo)
 
-    # Convert sets to sorted lists
-    variants = {k: sorted(v, key=str.lower) for k, v in variants.items() if v}
+    variants = {k: sorted(v) for k, v in variants.items() if v}
 
-    print(f"✅ Found variants for {item_model.name}: {variants}")
-    return variants
+    return {
+        "variants": variants,
+        "combinations": combinations  # list of dicts like [{"storage": "128GB", "color": "Black"}, ...]
+    }
