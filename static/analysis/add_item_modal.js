@@ -44,6 +44,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 });
 
+async function loadCategoryAttributes(categoryId) {
+  let data;
+  if (cache.attributes[categoryId]) {
+    data = cache.attributes[categoryId];
+  } else {
+    const res = await fetch(`/api/category_attributes/?category=${categoryId}`);
+    data = await res.json();
+    cache.attributes[categoryId] = data;
+  }
+  
+  currentAttributes = data;
+  renderAttributes(data);
+}
+
 // ========== Typeahead (Tom Select) ==========
 function initTomSelects() {
   categoryTomSelect = new TomSelect('#modalItemCategory', { 
@@ -116,7 +130,7 @@ function setupTomSelectNavigation() {
     }, 50);
   });
 
-  // Model -> First attribute or Save
+  // Between attributes  
   modelTomSelect.on('item_add', (value) => {
     if (value === '__new__') return; // Don't navigate if adding new model
     
@@ -392,7 +406,8 @@ async function handleAddNewModel(categoryId, subcategoryId) {
     modelTomSelect.clear();
   }
 }
-
+let allowedCombinations = [];
+let selectedVariants = {};
 async function sendFieldUpdate(fieldName, value) {
   try {
     const res = await fetch('/api/save_input/', {
@@ -410,6 +425,10 @@ async function sendFieldUpdate(fieldName, value) {
     // Handle model selection and variants
     if (fieldName === 'model' && data.variants) {
       console.log('Received variants from backend:', data.variants);
+      console.log('Received combinations from backend:', data.combinations);
+
+      allowedCombinations = data.combinations || [];
+      selectedVariants = {};
 
       // Build attribute objects like the old category attributes
       const attrs = Object.keys(data.variants).map((attrName, idx) => ({
@@ -423,6 +442,13 @@ async function sendFieldUpdate(fieldName, value) {
       // Update currentAttributes and render
       currentAttributes = attrs;
       renderAttributes(attrs);
+    } else {
+      // Track variant selections
+      const attrMatch = currentAttributes.find(a => a.name === fieldName || a.label === fieldName || `attr_${a.id}` === fieldName);
+      if (attrMatch) {
+        selectedVariants[attrMatch.name] = value;
+        filterRemainingAttributes();
+      }
     }
   } catch (err) {
     console.error(`Failed to send ${fieldName}:`, err);
@@ -430,18 +456,29 @@ async function sendFieldUpdate(fieldName, value) {
 }
 
 
-async function loadCategoryAttributes(categoryId) {
-  let data;
-  if (cache.attributes[categoryId]) {
-    data = cache.attributes[categoryId];
-  } else {
-    const res = await fetch(`/api/category_attributes/?category=${categoryId}`);
-    data = await res.json();
-    cache.attributes[categoryId] = data;
-  }
 
-  currentAttributes = data;   //  ensure currentAttributes is always updated
-  renderAttributes(data);
+function filterRemainingAttributes() {
+  if (allowedCombinations.length === 0) return;
+
+  // Filter combinations based on current selections
+  const validCombos = allowedCombinations.filter(combo => {
+    return Object.keys(selectedVariants).every(key => combo[key] === selectedVariants[key]);
+  });
+
+  // Update options for unselected attributes
+  currentAttributes.forEach(attr => {
+    if (!selectedVariants[attr.name]) {
+      const ts = attributeTomSelects[attr.id];
+      if (ts) {
+        const allowedOptions = [...new Set(validCombos.map(c => c[attr.name]))];
+        ts.clearOptions();
+        allowedOptions.forEach(opt => {
+          ts.addOption({ value: opt, text: opt });
+        });
+        ts.refreshOptions(false);
+      }
+    }
+  });
 }
 
 
@@ -469,19 +506,45 @@ function renderAttributes(attrs) {
       const selectElement = document.getElementById(`attr_${attr.id}`);
       if (selectElement) {
         const ts = new TomSelect(`#attr_${attr.id}`, {
-          placeholder: `Select ${attr.label || attr.name}...`,
-          create: false,
-          options: (attr.options || []).map(opt => ({ value: opt, text: opt })),
-        });
-        
-        attributeTomSelects[attr.id] = ts;
-        setupAttributeNavigation(attr.id, index);
-        ts.on('change', (value) => {
-          if (value) sendFieldUpdate(attr.name || attr.label || `attr_${attr.id}`, value);
-        });
+        placeholder: `Select ${attr.label || attr.name}...`,
+        create: false,
+        options: (attr.options || []).map(opt => ({ value: opt, text: opt })),
+      });
+
+      attributeTomSelects[attr.id] = ts;
+      setupAttributeNavigation(attr.id, index);
+
+      // 🔹 Auto-select if only one option
+      if (attr.options && attr.options.length === 1) {
+        const onlyOption = attr.options[0];
+        ts.setValue(onlyOption);
+        sendFieldUpdate(attr.name || attr.label || `attr_${attr.id}`, onlyOption);
+      }
+
+      ts.on('change', (value) => {
+        if (value) sendFieldUpdate(attr.name || attr.label || `attr_${attr.id}`, value);
+      });
       }
     }
   });
+
+  // After all attributes are rendered and TomSelects initialized:
+  if (attrs.length > 0) {
+    setTimeout(() => {
+      const firstAttr = attrs[0];
+      const firstAttrTs = attributeTomSelects[firstAttr.id];
+      if (firstAttrTs) {
+        firstAttrTs.focus();
+        firstAttrTs.open();
+      } else {
+        const firstAttrInput = document.getElementById(`attr_${firstAttr.id}`);
+        if (firstAttrInput) {
+          firstAttrInput.focus();
+        }
+      }
+    }, 100);
+  }
+
 
 
   // Setup Enter key navigation for text/number inputs
@@ -515,6 +578,8 @@ function renderAttributes(attrs) {
       }
     }
   });
+
+  
 
   
 }
@@ -564,9 +629,6 @@ addItemBtn.addEventListener('click', async () => {
   }
 
     const selectedCategory = categoryTomSelect.getValue();
-  if (selectedCategory) {
-      await loadCategoryAttributes(selectedCategory);
-  }
 
 
 });

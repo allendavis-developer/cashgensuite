@@ -155,43 +155,98 @@ def round_down_to_even(value):
 def compute_prices_from_cex_rule(market_item, cex_rule=None):
     """
     Fetch latest CEX prices for a given MarketItem and compute selling and buying prices.
-    
+
     Updates market_item.cex_sale_price, market_item.cex_cash_trade_price, and market_item.cex_url.
-    
+
     Selling price:
         - If cex_rule provided: cex_sale_price * cex_rule.cex_pct
         - Otherwise: cex_sale_price * 0.8 (default 20% discount)
-    
+
     Buying price range:
         - start = 50% of selling price
-        - end = CeX cash price if available, else 50% of selling price
+        - mid   = average of start and end
+        - end   = CeX cash price if available, else 50% of selling price
         - Ensure start <= end
+
+    Returns:
+        {
+            "selling_price": float,
+            "buying_start_price": float,
+            "buying_mid_price": float,
+            "buying_end_price": float,
+            "cex_trade_cash_price": float,
+            "cex_sale_price": float,
+            "cex_url": str,
+            "reasons": dict
+        }
     """
 
-    # --- Fetch first active CEX listing for this item ---
-    cex_listing = CompetitorListing.objects.filter(
+    qs = CompetitorListing.objects.filter(
         competitor="CEX",
         market_item=market_item,
         is_active=True
-    ).order_by("id").first()
+    ).order_by("id")
+
+    # Prefer unlocked versions if available
+    cex_listing = qs.filter(Q(title__icontains="unlocked")).first() or qs.first()
+
+    if not cex_listing:
+        return {
+            "selling_price": 0,
+            "buying_start_price": 0,
+            "buying_mid_price": 0,
+            "buying_end_price": 0,
+            "cex_trade_cash_price": None,
+            "cex_sale_price": None,
+            "cex_url": None,
+            "reasons": {"error": "No CEX listing found"}
+        }
+
+    cex_sale_price = cex_listing.price or 0
+    cex_cash_trade_price = cex_listing.trade_cash_price
+    cex_url = cex_listing.url
 
     # --- Compute selling price ---
-    sale_price = cex_listing.price or 0
     if cex_rule:
-        selling_price = round(sale_price * cex_rule.cex_pct)
+        selling_price = round(cex_sale_price * cex_rule.cex_pct)
+        reason_selling = f"Applied CeX rule percentage ({cex_rule.cex_pct * 100:.0f}%) to CeX sale price."
     else:
-        selling_price = round(sale_price * 0.8)
+        selling_price = round(cex_sale_price * 0.8)
+        reason_selling = "Used default 20% discount from CeX sale price."
 
-    # --- Compute buying range ---
+    # --- Compute buying prices ---
     buying_start_price = round(selling_price / 2)
-    buying_end_price = cex_listing.trade_cash_price or round(selling_price / 2)
+    buying_end_price = cex_cash_trade_price or round(selling_price / 2)
 
+    # Ensure logical order
     if buying_start_price > buying_end_price:
         buying_start_price = round(buying_end_price * 0.8)
+        reason_buying_start = "Adjusted start price down to ensure it’s below CeX cash price."
+    else:
+        reason_buying_start = "Set to 50% of selling price."
 
-    return selling_price, buying_start_price, buying_end_price, cex_listing.trade_cash_price, cex_listing.price, cex_listing.url
+    buying_mid_price = round((buying_start_price + buying_end_price) / 2)
+    reason_buying_mid = "Average of start and end buying prices to offer a middle-ground trade value."
+    reason_buying_end = (
+        "Matched CeX cash trade price." if cex_cash_trade_price
+        else "Used 50% of selling price (no CeX cash trade price available)."
+    )
 
-
+    return {
+        "selling_price": selling_price,
+        "buying_start_price": buying_start_price,
+        "buying_mid_price": buying_mid_price,
+        "buying_end_price": buying_end_price,
+        "cex_trade_cash_price": cex_cash_trade_price,
+        "cex_sale_price": cex_sale_price,
+        "cex_url": cex_url,
+        "reasons": {
+            "selling_price": reason_selling,
+            "buying_start_price": reason_buying_start,
+            "buying_mid_price": reason_buying_mid,
+            "buying_end_price": reason_buying_end,
+        },
+    }
 
 
 
@@ -256,9 +311,17 @@ def get_selling_and_buying_price(request):
         cex_rule = get_most_specific_cex_rule(category_id, subcategory_id, model_id)
 
         # Compute final prices
-        selling_price, buying_start, buying_end, cex_buying_price, cex_selling_price, cex_url = compute_prices_from_cex_rule(
-            market_item, cex_rule
-        )
+        prices = compute_prices_from_cex_rule(market_item, cex_rule)
+
+        selling_price = prices["selling_price"]
+        buying_start = prices["buying_start_price"]
+        buying_mid = prices["buying_mid_price"]
+        buying_end = prices["buying_end_price"]
+        cex_buying_price = prices["cex_trade_cash_price"]
+        cex_selling_price = prices["cex_sale_price"]
+        cex_url = prices["cex_url"]
+        reasons = prices["reasons"]
+
 
         # Return response including competitor stats
         return JsonResponse({
@@ -270,7 +333,8 @@ def get_selling_and_buying_price(request):
             "cex_buying_price": cex_buying_price,
             "cex_selling_price": cex_selling_price,
             "cex_url": cex_url,
-            "competitor_stats": competitor_stats  # <-- added
+            "competitor_stats": competitor_stats, 
+            "reasons": reasons,
         })
 
     except ValueError as e:
@@ -278,7 +342,6 @@ def get_selling_and_buying_price(request):
     except Exception as e:
         import traceback; traceback.print_exc()
         return JsonResponse({"success": False, "error": str(e)}, status=500)
-
 
 
 
@@ -612,7 +675,7 @@ def category_attributes(request):
             "label": a.label,
             "field_type": a.field_type,
             "required": a.required,
-            "options": a.options or []
+            # "options": a.options or []
         } for a in attrs
     ]
     return JsonResponse(data, safe=False)
@@ -792,6 +855,8 @@ def save_input(request):
 
         # Send them back to the frontend so it can filter dropdowns
         response_data["variants"] = variants["variants"]
+        response_data["combinations"] = variants["combinations"]
+
 
     return JsonResponse(response_data)
 

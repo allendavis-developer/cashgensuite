@@ -707,14 +707,20 @@ async function updatePriceCells(row, category, model, attributes) {
   });
 
   const priceResult = await priceResponse.json();
+  console.log(priceResult);
   if (!priceResult.success) throw new Error(priceResult.error || 'Failed to get selling price');
 
   const sellingPrice = parseFloat(priceResult.selling_price);
   const buyingStartPrice = parseFloat(priceResult.buying_start_price);
   const cexOfferCashPrice = parseFloat(priceResult.cex_buying_price);
 
+  reasons = priceResult.reasons;
+
   // Suggested RRP
-  row.querySelector('.suggested-rrp').textContent = `£${sellingPrice.toFixed(2)}`;
+  const rrpCell = row.querySelector('.suggested-rrp');
+  rrpCell.textContent = `£${sellingPrice.toFixed(2)}`;
+  if (reasons.selling_price) rrpCell.title = reasons.selling_price;
+  
 
   // CEX offer
   const cexOfferCell = row.querySelector('.cex-offer');
@@ -722,24 +728,29 @@ async function updatePriceCells(row, category, model, attributes) {
   cexOfferCell.dataset.buyMax = cexOfferCashPrice;
   const startingOfferCell = row.querySelector('.starting-offer');
   startingOfferCell.textContent = `£${buyingStartPrice.toFixed(2)}`;
+  if (reasons.buying_end_price) cexOfferCell.title = reasons.buying_end_price;
 
   // Starting offer 
   const currentOfferCell = row.querySelector('.current-offer');
   const buyVal = currentOfferCell.querySelector('.buying-value');
   buyVal.textContent = `£${buyingStartPrice.toFixed(2)}`;
+  if (reasons.buying_start_price) startingOfferCell.title = "Initially set at half our suggested RRP, but can switch to mid offer and final offer";
 
   // Current offer
   currentOfferCell.querySelector('.buying-value').textContent = `£${buyingStartPrice.toFixed(2)}`;
   currentOfferCell.dataset.buyMin = buyingStartPrice;
+  if (reasons.buying_start_price) buyVal.title = reasons.buying_start_price;
 
   // Mid offer = starting + 50% of range
   const midOfferCell = row.querySelector('.mid-offer');
   const midOffer = buyingStartPrice + (cexOfferCashPrice - buyingStartPrice)/2;
   midOfferCell.textContent = `£${midOffer.toFixed(2)}`;
+  if (reasons.buying_mid_price) midOfferCell.title = reasons.buying_mid_price;
 
   // Final offer = max CEX offer
   const finalOfferCell = row.querySelector('.final-offer');
   finalOfferCell.textContent = `£${cexOfferCashPrice.toFixed(2)}`;
+  if (reasons.buying_end_price) finalOfferCell.title = reasons.buying_end_price;
 
   currentOfferCell.dataset.buyMin = buyingStartPrice;
 
