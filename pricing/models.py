@@ -364,10 +364,29 @@ class CEXPricingRule(models.Model):
     """
     Defines what % of competitor (CEX) price we sell an item for.
     Granularity: Category > Subcategory > ItemModel
+    If all fields are null, this is the DEFAULT rule.
     """
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='cex_rules')
-    subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, blank=True, null=True, related_name='cex_rules')
-    item_model = models.ForeignKey(ItemModel, on_delete=models.CASCADE, blank=True, null=True, related_name='cex_rules')
+    category = models.ForeignKey(
+        Category, 
+        on_delete=models.CASCADE, 
+        blank=True, 
+        null=True, 
+        related_name='cex_rules'
+    )
+    subcategory = models.ForeignKey(
+        Subcategory, 
+        on_delete=models.CASCADE, 
+        blank=True, 
+        null=True, 
+        related_name='cex_rules'
+    )
+    item_model = models.ForeignKey(
+        ItemModel, 
+        on_delete=models.CASCADE, 
+        blank=True, 
+        null=True, 
+        related_name='cex_rules'
+    )
 
     cex_pct = models.FloatField(help_text="Percentage of CEX price to sell at, e.g., 0.8 for 80%")
     description = models.CharField(max_length=255, blank=True)
@@ -378,5 +397,22 @@ class CEXPricingRule(models.Model):
         unique_together = ('category', 'subcategory', 'item_model')
 
     def __str__(self):
+        if not self.category and not self.subcategory and not self.item_model:
+            return f"DEFAULT - {self.cex_pct*100:.1f}%"
         target = self.item_model or self.subcategory or self.category
         return f"{target} - {self.cex_pct*100:.1f}%"
+    
+    def clean(self):
+        """Ensure only one DEFAULT rule exists"""
+        super().clean()
+        if not self.category and not self.subcategory and not self.item_model:
+            # Check if another DEFAULT rule exists
+            existing_default = CEXPricingRule.objects.filter(
+                category__isnull=True,
+                subcategory__isnull=True,
+                item_model__isnull=True
+            ).exclude(pk=self.pk)
+            
+            if existing_default.exists():
+                from django.core.exceptions import ValidationError
+                raise ValidationError("A DEFAULT rule already exists. Only one DEFAULT rule is allowed.")

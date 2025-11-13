@@ -195,31 +195,34 @@ def compute_prices_from_cex_rule(market_item, cex_rule=None):
 
 
 
-def get_most_specific_cex_rule(category, subcategory=None, item_model=None):
+def get_most_specific_cex_rule(category, subcategory, item_model):
     """
     Returns the most specific active CEX pricing rule for the given parameters.
     Priority:
     1. item_model + subcategory + category
     2. subcategory + category
     3. category only
+    4. default rule (no category, subcategory, or item_model)
     """
-    rules = CEXPricingRule.objects.filter(category=category, is_active=True)
-    
-    # Filter by item_model if provided
-    if item_model:
-        rule = rules.filter(item_model=item_model, subcategory=subcategory).first()
-        if rule:
-            return rule
+    qs = CEXPricingRule.objects.filter(is_active=True)
 
-    # Filter by subcategory if provided
-    if subcategory:
-        rule = rules.filter(subcategory=subcategory, item_model__isnull=True).first()
-        if rule:
-            return rule
+    # 1. Most specific: item_model + subcategory + category
+    rule = qs.filter(category=category, subcategory=subcategory, item_model=item_model).first()
+    if rule:
+        return rule
 
-    # Fallback to category only
-    rule = rules.filter(subcategory__isnull=True, item_model__isnull=True).first()
-    return rule
+    # 2. subcategory + category
+    rule = qs.filter(category=category, subcategory=subcategory, item_model__isnull=True).first()
+    if rule:
+        return rule
+
+    # 3. category only
+    rule = qs.filter(category=category, subcategory__isnull=True, item_model__isnull=True).first()
+    if rule:
+        return rule
+
+    # 4. default rule (no category, subcategory, or item_model)
+    return qs.filter(category__isnull=True, subcategory__isnull=True, item_model__isnull=True).first()
 
 
 @csrf_exempt
