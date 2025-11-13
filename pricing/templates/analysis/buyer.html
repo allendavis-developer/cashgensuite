@@ -129,7 +129,7 @@
   box-shadow: 0 0 0 1px #666 !important;
 }
 
-.starting-offer, .cex-offer {
+.current-offer, .cex-offer {
   text-align: center;
   color: #0f0;
   font-weight: 600;
@@ -444,10 +444,14 @@ function createCategoryTable(categoryId, categoryName, attributes) {
     'CEX Price',
     'Suggested RRP',
     'CEX Cash Offer',
+    'Starting Offer',
+    'Mid Offer',
+    'Final Offer',
     'Current Offer',
     'Margin',
     'Actions'
   ];
+
 
 
   table.innerHTML = `
@@ -537,7 +541,10 @@ async function addItemToTable() {
     `<td class="cex-price">—</td>`,
     `<td class="suggested-rrp">—</td>`,
     `<td class="cex-offer">—</td>`,
-    `<td class="starting-offer">
+    `<td class="starting-offer">—</td>`,
+    `<td class="mid-offer">—</td>`,
+    `<td class="final-offer">—</td>`,
+    `<td class="current-offer">
         <div class="buying-range-cell">
           <button class="qty-btn decrease-buying">−</button>
           <span class="buying-value">—</span>
@@ -686,20 +693,39 @@ async function updatePriceCells(row, category, model, attributes) {
   const cexOfferCell = row.querySelector('.cex-offer');
   cexOfferCell.textContent = `£${cexOfferCashPrice.toFixed(2)}`;
   cexOfferCell.dataset.buyMax = cexOfferCashPrice;
-
-  // Starting offer (+/-)
   const startingOfferCell = row.querySelector('.starting-offer');
-  const buyVal = startingOfferCell.querySelector('.buying-value');
-  buyVal.textContent = `£${buyingStartPrice.toFixed(2)}`;
-  startingOfferCell.dataset.buyMin = buyingStartPrice;
-  startingOfferCell.dataset.baseBuyMin = buyingStartPrice;
-  startingOfferCell.dataset.baseBuyMax = cexOfferCashPrice;
-  startingOfferCell.dataset.adjustPercent = "0";
+  startingOfferCell.textContent = `£${buyingStartPrice.toFixed(2)}`;
 
-  const decreaseBtn = startingOfferCell.querySelector('.decrease-buying');
-  const increaseBtn = startingOfferCell.querySelector('.increase-buying');
-  decreaseBtn.onclick = () => adjustBuying(startingOfferCell, -5);
-  increaseBtn.onclick = () => adjustBuying(startingOfferCell, 5);
+  // Starting offer 
+  const currentOfferCell = row.querySelector('.current-offer');
+  const buyVal = currentOfferCell.querySelector('.buying-value');
+  buyVal.textContent = `£${buyingStartPrice.toFixed(2)}`;
+
+  // Current offer
+  currentOfferCell.querySelector('.buying-value').textContent = `£${buyingStartPrice.toFixed(2)}`;
+  currentOfferCell.dataset.buyMin = buyingStartPrice;
+
+  // Mid offer = starting + 50% of range
+  const midOfferCell = row.querySelector('.mid-offer');
+  const midOffer = buyingStartPrice + (cexOfferCashPrice - buyingStartPrice)/2;
+  midOfferCell.textContent = `£${midOffer.toFixed(2)}`;
+
+  // Final offer = max CEX offer
+  const finalOfferCell = row.querySelector('.final-offer');
+  finalOfferCell.textContent = `£${cexOfferCashPrice.toFixed(2)}`;
+
+  currentOfferCell.dataset.buyMin = buyingStartPrice;
+
+  currentOfferCell.dataset.baseBuyMin = buyingStartPrice;
+  currentOfferCell.dataset.baseBuyMid = midOffer;
+  currentOfferCell.dataset.baseBuyMax = cexOfferCashPrice;
+
+  currentOfferCell.dataset.adjustPercent = "0";
+
+  const decreaseBtn = currentOfferCell.querySelector('.decrease-buying');
+  const increaseBtn = currentOfferCell.querySelector('.increase-buying');
+  decreaseBtn.onclick = () => adjustBuying(currentOfferCell, -1);
+  increaseBtn.onclick = () => adjustBuying(currentOfferCell, 1);
 
   // CEX price link
   const cexCell = row.querySelector('.cex-price');
@@ -741,34 +767,55 @@ async function updatePriceCells(row, category, model, attributes) {
 
 
 
-function adjustBuying(td, percentChange) {
+function adjustBuying(td, direction) {
+  // Read base values
   const baseMin = parseFloat(td.dataset.baseBuyMin);
-  let currentAdjust = parseFloat(td.dataset.adjustPercent) || 0;
+  const baseMid = parseFloat(td.dataset.baseBuyMid);
+  const baseMax = parseFloat(td.dataset.baseBuyMax);
 
-  // Limit adjustment range to ±50%
-  currentAdjust = Math.min(Math.max(currentAdjust + percentChange, -50), 50);
-  td.dataset.adjustPercent = currentAdjust;
+  // Get current mode (min, mid, or max)
+  let currentMode = td.dataset.buyMode || "min";
+  const modes = ["min", "mid", "max"];
+  let index = modes.indexOf(currentMode);
 
-  // Calculate new buying range
-  const factor = 1 + currentAdjust / 100;
-  const newMin = baseMin * factor;
+  // Adjust direction (+1 = up, -1 = down)
+  index += direction;
+  if (index < 0) index = 0;
+  if (index > 2) index = 2;
 
-  // Update dataset and displayed value
-  td.dataset.buyMin = newMin;
-  td.querySelector('.buying-value').textContent = `£${newMin.toFixed(2)}`;
+  currentMode = modes[index];
+  td.dataset.buyMode = currentMode;
+
+  // Pick the correct value
+  let newValue;
+  switch (currentMode) {
+    case "min":
+      newValue = baseMin;
+      break;
+    case "mid":
+      newValue = baseMid;
+      break;
+    case "max":
+      newValue = baseMax;
+      break;
+  }
+
+  // Update dataset and display
+  td.dataset.buyMin = newValue;
+  td.querySelector(".buying-value").textContent = `£${newValue.toFixed(2)}`;
 
   // Recalculate margin for the row
-  const row = td.closest('tr');
+  const row = td.closest("tr");
   const sellingPrice = parseFloat(
-    row.querySelector('.suggested-rrp')?.textContent.replace(/[£,]/g, '')
+    row.querySelector(".suggested-rrp")?.textContent.replace(/[£,]/g, "")
   ) || 0;
 
-  const marginCell = row.querySelector('.margin');
+  const marginCell = row.querySelector(".margin");
   if (sellingPrice > 0) {
-    const margin = ((sellingPrice - newMin) / sellingPrice) * 100;
+    const margin = ((sellingPrice - newValue) / sellingPrice) * 100;
     marginCell.textContent = `${margin.toFixed(1)}%`;
   } else {
-    marginCell.textContent = '—';
+    marginCell.textContent = "—";
   }
 
   updateSummary();
@@ -785,7 +832,7 @@ function updateSummary() {
     hasItems = true;
     const qty = parseInt(row.querySelector('.qty-input')?.value) || 1;
     const rrp = parseFloat(row.querySelector('.suggested-rrp')?.textContent.replace(/[£,]/g, '')) || 0;
-    const buy = parseFloat(row.querySelector('.starting-offer .buying-value')?.textContent.replace(/[£,]/g, '')) || 0;
+    const buy = parseFloat(row.querySelector('.current-offer .buying-value')?.textContent.replace(/[£,]/g, '')) || 0;
     totalSelling += rrp * qty;
     totalBuying += buy * qty;
   });
