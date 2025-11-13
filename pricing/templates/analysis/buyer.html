@@ -297,8 +297,6 @@
   color: #0f0;                 /* subtle green tint for price visibility */
 }
 
-
-
 #summaryContainer {
   color: #fff;
   font-weight: 700;           
@@ -306,16 +304,32 @@
   width: 100%;                 
   box-sizing: border-box;
   margin: 0 auto;
-  padding: 32px;  /* Increased from 16px */
-  background: #1a1a1a;  /* Add background to make it stand out */
+  padding: 16px;
+  background: #1a1a1a;
   border: 2px solid #333;
   border-radius: 8px;
+  /* Force horizontal layout */
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
 }
 
-#summaryContainer h3 {
-  font-size: 2.5rem;  /* Much larger heading */
-  margin-bottom: 20px;
+#totalSection, #cexSection {
+  width: 50% !important; /* Force equal width */
+  flex-shrink: 0 !important; /* Prevent shrinking */
+  box-sizing: border-box;
+  padding: 0 20px;
+}
+
+#totalSection h3, #cexSection h3 {
+  font-size: 2.5rem;
+  margin: 0 0 20px 0; /* Remove top margin, keep bottom margin */
   color: #00ff00;
+}
+
+#cexSection h3 {
+  color: #ff0000 !important; /* Force red color for CEX */
+  margin: 0 0 20px 0; /* Ensure consistent margins */
 }
 
 #summaryContainer p {
@@ -381,12 +395,26 @@
     <button id="analyseAllBtn" class="action-btn analyse-all-btn">Analyse</button>
   </div>
 
-  <div id="tablesContainer"></div>  
-  <div id="summaryContainer" style="padding: 16px; color: #fff;">
+<div id="summaryContainer">
+  
+  <!-- LEFT SIDE: Total Prices -->
+  <div id="totalSection">
     <h3>Summary</h3>
     <p>Total Buying Price: <span id="totalBuying">£0.00 - £0.00</span></p>
     <p>Total Selling Price: <span id="totalSelling">£0.00</span></p>
   </div>
+
+  <!-- RIGHT SIDE: CEX Prices -->
+  <div id="cexSection">
+    <h3>CEX Prices</h3>
+    <p>CEX Buying Price: <span id="cexBuying">£0.00 - £0.00</span></p>
+    <p>CEX Selling Price: <span id="cexSelling">£0.00</span></p>
+  </div>
+
+</div>
+
+
+  <div id="tablesContainer"></div>  
 
 </div>
 
@@ -451,7 +479,6 @@ function createCategoryTable(categoryId, categoryName, attributes) {
     'Margin',
     'Actions'
   ];
-
 
 
   table.innerHTML = `
@@ -826,22 +853,41 @@ function adjustBuying(td, direction) {
 function updateSummary() {
   let totalBuying = 0;
   let totalSelling = 0;
+  let cexBuying = 0;
+  let cexSelling = 0;
   let hasItems = false;
 
   document.querySelectorAll('.item-table tbody tr:not(.placeholder)').forEach(row => {
     hasItems = true;
     const qty = parseInt(row.querySelector('.qty-input')?.value) || 1;
+
+    // Regular totals
     const rrp = parseFloat(row.querySelector('.suggested-rrp')?.textContent.replace(/[£,]/g, '')) || 0;
     const buy = parseFloat(row.querySelector('.current-offer .buying-value')?.textContent.replace(/[£,]/g, '')) || 0;
     totalSelling += rrp * qty;
     totalBuying += buy * qty;
+
+    // CEX totals
+    const cexBuy = parseFloat(row.querySelector('.cex-offer')?.textContent.replace(/[£,]/g, '')) || 0;
+    const cexSell = parseFloat(row.querySelector('.cex-price a')?.textContent.replace(/[£,]/g, '')) ||
+                    parseFloat(row.querySelector('.cex-price')?.textContent.replace(/[£,]/g, '')) || 0;
+    cexBuying += cexBuy * qty;
+    cexSelling += cexSell * qty;
   });
 
   const summaryContainer = document.getElementById('summaryContainer');
   summaryContainer.style.display = hasItems ? 'block' : 'none';
+
   if (hasItems) {
     document.getElementById('totalBuying').textContent = `£${totalBuying.toFixed(2)}`;
     document.getElementById('totalSelling').textContent = `£${totalSelling.toFixed(2)}`;
+    document.getElementById('cexBuying').textContent = `£${cexBuying.toFixed(2)}`;
+    document.getElementById('cexSelling').textContent = `£${cexSelling.toFixed(2)}`;
+  } else {
+    document.getElementById('totalBuying').textContent = '£0.00 - £0.00';
+    document.getElementById('totalSelling').textContent = '£0.00';
+    document.getElementById('cexBuying').textContent = '£0.00 - £0.00';
+    document.getElementById('cexSelling').textContent = '£0.00';
   }
 }
 
