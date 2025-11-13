@@ -8,9 +8,9 @@ CATEGORY_SEARCH_FORMAT = {
     "smartwatches": ["item_name", "size",],
     "cameras": ["item_name",],
     "music tech": ["item_name",],
-    "headphones": ["item_name",]
-
-
+    "headphones": ["item_name",],
+    "media player accessories": ["item_name",],
+    "console accessories": ["item_name",]
     # Add more categories here
 }
 

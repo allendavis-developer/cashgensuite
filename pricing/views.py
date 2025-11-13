@@ -91,7 +91,7 @@ def check_existing_items(request):
 
 def get_market_item(search_term):
     """Retrieve a market item by exact title match."""
-    return MarketItem.objects.filter(title__iexact=search_term).first()
+    return MarketItem.objects.filter(title__icontains=search_term).first()
 
 from collections import Counter
 
