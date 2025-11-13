@@ -4,7 +4,11 @@ CATEGORY_SEARCH_FORMAT = {
     "gaming consoles": ["item_name", "storage", "condition"],
     "laptops": ["item_name", "ram", "storage",],
     "tablets": ["item_name", "storage",],
-    "televisions": ["item_name", "size",]
+    "televisions": ["item_name", "size",],
+    "smartwatches": ["item_name", "size",],
+    "cameras": ["item_name",],
+    "music tech": ["item_name",],
+    "headphones": ["item_name",]
 
 
     # Add more categories here
