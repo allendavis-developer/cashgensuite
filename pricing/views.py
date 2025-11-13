@@ -58,7 +58,7 @@ def handle_item_analysis_request(request):
 def bulk_analysis(request):
     return render(request, 'analysis/bulk_analysis.html')
 
-
+@csrf_exempt
 @require_POST
 def check_existing_items(request):
     try:
@@ -222,7 +222,7 @@ def get_most_specific_cex_rule(category, subcategory=None, item_model=None):
     return rule
 
 
-
+@csrf_exempt
 @require_POST
 def get_selling_and_buying_price(request):
     try:
