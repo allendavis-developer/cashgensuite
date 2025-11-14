@@ -414,6 +414,21 @@
 .offer-yellow { color: #ffc107 !important; }
 .offer-red { color: #f44336 !important; }
 
+.loading-spinner {
+  border: 3px solid #333;
+  border-top: 3px solid #4da6ff;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  animation: spin 0.7s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+
 
 {% endblock %}
 
@@ -487,6 +502,36 @@ document.addEventListener('DOMContentLoaded', updateSummary);
 
 // Add this at the top of your script, before DOMContentLoaded
 let globalTableBody = null;
+
+function showRowSpinner(row) {
+  const cellsToSpin = [
+    '.suggested-rrp',
+    '.starting-offer',
+    '.mid-offer',
+    '.final-offer',
+    '.current-offer',
+    '.cex-price',
+    '.cc-mode',
+    '.cg-mode',
+    '.margin'
+  ];
+
+  cellsToSpin.forEach(selector => {
+    const cell = row.querySelector(selector);
+    if (!cell) return;
+    cell.dataset.oldContent = cell.innerHTML;
+    cell.innerHTML = `<div class="loading-spinner"></div>`;
+  });
+}
+
+function hideRowSpinner(row) {
+  const cells = row.querySelectorAll('[data-old-content]');
+  cells.forEach(cell => {
+    cell.innerHTML = cell.dataset.oldContent;
+    delete cell.dataset.oldContent;
+  });
+}
+
 
 function createCategoryTable(categoryId, categoryName, attributes) {
   // If table already exists, just return its tbody
@@ -689,6 +734,7 @@ async function handleAnalyseClick(row) {
   const scrapeBtn = row.querySelector('.analyse');
   scrapeBtn.disabled = true;
   scrapeBtn.textContent = 'Checking...';
+  showRowSpinner(row);  // ← add this
 
   const category = row.dataset.categoryName;
   const subcategory = row.dataset.subcategoryName;
@@ -712,14 +758,14 @@ async function handleAnalyseClick(row) {
     if (checkResult.competitor_count > 0) {
       await updatePriceCells(row, category, model, attributes);
     } else {
-      let scrapeSources = [];
+      {% comment %} let scrapeSources = [];
       const sourcesResponse = await fetch(`/api/get-scrape-sources-for-category/?category_name=${encodeURIComponent(category)}`);
       const sourcesResult = await sourcesResponse.json();
       if (Array.isArray(sourcesResult)) scrapeSources = sourcesResult;
       if (scrapeSources.length === 0) scrapeSources = ['CEX', 'CashConverters', 'CashGenerator'];
 
-      {% comment %} await scrapePricesForRow(row, scrapeSources); {% endcomment %}
-      await updatePriceCells(row, category, model, attributes);
+      await scrapePricesForRow(row, scrapeSources);
+      await updatePriceCells(row, category, model, attributes); {% endcomment %}
     }
   } catch (error) {
     console.error('Analyse error:', error);
@@ -751,6 +797,8 @@ async function updatePriceCells(row, category, model, attributes) {
   const priceResult = await priceResponse.json();
   console.log(priceResult);
   if (!priceResult.success) throw new Error(priceResult.error || 'Failed to get selling price');
+
+  hideRowSpinner(row);  // ← remove spinner
 
   const sellingPrice = parseFloat(priceResult.selling_price);
   const buyingStartPrice = parseFloat(priceResult.buying_start_price);
