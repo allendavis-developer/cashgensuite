@@ -385,6 +385,11 @@
   margin-bottom: 30px;          /* space below buttons */
 }
 
+/* Offer color coding */
+.offer-green { color: #4caf50 !important; }
+.offer-yellow { color: #ffc107 !important; }
+.offer-red { color: #f44336 !important; }
+
 
 {% endblock %}
 
@@ -407,7 +412,7 @@
   <!-- RIGHT SIDE: CEX Prices -->
   <div id="cexSection">
     <h3>CEX Prices</h3>
-    <p>CEX Buying Price: <span id="cexBuying">£0.00 - £0.00</span></p>
+    <p>CEX Buying Price: <span id="cexBuying">£0.00</span></p>
     <p>CEX Selling Price: <span id="cexSelling">£0.00</span></p>
   </div>
 
@@ -457,43 +462,43 @@ const categories = {{ categories|safe }};
 
 document.addEventListener('DOMContentLoaded', updateSummary);
 
-function createCategoryTable(categoryId, categoryName, attributes) {
-  if (categoryTables[categoryId]) return categoryTables[categoryId];
+// Add this at the top of your script, before DOMContentLoaded
+let globalTableBody = null;
 
+function createCategoryTable(categoryId, categoryName, attributes) {
+  // If table already exists, just return its tbody
+  if (globalTableBody) return globalTableBody;
+
+  // Create the single table once
   const table = document.createElement('table');
   table.className = 'item-table';
   const columns = [
     'Quantity',
+    'Category', // Add this column
     'Subcategory',
     'Model',
-    ...attributes.map(a => a.name),
     'CashConverters Mode',
     'CashGenerator Mode',
     'CEX Price',
     'Suggested RRP',
-    'CEX Cash Offer',
     'Starting Offer',
     'Mid Offer',
-    'Final Offer',
+    'Final Offer (Match CEX)',
     'Current Offer',
     'Margin',
     'Actions'
   ];
-
 
   table.innerHTML = `
     <thead><tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr></thead>
     <tbody><tr class="placeholder"><td colspan="${columns.length}" style="text-align:center; color:#777;">No items added yet.</td></tr></tbody>
   `;
   
-  tablesContainer.append(
-    Object.assign(document.createElement('h3'), { textContent: categoryName }),
-    table
-  );
-  
-  categoryTables[categoryId] = table.querySelector('tbody');
-  return categoryTables[categoryId];
+  tablesContainer.append(table);
+  globalTableBody = table.querySelector('tbody');
+  return globalTableBody;
 }
+
 
 function attachQuantityListeners() {
   document.querySelectorAll('.item-table tbody tr:not(.placeholder) .qty-input').forEach(input => {
@@ -523,23 +528,30 @@ async function addItemToTable() {
   const catId = modalItemCategory.value;
   if (!catId) return alert("Please select a category.");
 
-  
-  // Save last selections so that the modal can be preloaded with that later
   lastSelections.category = modalItemCategory.value;
   lastSelections.subcategory = modalItemSubcategory.value;
 
-  
   const catName = modalItemCategory.options[modalItemCategory.selectedIndex]?.text;
   const subcategory = modalItemSubcategory.options[modalItemSubcategory.selectedIndex]?.text || '—';
-  const model = modalItemModel.options[modalItemModel.selectedIndex]?.text || '—';
+  const baseModel = modalItemModel.options[modalItemModel.selectedIndex]?.text || '—';
   const tbody = createCategoryTable(catId, catName, currentAttributes);
   if (tbody.querySelector('.placeholder')) tbody.innerHTML = '';
 
   const attributesPayload = {};
+  const attributeStrings = [];
   currentAttributes.forEach(attr => {
     const input = attributesContainer.querySelector(`#attr_${attr.id}`);
-    attributesPayload[attr.name] = input?.value || '—';
+    const value = input?.value || '—';
+    attributesPayload[attr.name] = value;
+    if (value !== '—') {
+      attributeStrings.push(value);
+    }
   });
+
+  // Concatenate model with attributes
+  const model = attributeStrings.length > 0 
+    ? `${baseModel} (${attributeStrings.join(', ')})`
+    : baseModel;
 
   console.log(attributesPayload);
 
@@ -551,23 +563,24 @@ async function addItemToTable() {
         'Content-Type': 'application/json',
         'X-CSRFToken': getCookie('csrftoken')
       },
-      body: JSON.stringify({ category: catName, subcategory, model, attributes: attributesPayload })
+      body: JSON.stringify({ category: catName, subcategory, model: baseModel, attributes: attributesPayload })
     });
     itemName = (await response.json()).data.generated_search_term;
+    console.log("generated term", itemName);
   } catch (error) {
     console.error("Error generating item name:", error);
   }
 
+
   const cells = [
     `<td><input type="number" class="qty-input" min="1" value="1"></td>`,
+    `<td>${catName}</td>`, // Add this line
     `<td>${subcategory}</td>`,
     `<td>${model}</td>`,
-    ...currentAttributes.map(attr => `<td>${attributesPayload[attr.name]}</td>`),
     `<td class="cc-mode">—</td>`,
     `<td class="cg-mode">—</td>`,
     `<td class="cex-price">—</td>`,
     `<td class="suggested-rrp">—</td>`,
-    `<td class="cex-offer">—</td>`,
     `<td class="starting-offer">—</td>`,
     `<td class="mid-offer">—</td>`,
     `<td class="final-offer">—</td>`,
@@ -595,6 +608,8 @@ async function addItemToTable() {
     itemName,
     subcategoryName: subcategory
   });
+  row.dataset.model = baseModel;
+
 
   tbody.appendChild(row);
   addItemModal.classList.remove('active');
@@ -661,7 +676,7 @@ async function handleAnalyseClick(row) {
         'Content-Type': 'application/json',
         'X-CSRFToken': getCookie('csrftoken')
       },
-      body: JSON.stringify({ category, subcategory: subcategory, model, attributes })
+      body: JSON.stringify({ category, subcategory: subcategory, model: row.dataset.model, attributes })
     });
 
     const checkResult = await checkResponse.json();
@@ -700,7 +715,7 @@ async function updatePriceCells(row, category, model, attributes) {
       categoryId: row.dataset.categoryId,
       subcategoryId: row.dataset.subcategoryId,
       subcategory: row.dataset.subcategoryName,
-      model,
+      model: row.dataset.model,
       modelId: row.dataset.modelId,
       attributes
     })
@@ -722,38 +737,35 @@ async function updatePriceCells(row, category, model, attributes) {
   if (reasons.selling_price) rrpCell.title = reasons.selling_price;
   
 
-  // CEX offer
-  const cexOfferCell = row.querySelector('.cex-offer');
-  cexOfferCell.textContent = `£${cexOfferCashPrice.toFixed(2)}`;
-  cexOfferCell.dataset.buyMax = cexOfferCashPrice;
+  // Starting offer 
   const startingOfferCell = row.querySelector('.starting-offer');
   startingOfferCell.textContent = `£${buyingStartPrice.toFixed(2)}`;
-  if (reasons.buying_end_price) cexOfferCell.title = reasons.buying_end_price;
-
-  // Starting offer 
+  startingOfferCell.classList.add('offer-green');
+  if (reasons.buying_start_price) startingOfferCell.title = reasons.buying_start_price;
+  
+  // Current offer
   const currentOfferCell = row.querySelector('.current-offer');
   const buyVal = currentOfferCell.querySelector('.buying-value');
   buyVal.textContent = `£${buyingStartPrice.toFixed(2)}`;
-  if (reasons.buying_start_price) startingOfferCell.title = "Initially set at half our suggested RRP, but can switch to mid offer and final offer";
-
-  // Current offer
   currentOfferCell.querySelector('.buying-value').textContent = `£${buyingStartPrice.toFixed(2)}`;
   currentOfferCell.dataset.buyMin = buyingStartPrice;
-  if (reasons.buying_start_price) buyVal.title = reasons.buying_start_price;
+  if (reasons.buying_start_price) buyVal.title = "Initially set at start price but can be switched to mid and max price";
+  buyVal.classList.add('offer-green');
 
   // Mid offer = starting + 50% of range
   const midOfferCell = row.querySelector('.mid-offer');
   const midOffer = buyingStartPrice + (cexOfferCashPrice - buyingStartPrice)/2;
   midOfferCell.textContent = `£${midOffer.toFixed(2)}`;
   if (reasons.buying_mid_price) midOfferCell.title = reasons.buying_mid_price;
+  midOfferCell.classList.add('offer-yellow');
 
   // Final offer = max CEX offer
   const finalOfferCell = row.querySelector('.final-offer');
   finalOfferCell.textContent = `£${cexOfferCashPrice.toFixed(2)}`;
   if (reasons.buying_end_price) finalOfferCell.title = reasons.buying_end_price;
+  finalOfferCell.classList.add('offer-red');
 
-  currentOfferCell.dataset.buyMin = buyingStartPrice;
-
+  currentOfferCell.dataset.buyMin = 0;
   currentOfferCell.dataset.baseBuyMin = buyingStartPrice;
   currentOfferCell.dataset.baseBuyMid = midOffer;
   currentOfferCell.dataset.baseBuyMax = cexOfferCashPrice;
@@ -826,21 +838,30 @@ function adjustBuying(td, direction) {
 
   // Pick the correct value
   let newValue;
+  let colorClass;
   switch (currentMode) {
     case "min":
       newValue = baseMin;
+      colorClass = "offer-green";
       break;
     case "mid":
       newValue = baseMid;
+      colorClass = "offer-yellow";
       break;
     case "max":
       newValue = baseMax;
+      colorClass = "offer-red";
       break;
   }
 
   // Update dataset and display
   td.dataset.buyMin = newValue;
-  td.querySelector(".buying-value").textContent = `£${newValue.toFixed(2)}`;
+  const buyingValue = td.querySelector(".buying-value");
+  buyingValue.textContent = `£${newValue.toFixed(2)}`;
+  
+  // Update color
+  buyingValue.classList.remove('offer-green', 'offer-yellow', 'offer-red');
+  buyingValue.classList.add(colorClass);
 
   // Recalculate margin for the row
   const row = td.closest("tr");
@@ -858,7 +879,6 @@ function adjustBuying(td, direction) {
 
   updateSummary();
 }
-
 
 
 function updateSummary() {
@@ -879,7 +899,7 @@ function updateSummary() {
     totalBuying += buy * qty;
 
     // CEX totals
-    const cexBuy = parseFloat(row.querySelector('.cex-offer')?.textContent.replace(/[£,]/g, '')) || 0;
+    const cexBuy = parseFloat(row.querySelector('.final-offer')?.textContent.replace(/[£,]/g, '')) || 0;
     const cexSell = parseFloat(row.querySelector('.cex-price a')?.textContent.replace(/[£,]/g, '')) ||
                     parseFloat(row.querySelector('.cex-price')?.textContent.replace(/[£,]/g, '')) || 0;
     cexBuying += cexBuy * qty;
@@ -897,7 +917,7 @@ function updateSummary() {
   } else {
     document.getElementById('totalBuying').textContent = '£0.00 - £0.00';
     document.getElementById('totalSelling').textContent = '£0.00';
-    document.getElementById('cexBuying').textContent = '£0.00 - £0.00';
+    document.getElementById('cexBuying').textContent = '£0.00';
     document.getElementById('cexSelling').textContent = '£0.00';
   }
 }

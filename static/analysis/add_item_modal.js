@@ -295,7 +295,7 @@ async function preloadData() {
 function populateCategories() {
   categoryTomSelect.clear();
   categoryTomSelect.clearOptions();
-  
+
   cache.categories.forEach(c => {
     categoryTomSelect.addOption({ value: c.id, text: c.name });
   });
@@ -320,14 +320,17 @@ async function fetchSubcategories(categoryId) {
 function renderSubcategories(data) {
   subcategoryTomSelect.clear();
   subcategoryTomSelect.clearOptions();
-  
-  data.forEach(sc => {
+
+  const sorted = [...data].sort((a, b) => 
+    a.name.localeCompare(b.name)
+  );
+
+  sorted.forEach(sc => {
     subcategoryTomSelect.addOption({ value: sc.id, text: sc.name });
   });
-  
+
   subcategoryTomSelect.refreshOptions(false);
-  
-  // Clear models
+
   modelTomSelect.clear();
   modelTomSelect.clearOptions();
 }
@@ -354,13 +357,19 @@ function renderModels(data) {
   modelTomSelect.clear();
   modelTomSelect.clearOptions();
   
-  data.forEach(m => {
+  const sorted = [...data].sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+  );
+
+
+  sorted.forEach(m => {
     modelTomSelect.addOption({ value: m.id, text: m.name });
   });
-    modelTomSelect.addOption({ value: '__new__', text: 'Add new model...' });
 
+  modelTomSelect.addOption({ value: '__new__', text: 'Add new model...' });
   modelTomSelect.refreshOptions(false);
 }
+
 
 async function handleAddNewModel(categoryId, subcategoryId) {
   const newModelName = prompt('Enter the new model name:');
@@ -470,7 +479,25 @@ function filterRemainingAttributes() {
     if (!selectedVariants[attr.name]) {
       const ts = attributeTomSelects[attr.id];
       if (ts) {
-        const allowedOptions = [...new Set(validCombos.map(c => c[attr.name]))];
+        console.log("sorting alphabetically");
+        const allowedOptions = [...new Set(validCombos.map(c => c[attr.name]))]
+          .sort((a, b) => {
+            const numA = parseFloat(a);
+            const numB = parseFloat(b);
+            const isNumA = !isNaN(numA) && a.trim() !== "";
+            const isNumB = !isNaN(numB) && b.trim() !== "";
+
+            if (isNumA && isNumB) {
+              return numA - numB;          // numeric sort
+            } else if (isNumA) {
+              return -1;                   // numbers first
+            } else if (isNumB) {
+              return 1;
+            }
+
+            return a.localeCompare(b);    // alphabetical fallback
+          });
+
         ts.clearOptions();
         allowedOptions.forEach(opt => {
           ts.addOption({ value: opt, text: opt });
@@ -508,8 +535,22 @@ function renderAttributes(attrs) {
         const ts = new TomSelect(`#attr_${attr.id}`, {
         placeholder: `Select ${attr.label || attr.name}...`,
         create: false,
-        options: (attr.options || []).map(opt => ({ value: opt, text: opt })),
+        options: (attr.options || [])
+          .slice()
+          .sort((a, b) => {
+            // Natural sort: extract numbers and compare intelligently
+            const numA = parseFloat(a.match(/\d+(\.\d+)?/)?.[0]);
+            const numB = parseFloat(b.match(/\d+(\.\d+)?/)?.[0]);
+            
+            if (!isNaN(numA) && !isNaN(numB) && numA !== numB) {
+              return numA - numB;
+            }
+            return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+          })
+          .map(opt => ({ value: opt, text: opt })),
       });
+
+
 
       attributeTomSelects[attr.id] = ts;
       setupAttributeNavigation(attr.id, index);
