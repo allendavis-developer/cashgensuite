@@ -174,7 +174,7 @@
 
 .actions-links {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 6px;
   align-items: center;
 }
@@ -481,8 +481,8 @@ function createCategoryTable(categoryId, categoryName, attributes) {
     'CEX Price',
     'Suggested RRP',
     'Starting Offer',
-    'Mid Offer',
-    'Final Offer (Match CEX)',
+    'Second Offer',
+    'Third Offer (Match CEX)',
     'Current Offer',
     'Margin',
     'Actions'
@@ -730,6 +730,10 @@ async function updatePriceCells(row, category, model, attributes) {
 
   const sellingPrice = parseFloat(priceResult.selling_price);
   const buyingStartPrice = parseFloat(priceResult.buying_start_price);
+  const buyingSecondPrice = parseFloat(priceResult.buying_mid_price);
+  console.log(priceResult);
+  const buyingThirdPrice = parseFloat(priceResult.buying_end_price);
+
   const cexOfferCashPrice = parseFloat(priceResult.cex_buying_price);
 
   reasons = priceResult.reasons;
@@ -757,14 +761,14 @@ async function updatePriceCells(row, category, model, attributes) {
 
   // Mid offer = starting + 50% of range
   const midOfferCell = row.querySelector('.mid-offer');
-  const midOffer = buyingStartPrice + (cexOfferCashPrice - buyingStartPrice)/2;
+  const midOffer = buyingSecondPrice;
   midOfferCell.textContent = `£${midOffer.toFixed(2)}`;
   if (reasons.buying_mid_price) midOfferCell.title = reasons.buying_mid_price;
   midOfferCell.classList.add('offer-yellow');
 
   // Final offer = max CEX offer
   const finalOfferCell = row.querySelector('.final-offer');
-  finalOfferCell.textContent = `£${cexOfferCashPrice.toFixed(2)}`;
+  finalOfferCell.textContent = `£${buyingThirdPrice.toFixed(2)}`;
   if (reasons.buying_end_price) finalOfferCell.title = reasons.buying_end_price;
   finalOfferCell.classList.add('offer-red');
 

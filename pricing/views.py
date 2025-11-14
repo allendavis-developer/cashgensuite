@@ -152,6 +152,8 @@ def round_down_to_even(value):
     return (int(value) // 2) * 2
 
 
+import requests
+
 def compute_prices_from_cex_rule(market_item, cex_rule=None):
     """
     Fetch latest CEX prices for a given MarketItem and compute selling and buying prices.
@@ -202,9 +204,47 @@ def compute_prices_from_cex_rule(market_item, cex_rule=None):
             "reasons": {"error": "No CEX listing found"}
         }
 
+    url = f"https://wss2.cex.uk.webuy.io/v3/boxes/{cex_listing.stable_id}/detail"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/118.0.5993.117 Safari/537.36",
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "Referer": "https://www.cex.uk/",
+    }
+
+    outOfStock = False
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        box = data.get("response", {}).get("data", {}).get("boxDetails", [{}])[0]
+        outOfStock = box.get("outOfStock")
+    except Exception as e:
+        print(f"CeX price lookup failed for {stable_id}: {e}")
+        return None
+
+
     cex_sale_price = cex_listing.price or 0
     cex_cash_trade_price = cex_listing.trade_cash_price
     cex_url = cex_listing.url
+
+    if (outOfStock):
+        return {
+            "selling_price": 0,
+            "buying_start_price": 0,
+            "buying_mid_price": 0,
+            "buying_end_price": 0,
+            "cex_trade_cash_price": cex_cash_trade_price,
+            "cex_sale_price": cex_sale_price,
+            "cex_url": cex_listing.url,
+            "reasons": {
+                "selling_price": "Out of stock on CEX, we shouldn't take this item in",
+                "buying_start_price": "Out of stock on CEX, we shouldn't take this item in",
+                "buying_mid_price": "Out of stock on CEX, we shouldn't take this item in",
+                "buying_end_price": "Out of stock on CEX, we shouldn't take this item in",
+            },
+        }
 
     # --- Compute selling price ---
     if cex_rule:
@@ -247,6 +287,7 @@ def compute_prices_from_cex_rule(market_item, cex_rule=None):
             "buying_end_price": reason_buying_end,
         },
     }
+
 
 
 
@@ -329,6 +370,7 @@ def get_selling_and_buying_price(request):
             "search_term": search_term,
             "selling_price": selling_price,
             "buying_start_price": buying_start,
+            "buying_mid_price": buying_mid,
             "buying_end_price": buying_end,
             "cex_buying_price": cex_buying_price,
             "cex_selling_price": cex_selling_price,
