@@ -397,7 +397,6 @@
 <div class="main-content">
   <div class="add-btn-container">
     <button id="addItemBtn" class="action-btn add-btn">Add</button>
-    <button id="analyseAllBtn" class="action-btn analyse-all-btn">Analyse</button>
   </div>
 
 <div id="summaryContainer">
@@ -615,6 +614,10 @@ async function addItemToTable() {
   addItemModal.classList.remove('active');
   resetModal();
   attachQuantityListeners();
+    // Immediately analyse the new row
+  await handleAnalyseClick(row);
+
+  
 }
 
 function createActionsCell(row) {
@@ -981,24 +984,6 @@ async function scrapePricesForRow(row, selectedCompetitors = []) {
   }
 }
 
-document.getElementById('analyseAllBtn').addEventListener('click', async function() {
-  this.disabled = true;
-  this.textContent = 'Analysing...';
-
-  const rowsToAnalyse = Array.from(document.querySelectorAll('.item-table tbody tr:not(.placeholder)'))
-    .filter(row => {
-      const buyCell = row.querySelector('td:nth-last-child(3)');
-      const sellingCell = row.querySelector('td:nth-last-child(5)');
-      return !buyCell.textContent.includes('£') || !sellingCell.textContent.includes('£');
-    });
-
-  for (let row of rowsToAnalyse) {
-    await handleAnalyseClick(row);
-  }
-
-  this.disabled = false;
-  this.textContent = 'Analyse All';
-});
 </script>
 
 {% load static %}
