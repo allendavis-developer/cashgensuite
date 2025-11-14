@@ -80,6 +80,29 @@
   box-shadow: 0 0 6px rgba(77,166,255,0.3);
 }
 
+/* Manual Offer Input (when starting price is zero) */
+.manual-offer-input {
+  width: 90px;
+  padding: 6px 10px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  text-align: center;
+  transition: all 0.2s ease;
+  -moz-appearance: textfield;
+}
+
+
+.manual-offer-input::-webkit-inner-spin-button,
+.manual-offer-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+
+
 /* ===== Tom Select Dark Mode ===== */
 .ts-wrapper,
 .ts-dropdown {
@@ -752,12 +775,45 @@ async function updatePriceCells(row, category, model, attributes) {
   
   // Current offer
   const currentOfferCell = row.querySelector('.current-offer');
-  const buyVal = currentOfferCell.querySelector('.buying-value');
-  buyVal.textContent = `£${buyingStartPrice.toFixed(2)}`;
-  currentOfferCell.querySelector('.buying-value').textContent = `£${buyingStartPrice.toFixed(2)}`;
-  currentOfferCell.dataset.buyMin = buyingStartPrice;
-  if (reasons.buying_start_price) buyVal.title = "Initially set at start price but can be switched to mid and max price";
-  buyVal.classList.add('offer-green');
+
+  // If starting price is zero → replace with plain text input
+  if (buyingStartPrice === 0) {
+      currentOfferCell.innerHTML = '';   // remove everything inside
+
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.min = '0';
+      input.step = '0.01';
+      input.value = '';
+      input.placeholder = 'Enter offer';
+      input.classList.add('manual-offer-input');
+      
+
+      // Store it for other logic if needed
+      input.addEventListener('input', () => {
+          const val = parseFloat(input.value) || 0;
+          currentOfferCell.dataset.buyMin = val;
+          updateSummary();
+      });
+
+      currentOfferCell.appendChild(input);
+
+  } else {
+      // Normal non-zero behaviour
+      const buyVal = currentOfferCell.querySelector('.buying-value');
+      buyVal.textContent = `£${buyingStartPrice.toFixed(2)}`;
+      buyVal.classList.add('offer-green');
+      if (reasons.buying_start_price) {
+          buyVal.title = "Initially set at start price but can be switched to mid and max price";
+      }
+      
+    // Set up increase/decrease buttons normally
+    const decreaseBtn = currentOfferCell.querySelector('.decrease-buying');
+    const increaseBtn = currentOfferCell.querySelector('.increase-buying');
+    decreaseBtn.onclick = () => adjustBuying(currentOfferCell, -1);
+    increaseBtn.onclick = () => adjustBuying(currentOfferCell, 1);
+}
+
 
   // Mid offer = starting + 50% of range
   const midOfferCell = row.querySelector('.mid-offer');
@@ -778,11 +834,6 @@ async function updatePriceCells(row, category, model, attributes) {
   currentOfferCell.dataset.baseBuyMax = cexOfferCashPrice;
 
   currentOfferCell.dataset.adjustPercent = "0";
-
-  const decreaseBtn = currentOfferCell.querySelector('.decrease-buying');
-  const increaseBtn = currentOfferCell.querySelector('.increase-buying');
-  decreaseBtn.onclick = () => adjustBuying(currentOfferCell, -1);
-  increaseBtn.onclick = () => adjustBuying(currentOfferCell, 1);
 
   // CEX price link
   const cexCell = row.querySelector('.cex-price');
