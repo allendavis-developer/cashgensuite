@@ -5,7 +5,7 @@ from django.db import transaction
 from django.db.models import Q, Prefetch, Count
 from django.utils import timezone
 from django.db import connection, reset_queries
-
+from django.db import IntegrityError
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
@@ -1071,17 +1071,15 @@ import time
 @csrf_exempt
 @require_POST
 def save_overnight_scraped_data(request):
-    """Process ALL scraped data efficiently"""
     start_time = time.time()
     print("🚀 [START] save_overnight_scraped_data")
 
     try:
-        # Parse JSON
         data = json.loads(request.body.decode('utf-8'))
         category_name = data.get('category_name')
         subcategory_name = data.get('subcategory_name')
         results = data.get('results', [])
-        
+
         total_variants = len(results)
         print(f"📦 Processing {total_variants} variants")
 
@@ -1091,155 +1089,151 @@ def save_overnight_scraped_data(request):
         now = timezone.now()
         created_count = 0
         updated_count = 0
+        history_count = 0
 
-        # Step 1: Build hierarchy cache ONCE
+        # --------------------------------------------------------------------
+        # 1. Build hierarchy cache
+        # --------------------------------------------------------------------
         print("📚 Building hierarchy cache...")
         hierarchy_cache = ensure_hierarchy(category_name, subcategory_name, results)
         print(f"✅ Cached {len(hierarchy_cache)} models")
 
-        # Step 2: Pre-fetch ALL MarketItems we might need
+        # --------------------------------------------------------------------
+        # 2. Preload ALL needed MarketItems
+        # --------------------------------------------------------------------
         print("🔍 Pre-fetching MarketItems...")
-        all_item_names = set()
-        for variant in results:
-            item_name = variant.get('item_name')
-            if item_name:
-                all_item_names.add(item_name.strip())
-        
+
+        all_item_names = {v.get('item_name').strip()
+                          for v in results
+                          if v.get('item_name')}
+
         existing_market_items = {}
-        # Fetch in chunks to avoid query size issues
         item_names_list = list(all_item_names)
+
         for i in range(0, len(item_names_list), 500):
             chunk = item_names_list[i:i+500]
-            items = MarketItem.objects.filter(title__in=chunk).select_related('category', 'item_model')
+            items = (
+                MarketItem.objects
+                .filter(title__in=chunk)
+                .select_related('category', 'item_model')
+            )
             for mi in items:
                 existing_market_items[(mi.title, mi.category_id, mi.item_model_id)] = mi
-        
+
         print(f"✅ Found {len(existing_market_items)} existing MarketItems")
 
-        # Step 3: Create missing MarketItems
+        # --------------------------------------------------------------------
+        # 3. Create any missing MarketItems
+        # --------------------------------------------------------------------
         to_create = []
+
         for variant in results:
             item_name = variant.get('item_name')
             model_name = variant.get('model_name', '').strip()
-            
+
             if not item_name or not model_name or model_name not in hierarchy_cache:
                 continue
-            
+
             category, subcategory, item_model = hierarchy_cache[model_name]
             key = (item_name.strip(), category.id, item_model.id)
-            
+
             if key not in existing_market_items:
-                to_create.append(MarketItem(
-                    title=item_name.strip(),
-                    category=category,
-                    item_model=item_model,
-                    last_scraped=now
-                ))
-        
+                to_create.append(
+                    MarketItem(
+                        title=item_name.strip(),
+                        category=category,
+                        item_model=item_model,
+                        last_scraped=now
+                    )
+                )
+
         if to_create:
             print(f"🆕 Creating {len(to_create)} new MarketItems...")
-            # Batch create without ignore_conflicts to get IDs back
             for i in range(0, len(to_create), 100):
-                batch = to_create[i:i+100]
-                try:
-                    created = MarketItem.objects.bulk_create(batch, ignore_conflicts=False)
-                    for mi in created:
-                        existing_market_items[(mi.title, mi.category_id, mi.item_model_id)] = mi
-                except Exception as e:
-                    print(f"    ⚠️ Batch conflict, creating individually...")
-                    # Fall back to get_or_create for this batch
-                    for obj in batch:
-                        mi, created = MarketItem.objects.get_or_create(
-                            title=obj.title,
-                            category=obj.category,
-                            item_model=obj.item_model,
-                            defaults={'last_scraped': now}
-                        )
-                        existing_market_items[(mi.title, mi.category_id, mi.item_model_id)] = mi
-        
-        # Re-fetch all to ensure we have IDs, then update last_scraped
-        print("🕓 Updating last_scraped...")
-        all_titles = list(all_item_names)
+                batch = MarketItem.objects.bulk_create(to_create[i:i+100])
+                for mi in batch:
+                    existing_market_items[(mi.title, mi.category_id, mi.item_model_id)] = mi
+
+        # Update last_scraped
         all_items = []
-        for i in range(0, len(all_titles), 500):
-            chunk = all_titles[i:i+500]
+        for i in range(0, len(item_names_list), 500):
+            chunk = item_names_list[i:i+500]
             all_items.extend(MarketItem.objects.filter(title__in=chunk))
-        
-        # Update timestamps
+
         for mi in all_items:
             mi.last_scraped = now
-        
+
         for i in range(0, len(all_items), 200):
             MarketItem.objects.bulk_update(all_items[i:i+200], ['last_scraped'])
-        
-        # Rebuild the map with fresh objects that have IDs
-        existing_market_items = {}
-        for mi in all_items:
-            existing_market_items[(mi.title, mi.category_id, mi.item_model_id)] = mi
-        
+
+        # Rebuild definitive map
+        existing_market_items = {
+            (mi.title, mi.category_id, mi.item_model_id): mi
+            for mi in all_items
+        }
+
         print(f"✅ Total MarketItems ready: {len(existing_market_items)}")
 
-        # Step 4: Process listings in larger, more efficient batches
-        print("💾 Processing listings...")
-        CHUNK_SIZE = 200  # Process 200 variants at a time
-        
+        # --------------------------------------------------------------------
+        # 4. Preload ALL existing listings once
+        # --------------------------------------------------------------------
+        print("📦 Preloading all existing competitor listings...")
+
+        all_market_item_ids = {mi.id for mi in existing_market_items.values()}
+
+        existing_listings = {}
+        listing_qs = CompetitorListing.objects.filter(
+            market_item_id__in=all_market_item_ids
+        ).only(
+            'id', 'market_item_id', 'competitor', 'stable_id',
+            'price', 'trade_voucher_price', 'trade_cash_price'
+        )
+
+        for lst in listing_qs:
+            key = (lst.market_item_id, lst.competitor, lst.stable_id)
+            existing_listings[key] = lst
+
+        print(f"✅ Loaded {len(existing_listings)} existing listings")
+
+        # --------------------------------------------------------------------
+        # 5. Process all variants in chunks, using global existing_listings map
+        # --------------------------------------------------------------------
+        CHUNK_SIZE = 200
+
         for chunk_idx in range(0, total_variants, CHUNK_SIZE):
             chunk_start = time.time()
             variant_chunk = results[chunk_idx:chunk_idx + CHUNK_SIZE]
-            
-            print(f"  📦 Variants {chunk_idx}-{chunk_idx + len(variant_chunk)}...")
-            
-            # Collect all market_items in this chunk
-            chunk_market_items = []
-            variant_to_market_item = {}
-            
+
+            listings_to_create = []
+            listings_to_update = []
+            histories_to_create = []
+
+            # per-chunk dedupe (avoid creating same row twice)
+            seen_in_chunk = set()
+
             for variant in variant_chunk:
                 item_name = variant.get('item_name')
                 model_name = variant.get('model_name', '').strip()
-                
+
                 if not item_name or not model_name or model_name not in hierarchy_cache:
                     continue
-                
+
                 category, subcategory, item_model = hierarchy_cache[model_name]
-                key = (item_name.strip(), category.id, item_model.id)
-                market_item = existing_market_items.get(key)
-                
-                if market_item:
-                    chunk_market_items.append(market_item)
-                    variant_to_market_item[id(variant)] = market_item
-            
-            if not chunk_market_items:
-                continue
-            
-            # Pre-fetch existing listings for ALL market items in this chunk
-            existing_listings = {}
-            listings_qs = CompetitorListing.objects.filter(
-                market_item__in=chunk_market_items
-            ).only('id', 'market_item_id', 'competitor', 'stable_id', 'price',
-                   'trade_voucher_price', 'trade_cash_price')
-            
-            for listing in listings_qs:
-                key = (listing.market_item_id, listing.competitor, listing.stable_id)
-                existing_listings[key] = listing
-            
-            # Process all listings in this chunk
-            listings_to_create = []
-            listings_to_update = []
-            
-            for variant in variant_chunk:
-                market_item = variant_to_market_item.get(id(variant))
+                key_mi = (item_name.strip(), category.id, item_model.id)
+                market_item = existing_market_items.get(key_mi)
+
                 if not market_item:
                     continue
-                
-                listings = variant.get('listings', [])
-                
-                for item in listings:
+
+                for item in variant.get('listings', []):
                     competitor = item.get('competitor')
                     stable_id = item.get('stable_id')
-                    
+
                     if not competitor or not stable_id:
                         continue
-                    
+
+                    lookup_key = (market_item.id, competitor, stable_id)
+
                     price = float(item.get('price', 0))
                     trade_voucher = item.get('tradeVoucher')
                     trade_cash = item.get('tradeCash')
@@ -1248,11 +1242,22 @@ def save_overnight_scraped_data(request):
                     condition = item.get('condition', '')
                     store = item.get('store', '')
                     url = item.get('url', '')
-                    
-                    key = (market_item.id, competitor, stable_id)
-                    
-                    if key in existing_listings:
-                        listing = existing_listings[key]
+
+                    # skip duplicates inside same chunk
+                    if lookup_key in seen_in_chunk:
+                        continue
+                    seen_in_chunk.add(lookup_key)
+
+                    # ---- existing listing
+                    if lookup_key in existing_listings:
+                        listing = existing_listings[lookup_key]
+
+                        price_changed = (
+                            price != listing.price or
+                            trade_voucher != listing.trade_voucher_price or
+                            trade_cash != listing.trade_cash_price
+                        )
+
                         listing.price = price
                         listing.trade_voucher_price = trade_voucher
                         listing.trade_cash_price = trade_cash
@@ -1263,66 +1268,108 @@ def save_overnight_scraped_data(request):
                         listing.url = url
                         listing.is_active = True
                         listing.last_seen = now
+
                         listings_to_update.append(listing)
-                    else:
-                        listings_to_create.append(
-                            CompetitorListing(
-                                market_item=market_item,
-                                competitor=competitor,
-                                stable_id=stable_id,
-                                price=price,
-                                trade_voucher_price=trade_voucher,
-                                trade_cash_price=trade_cash,
-                                title=title,
-                                description=description,
-                                condition=condition,
-                                store_name=store,
-                                url=url,
-                                is_active=True,
-                                last_seen=now
+
+                        if price_changed:
+                            histories_to_create.append(
+                                CompetitorListingHistory(
+                                    listing=listing,
+                                    price=price,
+                                    trade_voucher_price=trade_voucher,
+                                    trade_cash_price=trade_cash,
+                                    title=title,
+                                    condition=condition,
+                                    timestamp=now,
+                                )
                             )
-                        )
-            
-            # Bulk operations for this chunk
+                        continue
+
+                    # ---- new listing
+                    new_listing = CompetitorListing(
+                        market_item=market_item,
+                        competitor=competitor,
+                        stable_id=stable_id,
+                        price=price,
+                        trade_voucher_price=trade_voucher,
+                        trade_cash_price=trade_cash,
+                        title=title,
+                        description=description,
+                        condition=condition,
+                        store_name=store,
+                        url=url,
+                        is_active=True,
+                        last_seen=now
+                    )
+                    listings_to_create.append(new_listing)
+
+            # ----------------------------------------------------------------
+            # Bulk create new listings
+            # ----------------------------------------------------------------
             if listings_to_create:
-                # Create in sub-batches to avoid overwhelming DB
                 for i in range(0, len(listings_to_create), 100):
                     batch = listings_to_create[i:i+100]
-                    try:
-                        CompetitorListing.objects.bulk_create(batch, ignore_conflicts=True)
-                        created_count += len(batch)
-                    except Exception as e:
-                        print(f"    ❌ Create error at batch {i}: {e}")
-            
+                    created = CompetitorListing.objects.bulk_create(batch)
+                    created_count += len(created)
+
+                    # add to global existing_listings map
+                    for lst in created:
+                        key = (lst.market_item_id, lst.competitor, lst.stable_id)
+                        existing_listings[key] = lst
+
+                        histories_to_create.append(
+                            CompetitorListingHistory(
+                                listing=lst,
+                                price=lst.price,
+                                trade_voucher_price=lst.trade_voucher_price,
+                                trade_cash_price=lst.trade_cash_price,
+                                title=lst.title,
+                                condition=lst.condition,
+                                timestamp=now,
+                            )
+                        )
+
+            # ----------------------------------------------------------------
+            # Bulk update existing listings
+            # ----------------------------------------------------------------
             if listings_to_update:
                 for i in range(0, len(listings_to_update), 100):
-                    batch = listings_to_update[i:i+100]
-                    try:
-                        CompetitorListing.objects.bulk_update(
-                            batch,
-                            ['price', 'trade_voucher_price', 'trade_cash_price',
-                             'title', 'description', 'condition', 'store_name',
-                             'url', 'is_active', 'last_seen']
-                        )
-                        updated_count += len(batch)
-                    except Exception as e:
-                        print(f"    ❌ Update error at batch {i}: {e}")
-            
-            chunk_time = time.time() - chunk_start
-            print(f"    ✅ {len(listings_to_create)} created, {len(listings_to_update)} updated in {chunk_time:.2f}s")
-            
-            # Close connection periodically
-            if chunk_idx % 1000 == 0:
-                connection.close_if_unusable_or_obsolete()
+                    CompetitorListing.objects.bulk_update(
+                        listings_to_update[i:i+100],
+                        [
+                            'price', 'trade_voucher_price', 'trade_cash_price',
+                            'title', 'description', 'condition', 'store_name',
+                            'url', 'is_active', 'last_seen'
+                        ]
+                    )
+                    updated_count += len(listings_to_update[i:i+100])
+
+            # ----------------------------------------------------------------
+            # Bulk create histories
+            # ----------------------------------------------------------------
+            if histories_to_create:
+                for i in range(0, len(histories_to_create), 100):
+                    CompetitorListingHistory.objects.bulk_create(
+                        histories_to_create[i:i+100],
+                        ignore_conflicts=True
+                    )
+                    history_count += len(histories_to_create[i:i+100])
+
+            print(f"    Chunk {chunk_idx}-{chunk_idx + len(variant_chunk)} "
+                  f"→ {len(listings_to_create)} created, "
+                  f"{len(listings_to_update)} updated")
+
+            connection.close_if_unusable_or_obsolete()
 
         total_time = time.time() - start_time
-        print(f"\n🏁 [END] Completed in {total_time:.2f}s")
-        print(f"📊 Created: {created_count}, Updated: {updated_count}")
+        print(f"\n🏁 Completed in {total_time:.2f}s")
+        print(f"📊 Created: {created_count}, Updated: {updated_count}, Histories: {history_count}")
 
         return JsonResponse({
             'success': True,
             'created': created_count,
             'updated': updated_count,
+            'histories': history_count,
             'total_variants': total_variants,
             'duration_seconds': round(total_time, 2)
         })
