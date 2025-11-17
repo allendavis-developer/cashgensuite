@@ -118,6 +118,10 @@ def get_competitor_price_stats(market_item):
         CompetitorListing.objects.filter(
             market_item=market_item, competitor="CashConverters", is_active=True
         ).order_by("price")
+
+    # let's fetch the cc listings dynamically now
+    
+
     )
     cg_listings = list(
         CompetitorListing.objects.filter(
@@ -154,82 +158,99 @@ def round_down_to_even(value):
 
 import requests
 
-def compute_prices_from_cex_rule(market_item, cex_rule=None):
+def fetch_cex_box_details(stable_id):
     """
-    Fetch latest CEX prices for a given MarketItem and compute selling and buying prices.
-
-    Updates market_item.cex_sale_price, market_item.cex_cash_trade_price, and market_item.cex_url.
-
-    Selling price:
-        - If cex_rule provided: cex_sale_price * cex_rule.cex_pct
-        - Otherwise: cex_sale_price * 0.8 (default 20% discount)
-
-    Buying price range:
-        - start = 50% of selling price
-        - mid   = average of start and end
-        - end   = CeX cash price if available, else 50% of selling price
-        - Ensure start <= end
+    Fetch raw CeX data for a box ID.
 
     Returns:
         {
-            "selling_price": float,
-            "buying_start_price": float,
-            "buying_mid_price": float,
-            "buying_end_price": float,
-            "cex_trade_cash_price": float,
-            "cex_sale_price": float,
-            "cex_url": str,
-            "reasons": dict
+            "out_of_stock": bool,
+            "price": float or None,
+            "cash_trade_price": float or None,
+            "url": str or None,
         }
+        or None on failure.
     """
-
-    qs = CompetitorListing.objects.filter(
-        competitor="CEX",
-        market_item=market_item,
-        is_active=True
-    ).order_by("id")
-
-    # Prefer unlocked versions if available
-    cex_listing = qs.filter(Q(title__icontains="unlocked")).first() or qs.first()
-
-    if not cex_listing:
-        return {
-            "selling_price": 0,
-            "buying_start_price": 0,
-            "buying_mid_price": 0,
-            "buying_end_price": 0,
-            "cex_trade_cash_price": None,
-            "cex_sale_price": None,
-            "cex_url": None,
-            "reasons": {"error": "No CEX listing found"}
-        }
-
-    url = f"https://wss2.cex.uk.webuy.io/v3/boxes/{cex_listing.stable_id}/detail"
+    url = f"https://wss2.cex.uk.webuy.io/v3/boxes/{stable_id}/detail"
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                      "AppleWebKit/537.36 (KHTML, like Gecko) "
-                      "Chrome/118.0.5993.117 Safari/537.36",
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/118.0.5993.117 Safari/537.36"
+        ),
         "Accept": "application/json, text/javascript, */*; q=0.01",
         "Referer": "https://www.cex.uk/",
     }
 
-    outOfStock = False
     try:
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         data = response.json()
+
         box = data.get("response", {}).get("data", {}).get("boxDetails", [{}])[0]
-        outOfStock = box.get("outOfStock")
+        return {
+            "out_of_stock": box.get("outOfStock"),
+            "price": box.get("sellPrice"),
+            "cash_trade_price": box.get("cashPrice"),
+            "url": f"https://uk.webuy.com/product-detail?id={stable_id}",
+        }
+
     except Exception as e:
         print(f"CeX price lookup failed for {stable_id}: {e}")
         return None
 
+def fetch_cc_search_results(query):
+    """
+    Fetch raw search results from Cash Converters UK API using only a query string.
+    Prints the JSON response for now.
+    """
+    base_url = "https://www.cashconverters.co.uk/c3api/search/results"
 
-    cex_sale_price = cex_listing.price or 0
-    cex_cash_trade_price = cex_listing.trade_cash_price
-    cex_url = cex_listing.url
+    params = {
+        "Sort": "newest",
+        "page": 1,
+        "query": query,
+    }
 
-    if (outOfStock):
+    try:
+        response = requests.get(base_url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        print("Response JSON:", data)
+        return data
+    except requests.RequestException as e:
+        print(f"Request failed: {e}")
+        return None
+    except ValueError:
+        print("Failed to parse JSON response")
+        return None
+
+def classify_mover(cex_sale_price, cex_cash_trade_price):
+    if not cex_sale_price or not cex_cash_trade_price:
+        return "unknown", "Not enough data to classify mover."
+
+    margin = (cex_sale_price - cex_cash_trade_price) / cex_sale_price
+
+    if margin > 0.50:
+        return "slow", "High CeX margin (>50%), typically indicates slow-moving stock."
+    elif margin >= 0.40:
+        return "medium", "CeX margin between 40–50%, typical of medium movers."
+    else:
+        return "fast", "Low CeX margin (<40%), usually fast-moving stock."
+
+
+def compute_prices_from_cex_rule(
+    cex_sale_price,
+    cex_cash_trade_price,
+    cex_url,
+    out_of_stock,
+    cex_rule=None
+):
+    """
+    Pure price computation with externally-fetched CeX data.
+    """
+
+    if out_of_stock:
         return {
             "selling_price": 0,
             "buying_start_price": 0,
@@ -237,7 +258,7 @@ def compute_prices_from_cex_rule(market_item, cex_rule=None):
             "buying_end_price": 0,
             "cex_trade_cash_price": cex_cash_trade_price,
             "cex_sale_price": cex_sale_price,
-            "cex_url": cex_listing.url,
+            "cex_url": cex_url,
             "reasons": {
                 "selling_price": "Out of stock on CEX, we shouldn't take this item in",
                 "buying_start_price": "Out of stock on CEX, we shouldn't take this item in",
@@ -246,34 +267,46 @@ def compute_prices_from_cex_rule(market_item, cex_rule=None):
             },
         }
 
-    # --- Compute selling price ---
+    # Selling price
     if cex_rule:
         selling_price = round(cex_sale_price * cex_rule.cex_pct)
-        reason_selling = f"Applied CeX rule percentage ({cex_rule.cex_pct * 100:.0f}%) to CeX sale price."
+        reason_selling = (
+            f"Applied CeX rule percentage ({cex_rule.cex_pct * 100:.0f}%) "
+            "to CeX sale price."
+        )
     else:
         selling_price = round(cex_sale_price * 0.8)
         reason_selling = "Used default 20% discount from CeX sale price."
 
-    # --- Compute buying prices ---
+    # Buying prices
     buying_start_price = round(selling_price / 2)
     buying_end_price = cex_cash_trade_price or round(selling_price / 2)
 
-    # Ensure logical order
     if buying_start_price > buying_end_price:
-        buying_start_price = round(buying_end_price * 0.8)
-        reason_buying_start = "Adjusted start price down to ensure it’s below CeX cash price."
+        buying_start_price = round(buying_end_price * cex_rule.cex_buying_pct)
+        reason_buying_start = (
+            f"Applied CeX buying rule percentage "
+            f"({cex_rule.cex_buying_pct * 100:.0f}%) to cash offer."
+        )
     else:
         reason_buying_start = "Set to 50% of selling price."
 
     buying_mid_price = round((buying_start_price + buying_end_price) / 2)
-    reason_buying_mid = "Average of start and end buying prices to offer a middle-ground trade value."
+
+    reason_buying_mid = (
+        "Average of start and end buying prices to offer a middle-ground trade value."
+    )
     reason_buying_end = (
-        "Matched CeX cash trade price." if cex_cash_trade_price
+        "Matched CeX cash trade price."
+        if cex_cash_trade_price
         else "Used 50% of selling price (no CeX cash trade price available)."
     )
 
+    category, category_reason = classify_mover(cex_sale_price, cex_cash_trade_price)
+
     return {
         "selling_price": selling_price,
+        "category": category,
         "buying_start_price": buying_start_price,
         "buying_mid_price": buying_mid_price,
         "buying_end_price": buying_end_price,
@@ -285,10 +318,9 @@ def compute_prices_from_cex_rule(market_item, cex_rule=None):
             "buying_start_price": reason_buying_start,
             "buying_mid_price": reason_buying_mid,
             "buying_end_price": reason_buying_end,
+            "category": category_reason,
         },
     }
-
-
 
 
 def get_most_specific_cex_rule(category, subcategory, item_model):
@@ -320,7 +352,6 @@ def get_most_specific_cex_rule(category, subcategory, item_model):
     # 4. default rule (no category, subcategory, or item_model)
     return qs.filter(category__isnull=True, subcategory__isnull=True, item_model__isnull=True).first()
 
-
 @csrf_exempt
 @require_POST
 def get_selling_and_buying_price(request):
@@ -337,7 +368,6 @@ def get_selling_and_buying_price(request):
         if not category or not model:
             return JsonResponse({"success": False, "error": "Category and model are required."})
 
-        # Build search term and get market item
         search_term = build_search_term(model, category, subcategory, attributes)
         market_item = get_market_item(search_term)
         print("Searching for:", search_term, "Found:", market_item)
@@ -345,38 +375,64 @@ def get_selling_and_buying_price(request):
         if not market_item:
             return JsonResponse({"success": False, "error": "No matching market item found."})
 
-        # Get competitor price stats
         competitor_stats = get_competitor_price_stats(market_item)
 
-        # Get most specific CeX pricing rule
+        # Get best CEX listing
+        qs = CompetitorListing.objects.filter(
+            competitor="CEX",
+            market_item=market_item,
+            is_active=True
+        ).order_by("id")
+
+        cex_listing = qs.filter(Q(title__icontains="unlocked")).first() or qs.first()
+
+        if not cex_listing:
+            return JsonResponse({
+                "success": False,
+                "error": "No CEX listing found."
+            })
+
+        # CEX scrape happens HERE now
+        box_data = fetch_cex_box_details(cex_listing.stable_id)
+        
+        if not box_data:
+            return JsonResponse({"success": False, "error": "Failed to fetch CeX box details"})
+
+        query = cc_build_query(category, subcategory, model, attributes)
+
+
+        # Extract values to pass into compute function
+        out_of_stock = box_data["out_of_stock"]
+        cex_sale_price = cex_listing.price or 0
+        cex_cash_trade_price = cex_listing.trade_cash_price
+        cex_url = cex_listing.url
+
+        # Rule
         cex_rule = get_most_specific_cex_rule(category_id, subcategory_id, model_id)
 
-        # Compute final prices
-        prices = compute_prices_from_cex_rule(market_item, cex_rule)
+        # Pure compute
+        prices = compute_prices_from_cex_rule(
+            cex_sale_price=cex_sale_price,
+            cex_cash_trade_price=cex_cash_trade_price,
+            cex_url=cex_url,
+            out_of_stock=out_of_stock,
+            cex_rule=cex_rule
+        )
 
-        selling_price = prices["selling_price"]
-        buying_start = prices["buying_start_price"]
-        buying_mid = prices["buying_mid_price"]
-        buying_end = prices["buying_end_price"]
-        cex_buying_price = prices["cex_trade_cash_price"]
-        cex_selling_price = prices["cex_sale_price"]
-        cex_url = prices["cex_url"]
-        reasons = prices["reasons"]
-
-
-        # Return response including competitor stats
+        # Send response
         return JsonResponse({
             "success": True,
             "search_term": search_term,
-            "selling_price": selling_price,
-            "buying_start_price": buying_start,
-            "buying_mid_price": buying_mid,
-            "buying_end_price": buying_end,
-            "cex_buying_price": cex_buying_price,
-            "cex_selling_price": cex_selling_price,
-            "cex_url": cex_url,
-            "competitor_stats": competitor_stats, 
-            "reasons": reasons,
+            "selling_price": prices["selling_price"],
+            "buying_start_price": prices["buying_start_price"],
+            "buying_mid_price": prices["buying_mid_price"],
+            "buying_end_price": prices["buying_end_price"],
+            "cex_buying_price": prices["cex_trade_cash_price"],
+            "cex_selling_price": prices["cex_sale_price"],
+            "category": prices["category"],
+            "cex_url": prices["cex_url"],
+            "competitor_stats": competitor_stats,
+            "reasons": prices["reasons"],
         })
 
     except ValueError as e:
@@ -385,6 +441,50 @@ def get_selling_and_buying_price(request):
         import traceback; traceback.print_exc()
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
+
+CC_CATEGORY_MAP = {
+    "Laptops": "1073742012",
+}
+
+
+def cc_build_query(category, subcategory, model, attributes):
+    """
+    Convert your internal item definition (category, subcategory, model, attributes)
+    into a search query string suitable for Cash Converters.
+
+    This is the base version: predictable, shallow, and ready for extension.
+    """
+    print(category)
+    print(subcategory)
+    print(model)
+    print(attributes)
+
+    parts = []
+
+    # Always include model — it's usually the strongest signal
+    if model:
+        parts.append(str(model))
+
+    # Category/Subcategory can help narrow the item
+    # (e.g. "iPhone 15 mobile phone", "PS5 console")
+    if subcategory:
+        parts.append(str(subcategory))
+    elif category:
+        parts.append(str(category))
+
+    # Attributes can fill in useful details:
+    # e.g. {"Storage": "128GB", "Colour": "Black"}
+    # You can expand these rules as you learn what the CC API responds to.
+    for key, value in attributes.items():
+        # Keep only simple attributes that read naturally in a query
+        # (screen size, capacity, model codes, colours, etc.)
+        if isinstance(value, str) and len(value) < 30:
+            parts.append(value)
+
+    # Join with spaces. CC search is fairly forgiving.
+    query = " ".join(part for part in parts if part)
+
+    return query.strip()
 
 
 

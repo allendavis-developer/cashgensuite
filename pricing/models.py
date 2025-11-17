@@ -361,31 +361,37 @@ class GlobalMarginRule(models.Model):
 
 
 class CEXPricingRule(models.Model):
-    """
-    Defines what % of competitor (CEX) price we sell an item for.
-    Granularity: Category > Subcategory > ItemModel
-    If all fields are null, this is the DEFAULT rule.
-    """
+    class MovementClass(models.TextChoices):
+        SLOW = "slow", "Slow Moving"
+        MEDIUM = "medium", "Medium Moving"
+        FAST = "fast", "Fast Moving"
+
     category = models.ForeignKey(
-        Category, 
-        on_delete=models.CASCADE, 
-        blank=True, 
-        null=True, 
-        related_name='cex_rules'
+        Category,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name="cex_rules"
     )
     subcategory = models.ForeignKey(
-        Subcategory, 
-        on_delete=models.CASCADE, 
-        blank=True, 
-        null=True, 
-        related_name='cex_rules'
+        Subcategory,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name="cex_rules"
     )
     item_model = models.ForeignKey(
-        ItemModel, 
-        on_delete=models.CASCADE, 
-        blank=True, 
-        null=True, 
-        related_name='cex_rules'
+        ItemModel,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name="cex_rules"
+    )
+
+    movement_class = models.CharField(
+        max_length=10,
+        choices=MovementClass.choices,
+        default=MovementClass.MEDIUM
     )
 
     cex_pct = models.FloatField(help_text="Percentage of CEX price to sell at, e.g., 0.8 for 80%")
@@ -393,26 +399,38 @@ class CEXPricingRule(models.Model):
     is_active = models.BooleanField(default=True)
 
     class Meta:
-        ordering = ['category', 'subcategory', 'item_model']
-        unique_together = ('category', 'subcategory', 'item_model')
+        ordering = ["category", "subcategory", "item_model", "movement_class"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["category", "subcategory", "item_model", "movement_class"],
+                name="unique_rule_per_scope_and_movement"
+            )
+        ]
 
     def __str__(self):
+        pct = f"{self.cex_pct * 100:.1f}%"
+        mc = self.movement_class
         if not self.category and not self.subcategory and not self.item_model:
-            return f"DEFAULT - {self.cex_pct*100:.1f}%"
+            return f"DEFAULT [{mc}] - {pct}"
         target = self.item_model or self.subcategory or self.category
-        return f"{target} - {self.cex_pct*100:.1f}%"
-    
+        return f"{target} [{mc}] - {pct}"
+
     def clean(self):
-        """Ensure only one DEFAULT rule exists"""
         super().clean()
-        if not self.category and not self.subcategory and not self.item_model:
-            # Check if another DEFAULT rule exists
-            existing_default = CEXPricingRule.objects.filter(
-                category__isnull=True,
-                subcategory__isnull=True,
-                item_model__isnull=True
-            ).exclude(pk=self.pk)
-            
-            if existing_default.exists():
-                from django.core.exceptions import ValidationError
-                raise ValidationError("A DEFAULT rule already exists. Only one DEFAULT rule is allowed.")
+
+        # Check for duplicates (since NULL != NULL in unique_together)
+        existing = CEXPricingRule.objects.filter(
+            category=self.category,
+            subcategory=self.subcategory,
+            item_model=self.item_model,
+            movement_class=self.movement_class,
+        ).exclude(pk=self.pk)
+
+        if existing.exists():
+            from django.core.exceptions import ValidationError
+            raise ValidationError(
+                f"A rule already exists for this combination of "
+                f"category/subcategory/item_model and movement class '{self.movement_class}'."
+            )
+
+

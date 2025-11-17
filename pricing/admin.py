@@ -14,7 +14,7 @@ from .models import (
     MarginRule,
     GlobalMarginRule,
     ItemModelAttributeValue,
-    CEXPricingRule
+    CEXPricingRule,
 )
 
 # -------------------------------
@@ -403,6 +403,17 @@ class CEXPricingRuleForm(forms.ModelForm):
             'item_model': autocomplete.ModelSelect2(url='itemmodel-autocomplete', forward=['subcategory']),
         }
 
+class CEXPricingRuleInline(admin.TabularInline):
+    model = CEXPricingRule
+    extra = 3  # Show 3 rows
+    max_num = 3
+    can_delete = False
+    fields = ("movement_class", "cex_pct", "is_active")
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.order_by("movement_class")
+
 
 @admin.register(CEXPricingRule)
 class CEXPricingRuleAdmin(admin.ModelAdmin):
@@ -411,6 +422,7 @@ class CEXPricingRuleAdmin(admin.ModelAdmin):
     list_filter = ('is_active', 'category')
     search_fields = ('category__name', 'subcategory__name', 'item_model__name', 'description')
     ordering = ('category', 'subcategory', 'item_model',)
+
 
 class CategoryAutocomplete(autocomplete.Select2QuerySetView):
     def get_queryset(self):
