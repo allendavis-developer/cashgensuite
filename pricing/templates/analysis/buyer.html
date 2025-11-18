@@ -550,8 +550,10 @@ function createCategoryTable(categoryId, categoryName, attributes) {
     'CashConverters Mode',
     'CashGenerator Mode',
     'Movement Category',
+    'CEX Margin',
     'CEX Price',
     'CEX Price Last Updated',
+    '% Used for suggested RRP',
     'Suggested RRP',
     'Starting Offer',
     'Second Offer',
@@ -652,8 +654,10 @@ async function addItemToTable() {
     `<td class="cc-mode">—</td>`,
     `<td class="cg-mode">—</td>`,
     `<td class="cex-movement-category">—</td>`,
+    `<td class="cex-margin">—</td>`,
     `<td class="cex-price">—</td>`,
     `<td class="cex-price-last-updated">—</td>`,
+    `<td class="cex-rrp-pct">—</td>`,
     `<td class="suggested-rrp">—</td>`,
     `<td class="starting-offer">—</td>`,
     `<td class="mid-offer">—</td>`,
@@ -816,6 +820,9 @@ async function updatePriceCells(row, category, model, attributes) {
 
   reasons = priceResult.reasons;
 
+  const rrpPctCell = row.querySelector('.cex-rrp-pct');
+  rrpPctCell.textContent = `${priceResult.cex_rrp_pct * 100}%`;
+
   // Suggested RRP
   const rrpCell = row.querySelector('.suggested-rrp');
   rrpCell.textContent = `£${sellingPrice.toFixed(2)}`;
@@ -827,7 +834,9 @@ async function updatePriceCells(row, category, model, attributes) {
 
   // Starting offer 
   const startingOfferCell = row.querySelector('.starting-offer');
-  startingOfferCell.textContent = `£${buyingStartPrice.toFixed(2)}`;
+  const startingOfferMargin = ((sellingPrice - buyingStartPrice)/sellingPrice) * 100
+  startingOfferCell.textContent = `£${buyingStartPrice.toFixed(2)} (${startingOfferMargin.toFixed(2)}%)`;
+
   startingOfferCell.classList.add('offer-green');
   if (reasons.buying_start_price) startingOfferCell.title = reasons.buying_start_price;
   
@@ -876,13 +885,16 @@ async function updatePriceCells(row, category, model, attributes) {
   // Mid offer = starting + 50% of range
   const midOfferCell = row.querySelector('.mid-offer');
   const midOffer = buyingSecondPrice;
-  midOfferCell.textContent = `£${midOffer.toFixed(2)}`;
+  const midOfferMargin = ((sellingPrice - midOffer)/sellingPrice) * 100
+  midOfferCell.textContent = `£${midOffer.toFixed(2)} (${midOfferMargin.toFixed(2)})%`;
   if (reasons.buying_mid_price) midOfferCell.title = reasons.buying_mid_price;
   midOfferCell.classList.add('offer-yellow');
 
   // Final offer = max CEX offer
   const finalOfferCell = row.querySelector('.final-offer');
-  finalOfferCell.textContent = `£${buyingThirdPrice.toFixed(2)}`;
+  const finalOfferMargin = ((sellingPrice - buyingThirdPrice)/sellingPrice) * 100
+  finalOfferCell.textContent = `£${buyingThirdPrice.toFixed(2)} (${finalOfferMargin.toFixed(2)}%)`;
+
   if (reasons.buying_end_price) finalOfferCell.title = reasons.buying_end_price;
   finalOfferCell.classList.add('offer-red');
 
@@ -900,9 +912,14 @@ async function updatePriceCells(row, category, model, attributes) {
   } else {
     cexCell.textContent = '—';
   }
-  const cexPriceLastUpdatedCell = row.querySelector('.cex-price-last-updated');
 
-   cexPriceLastUpdatedCell.textContent = `${priceResult.cex_last_price_updated_date}`
+  const cexPriceLastUpdatedCell = row.querySelector('.cex-price-last-updated');
+  cexPriceLastUpdatedCell.textContent = `${priceResult.cex_last_price_updated_date}`
+  
+  const cexMarginCell = row.querySelector('.cex-margin');
+  cexProfit = priceResult.cex_selling_price - priceResult.cex_buying_price;
+  cexMargin = cexProfit/priceResult.cex_selling_price * 100;
+  cexMarginCell.textContent = `${cexMargin.toFixed(2)}%`
 
   if (priceResult.competitor_stats) {
   const updateModeCell = (cell, stats) => {

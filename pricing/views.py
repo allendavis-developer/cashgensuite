@@ -183,7 +183,7 @@ def fetch_cex_box_details(stable_id):
     }
 
     try:
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=30)
         response.raise_for_status()
         data = response.json()
 
@@ -305,24 +305,24 @@ def compute_prices_from_cex_rule(
     )
 
     # 3. If out of stock, bail early
-    if out_of_stock:
-        return {
-            "selling_price": 0,
-            "buying_start_price": 0,
-            "buying_mid_price": 0,
-            "buying_end_price": 0,
-            "category": "medium",
-            "cex_trade_cash_price": cex_cash_trade_price,
-            "cex_sale_price": cex_sale_price,
-            "cex_url": cex_url,
-            "reasons": {
-                "selling_price": "Out of stock on CEX, we shouldn't take this item in",
-                "buying_start_price": "Out of stock on CEX, we shouldn't take this item in",
-                "buying_mid_price": "Out of stock on CEX, we shouldn't take this item in",
-                "buying_end_price": "Out of stock on CEX, we shouldn't take this item in",
-                "category": movement_reason,
-            },
-        }
+    # if out_of_stock:
+    #     return {
+    #         "selling_price": 0,
+    #         "buying_start_price": 0,
+    #         "buying_mid_price": 0,
+    #         "buying_end_price": 0,
+    #         "category": "medium",
+    #         "cex_trade_cash_price": cex_cash_trade_price,
+    #         "cex_sale_price": cex_sale_price,
+    #         "cex_url": cex_url,
+    #         "reasons": {
+    #             "selling_price": "Out of stock on CEX, we shouldn't take this item in",
+    #             "buying_start_price": "Out of stock on CEX, we shouldn't take this item in",
+    #             "buying_mid_price": "Out of stock on CEX, we shouldn't take this item in",
+    #             "buying_end_price": "Out of stock on CEX, we shouldn't take this item in",
+    #             "category": movement_reason,
+    #         },
+    #     }
 
     # 4. Selling price logic
     if cex_rule:
@@ -337,7 +337,7 @@ def compute_prices_from_cex_rule(
 
     # 5. Buying logic
     cex_margin = (cex_sale_price - cex_cash_trade_price) / cex_sale_price
-    target_profit = (selling_price * cex_margin)
+    target_profit = round(selling_price * cex_margin)
     buying_start_price = selling_price - target_profit
 
     buying_end_price = cex_cash_trade_price or round(selling_price / 2)
@@ -367,6 +367,7 @@ def compute_prices_from_cex_rule(
         "cex_trade_cash_price": cex_cash_trade_price,
         "cex_sale_price": cex_sale_price,
         "cex_url": cex_url,
+        "cex_rrp_pct": cex_rule.cex_pct,
         "reasons": {
             "selling_price": reason_selling,
             "buying_start_price": reason_buying_start,
@@ -463,7 +464,8 @@ def get_selling_and_buying_price(request):
             "cex_url": prices["cex_url"],
             "competitor_stats": competitor_stats,
             "reasons": prices["reasons"],
-            "cex_last_price_updated_date": date_formatted
+            "cex_last_price_updated_date": date_formatted,
+            "cex_rrp_pct": prices["cex_rrp_pct"]
         })
 
     except ValueError as e:
