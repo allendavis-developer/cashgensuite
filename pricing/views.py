@@ -191,6 +191,7 @@ def fetch_cex_box_details(stable_id):
         return {
             "out_of_stock": box.get("outOfStock"),
             "price": box.get("sellPrice"),
+            "last_price_updated_date": box.get("lastPriceUpdatedDate"),
             "cash_trade_price": box.get("cashPrice"),
             "url": f"https://uk.webuy.com/product-detail?id={stable_id}",
         }
@@ -238,24 +239,79 @@ def classify_mover(cex_sale_price, cex_cash_trade_price):
     else:
         return "fast", "Low CeX margin (<40%), usually fast-moving stock."
 
+def find_cex_rule(category, subcategory, item_model, movement_class):
+    qs = CEXPricingRule.objects.filter(
+        is_active=True,
+        movement_class=movement_class,
+    )
+
+    # 1. Most specific: category + subcategory + item_model
+    rule = qs.filter(
+        category=category,
+        subcategory=subcategory,
+        item_model=item_model
+    ).first()
+    if rule:
+        return rule
+
+    # 2. Less specific: category + subcategory (no item_model)
+    rule = qs.filter(
+        category=category,
+        subcategory=subcategory,
+        item_model__isnull=True
+    ).first()
+    if rule:
+        return rule
+
+    # 3. category only
+    rule = qs.filter(
+        category=category,
+        subcategory__isnull=True,
+        item_model__isnull=True
+    ).first()
+    if rule:
+        return rule
+
+    # 4. default rule (no category / subcategory / item_model)
+    return qs.filter(
+        category__isnull=True,
+        subcategory__isnull=True,
+        item_model__isnull=True
+    ).first()
+
+
 
 def compute_prices_from_cex_rule(
     cex_sale_price,
     cex_cash_trade_price,
     cex_url,
     out_of_stock,
-    cex_rule=None
+    category=None,
+    subcategory=None,
+    item_model=None
 ):
-    """
-    Pure price computation with externally-fetched CeX data.
-    """
+    # 1. Determine movement class via classify_mover
+    movement_class, movement_reason = classify_mover(
+        cex_sale_price,
+        cex_cash_trade_price
+    )
 
+    # 2. Fetch the correct rule using your specificity ladder
+    cex_rule = find_cex_rule(
+        category=category,
+        subcategory=subcategory,
+        item_model=item_model,
+        movement_class=movement_class
+    )
+
+    # 3. If out of stock, bail early
     if out_of_stock:
         return {
             "selling_price": 0,
             "buying_start_price": 0,
             "buying_mid_price": 0,
             "buying_end_price": 0,
+            "category": "medium",
             "cex_trade_cash_price": cex_cash_trade_price,
             "cex_sale_price": cex_sale_price,
             "cex_url": cex_url,
@@ -264,49 +320,47 @@ def compute_prices_from_cex_rule(
                 "buying_start_price": "Out of stock on CEX, we shouldn't take this item in",
                 "buying_mid_price": "Out of stock on CEX, we shouldn't take this item in",
                 "buying_end_price": "Out of stock on CEX, we shouldn't take this item in",
+                "category": movement_reason,
             },
         }
 
-    # Selling price
+    # 4. Selling price logic
     if cex_rule:
         selling_price = round(cex_sale_price * cex_rule.cex_pct)
         reason_selling = (
-            f"Applied CeX rule percentage ({cex_rule.cex_pct * 100:.0f}%) "
-            "to CeX sale price."
+            f"Applied CeX rule ({cex_rule.cex_pct * 100:.0f}%) "
+            "based on detected movement class."
         )
     else:
         selling_price = round(cex_sale_price * 0.8)
-        reason_selling = "Used default 20% discount from CeX sale price."
+        reason_selling = "Used default 20% discount (no rule found)."
 
-    # Buying prices
-    buying_start_price = round(selling_price / 2)
+    # 5. Buying logic
+    cex_margin = (cex_sale_price - cex_cash_trade_price) / cex_sale_price
+    target_profit = (selling_price * cex_margin)
+    buying_start_price = selling_price - target_profit
+
     buying_end_price = cex_cash_trade_price or round(selling_price / 2)
 
-    if buying_start_price > buying_end_price:
-        buying_start_price = round(buying_end_price * cex_rule.cex_buying_pct)
+    if buying_start_price > buying_end_price and cex_rule:
+        buying_start_price = round(buying_end_price * cex_rule.cex_pct)
         reason_buying_start = (
-            f"Applied CeX buying rule percentage "
-            f"({cex_rule.cex_buying_pct * 100:.0f}%) to cash offer."
+            f"Applied CeX buying rule ({cex_rule.cex_pct * 100:.0f}%)."
         )
     else:
         reason_buying_start = "Set to 50% of selling price."
 
     buying_mid_price = round((buying_start_price + buying_end_price) / 2)
-
-    reason_buying_mid = (
-        "Average of start and end buying prices to offer a middle-ground trade value."
-    )
+    reason_buying_mid = "Average of start and end prices."
     reason_buying_end = (
         "Matched CeX cash trade price."
         if cex_cash_trade_price
         else "Used 50% of selling price (no CeX cash trade price available)."
     )
 
-    category, category_reason = classify_mover(cex_sale_price, cex_cash_trade_price)
-
     return {
         "selling_price": selling_price,
-        "category": category,
+        "category": movement_class,
         "buying_start_price": buying_start_price,
         "buying_mid_price": buying_mid_price,
         "buying_end_price": buying_end_price,
@@ -318,39 +372,9 @@ def compute_prices_from_cex_rule(
             "buying_start_price": reason_buying_start,
             "buying_mid_price": reason_buying_mid,
             "buying_end_price": reason_buying_end,
-            "category": category_reason,
+            "category": movement_reason,
         },
     }
-
-
-def get_most_specific_cex_rule(category, subcategory, item_model):
-    """
-    Returns the most specific active CEX pricing rule for the given parameters.
-    Priority:
-    1. item_model + subcategory + category
-    2. subcategory + category
-    3. category only
-    4. default rule (no category, subcategory, or item_model)
-    """
-    qs = CEXPricingRule.objects.filter(is_active=True)
-
-    # 1. Most specific: item_model + subcategory + category
-    rule = qs.filter(category=category, subcategory=subcategory, item_model=item_model).first()
-    if rule:
-        return rule
-
-    # 2. subcategory + category
-    rule = qs.filter(category=category, subcategory=subcategory, item_model__isnull=True).first()
-    if rule:
-        return rule
-
-    # 3. category only
-    rule = qs.filter(category=category, subcategory__isnull=True, item_model__isnull=True).first()
-    if rule:
-        return rule
-
-    # 4. default rule (no category, subcategory, or item_model)
-    return qs.filter(category__isnull=True, subcategory__isnull=True, item_model__isnull=True).first()
 
 @csrf_exempt
 @require_POST
@@ -400,24 +424,30 @@ def get_selling_and_buying_price(request):
 
         query = cc_build_query(category, subcategory, model, attributes)
 
-
         # Extract values to pass into compute function
-        out_of_stock = box_data["out_of_stock"]
+        # out_of_stock = box_data["out_of_stock"]
         cex_sale_price = cex_listing.price or 0
         cex_cash_trade_price = cex_listing.trade_cash_price
         cex_url = cex_listing.url
-
-        # Rule
-        cex_rule = get_most_specific_cex_rule(category_id, subcategory_id, model_id)
 
         # Pure compute
         prices = compute_prices_from_cex_rule(
             cex_sale_price=cex_sale_price,
             cex_cash_trade_price=cex_cash_trade_price,
             cex_url=cex_url,
-            out_of_stock=out_of_stock,
-            cex_rule=cex_rule
+            out_of_stock=False,
+            category=category_id,
+            subcategory=subcategory_id,
+            item_model=model_id
         )
+
+        #format last price updated
+        datetime = box_data["last_price_updated_date"].split(" ")
+        date = datetime[0]
+        yyyymmdd = date.split("-")
+        date_formatted = yyyymmdd[2] + "/" + yyyymmdd[1] + "/" + yyyymmdd[0]
+
+        print(date_formatted)
 
         # Send response
         return JsonResponse({
@@ -433,6 +463,7 @@ def get_selling_and_buying_price(request):
             "cex_url": prices["cex_url"],
             "competitor_stats": competitor_stats,
             "reasons": prices["reasons"],
+            "cex_last_price_updated_date": date_formatted
         })
 
     except ValueError as e:

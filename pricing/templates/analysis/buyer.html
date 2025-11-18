@@ -508,6 +508,8 @@ function showRowSpinner(row) {
     '.suggested-rrp',
     '.starting-offer',
     '.mid-offer',
+    '.cex-movement-category',
+    '.cex-price-last-updated',
     '.final-offer',
     '.current-offer',
     '.cex-price',
@@ -547,7 +549,9 @@ function createCategoryTable(categoryId, categoryName, attributes) {
     'Model',
     'CashConverters Mode',
     'CashGenerator Mode',
+    'Movement Category',
     'CEX Price',
+    'CEX Price Last Updated',
     'Suggested RRP',
     'Starting Offer',
     'Second Offer',
@@ -647,7 +651,9 @@ async function addItemToTable() {
     `<td>${model}</td>`,
     `<td class="cc-mode">—</td>`,
     `<td class="cg-mode">—</td>`,
+    `<td class="cex-movement-category">—</td>`,
     `<td class="cex-price">—</td>`,
+    `<td class="cex-price-last-updated">—</td>`,
     `<td class="suggested-rrp">—</td>`,
     `<td class="starting-offer">—</td>`,
     `<td class="mid-offer">—</td>`,
@@ -815,6 +821,9 @@ async function updatePriceCells(row, category, model, attributes) {
   rrpCell.textContent = `£${sellingPrice.toFixed(2)}`;
   if (reasons.selling_price) rrpCell.title = reasons.selling_price;
   
+  const moveCategoryCell = row.querySelector('.cex-movement-category');
+  moveCategoryCell.textContent = `${priceResult.category} selling`
+
 
   // Starting offer 
   const startingOfferCell = row.querySelector('.starting-offer');
@@ -891,6 +900,9 @@ async function updatePriceCells(row, category, model, attributes) {
   } else {
     cexCell.textContent = '—';
   }
+  const cexPriceLastUpdatedCell = row.querySelector('.cex-price-last-updated');
+
+   cexPriceLastUpdatedCell.textContent = `${priceResult.cex_last_price_updated_date}`
 
   if (priceResult.competitor_stats) {
   const updateModeCell = (cell, stats) => {
