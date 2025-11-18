@@ -240,6 +240,17 @@ def classify_mover(cex_sale_price, cex_cash_trade_price):
         return "fast", "Low CeX margin (<40%), usually fast-moving stock."
 
 def find_cex_rule(category, subcategory, item_model, movement_class):
+    if movement_class == "unknown":
+        allrules = CEXPricingRule.objects.filter(
+            is_active=True,
+            movement_class="medium",
+        )
+        return allrules.filter(
+            category__isnull=True,
+            subcategory__isnull=True,
+            item_model__isnull=True
+        ).first()
+
     qs = CEXPricingRule.objects.filter(
         is_active=True,
         movement_class=movement_class,
@@ -303,6 +314,8 @@ def compute_prices_from_cex_rule(
         item_model=item_model,
         movement_class=movement_class
     )
+
+    print(cex_rule)
 
     # 3. If out of stock, bail early
     # if out_of_stock:
@@ -443,12 +456,14 @@ def get_selling_and_buying_price(request):
         )
 
         #format last price updated
-        datetime = box_data["last_price_updated_date"].split(" ")
-        date = datetime[0]
-        yyyymmdd = date.split("-")
-        date_formatted = yyyymmdd[2] + "/" + yyyymmdd[1] + "/" + yyyymmdd[0]
-
-        print(date_formatted)
+        last_price_updated_date = box_data["last_price_updated_date"]
+        if last_price_updated_date:
+            datetime = box_data["last_price_updated_date"].split(" ")
+            date = datetime[0]
+            yyyymmdd = date.split("-")
+            date_formatted = yyyymmdd[2] + "/" + yyyymmdd[1] + "/" + yyyymmdd[0]
+        else:
+            date_formatted = "N/A"
 
         # Send response
         return JsonResponse({

@@ -829,13 +829,19 @@ async function updatePriceCells(row, category, model, attributes) {
   if (reasons.selling_price) rrpCell.title = reasons.selling_price;
   
   const moveCategoryCell = row.querySelector('.cex-movement-category');
-  moveCategoryCell.textContent = `${priceResult.category} selling`
 
+  const categoryMap = {
+    fast: 'High',
+    medium: 'Medium',
+    slow: 'Low'
+  };
+
+  moveCategoryCell.textContent = categoryMap[priceResult.category] || 'Unknown';
 
   // Starting offer 
   const startingOfferCell = row.querySelector('.starting-offer');
   const startingOfferMargin = ((sellingPrice - buyingStartPrice)/sellingPrice) * 100
-  startingOfferCell.textContent = `£${buyingStartPrice.toFixed(2)} (${startingOfferMargin.toFixed(2)}%)`;
+  startingOfferCell.textContent = `£${buyingStartPrice.toFixed(2)} (${startingOfferMargin.toFixed(1)}%)`;
 
   startingOfferCell.classList.add('offer-green');
   if (reasons.buying_start_price) startingOfferCell.title = reasons.buying_start_price;
@@ -886,14 +892,14 @@ async function updatePriceCells(row, category, model, attributes) {
   const midOfferCell = row.querySelector('.mid-offer');
   const midOffer = buyingSecondPrice;
   const midOfferMargin = ((sellingPrice - midOffer)/sellingPrice) * 100
-  midOfferCell.textContent = `£${midOffer.toFixed(2)} (${midOfferMargin.toFixed(2)})%`;
+  midOfferCell.textContent = `£${midOffer.toFixed(2)} (${midOfferMargin.toFixed(1)})%`;
   if (reasons.buying_mid_price) midOfferCell.title = reasons.buying_mid_price;
   midOfferCell.classList.add('offer-yellow');
 
   // Final offer = max CEX offer
   const finalOfferCell = row.querySelector('.final-offer');
   const finalOfferMargin = ((sellingPrice - buyingThirdPrice)/sellingPrice) * 100
-  finalOfferCell.textContent = `£${buyingThirdPrice.toFixed(2)} (${finalOfferMargin.toFixed(2)}%)`;
+  finalOfferCell.textContent = `£${buyingThirdPrice.toFixed(2)} (${finalOfferMargin.toFixed(1)}%)`;
 
   if (reasons.buying_end_price) finalOfferCell.title = reasons.buying_end_price;
   finalOfferCell.classList.add('offer-red');
@@ -919,7 +925,7 @@ async function updatePriceCells(row, category, model, attributes) {
   const cexMarginCell = row.querySelector('.cex-margin');
   cexProfit = priceResult.cex_selling_price - priceResult.cex_buying_price;
   cexMargin = cexProfit/priceResult.cex_selling_price * 100;
-  cexMarginCell.textContent = `${cexMargin.toFixed(2)}%`
+  cexMarginCell.textContent = `${cexMargin.toFixed(1)}%`
 
   if (priceResult.competitor_stats) {
   const updateModeCell = (cell, stats) => {
