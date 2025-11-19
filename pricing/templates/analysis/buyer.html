@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 
+
 {% block title %}Buyer{% endblock %}
 {% block header_title %}BUYER DASHBOARD{% endblock %}
 
@@ -161,6 +162,11 @@
   color: #4da6ff;
 }
 
+.out-of-stock-tag {
+  color: #d9534f; /* a quiet red */
+  font-weight: bold;
+  margin-left: 6px;
+}
 
 
 /* Modal */
@@ -588,6 +594,8 @@
 <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 
 <script>
+// TODO: Fix the issue with the analyse details and remove buttons being have to be there, they shouldn't be there anymore and we don't need to rely on this.classList.remove
+// We also need to stop having support for multi tables
 const addItemBtn = document.getElementById('addItemBtn');
 const tablesContainer = document.getElementById('tablesContainer');
 const categories = {{ categories|safe }};
@@ -1085,6 +1093,15 @@ async function updatePriceCells(row, category, model, attributes) {
     cexCell.textContent = '—';
   }
 
+  // OUT OF STOCK tag
+  if (priceResult.out_of_stock === true) {
+    const outTag = document.createElement('span');
+    outTag.textContent = ' OUT OF STOCK';
+    outTag.classList.add('out-of-stock-tag'); // Style this in CSS
+    cexCell.appendChild(outTag);
+  }
+
+
   const cexPriceLastUpdatedCell = row.querySelector('.cex-price-last-updated');
   cexPriceLastUpdatedCell.textContent = `${priceResult.cex_last_price_updated_date}`
   
@@ -1125,7 +1142,12 @@ function adjustBuying(td, direction) {
   const baseMin = parseFloat(td.dataset.baseBuyMin);
   const baseMid = parseFloat(td.dataset.baseBuyMid);
   const baseThird = parseFloat(td.dataset.baseBuyThird);
-  const baseMaxOffer = parseFloat(td.dataset.baseBuyMaxOffer);  // ADD THIS
+  const baseMaxOffer = parseFloat(td.dataset.baseBuyMaxOffer);  
+
+  // Check if max offer has been revealed
+  const row = td.closest("tr");
+  const maxOfferCell = row.querySelector('.max-offer');
+  const isMaxOfferRevealed = !maxOfferCell.classList.contains('max-offer-hidden');
 
 
   // Get current mode (min, mid, or max)
@@ -1136,7 +1158,10 @@ function adjustBuying(td, direction) {
   // Adjust direction (+1 = up, -1 = down)
   index += direction;
   if (index < 0) index = 0;
-  if (index > 3) index = 3;
+  
+  // Limit max index based on whether max offer is revealed
+  const maxAllowedIndex = isMaxOfferRevealed ? 3 : 2;
+  if (index > maxAllowedIndex) index = maxAllowedIndex;
 
   currentMode = modes[index];
   td.dataset.buyMode = currentMode;
@@ -1174,7 +1199,6 @@ function adjustBuying(td, direction) {
   buyingValue.classList.add(colorClass);
 
   // Recalculate margin for the row
-  const row = td.closest("tr");
   const sellingPrice = parseFloat(
     row.querySelector(".suggested-rrp")?.textContent.replace(/[£,]/g, "")
   ) || 0;

@@ -439,7 +439,9 @@ def get_selling_and_buying_price(request):
         query = cc_build_query(category, subcategory, model, attributes)
 
         # Extract values to pass into compute function
-        # out_of_stock = box_data["out_of_stock"]
+        out_of_stock = False
+        if box_data["out_of_stock"] == 1:
+            out_of_stock = True
         cex_sale_price = cex_listing.price or 0
         cex_cash_trade_price = cex_listing.trade_cash_price
         cex_url = cex_listing.url
@@ -480,7 +482,8 @@ def get_selling_and_buying_price(request):
             "competitor_stats": competitor_stats,
             "reasons": prices["reasons"],
             "cex_last_price_updated_date": date_formatted,
-            "cex_rrp_pct": prices["cex_rrp_pct"]
+            "cex_rrp_pct": prices["cex_rrp_pct"],
+            "out_of_stock": out_of_stock
         })
 
     except ValueError as e:
