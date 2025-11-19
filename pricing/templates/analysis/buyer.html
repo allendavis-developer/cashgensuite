@@ -214,16 +214,21 @@
 /* Details button (blue) */
 .actions-links .details {
   color: #4da6ff;
+  display: none;
+
   border: 1px solid #4da6ff;
 }
 .actions-links .details:hover {
   background: #4da6ff;
+
   color: #000;
 }
 
 /* Remove button (red) */
 .actions-links .remove {
   color: #ff5555;
+  display: none;
+
   border: 1px solid #ff5555;
 }
 .actions-links .remove:hover {
@@ -482,6 +487,43 @@
   }
 }
 
+/* Category Color Coding for Model and CEX Price cells */
+.category-high {
+  background-color: rgba(76, 175, 80, 0.2) !important; /* Green with transparency */
+  border-left: 3px solid #4caf50 !important;
+}
+
+.category-medium {
+  background-color: rgba(255, 193, 7, 0.2) !important; /* Yellow with transparency */
+  border-left: 3px solid #ffc107 !important;
+}
+
+.category-low {
+  background-color: rgba(244, 67, 54, 0.2) !important; /* Red with transparency */
+  border-left: 3px solid #f44336 !important;
+}
+
+/* Make links inside colored cells more visible */
+.category-high a,
+.category-medium a,
+.category-low a {
+  font-weight: 600;
+}
+
+/* Optional: Add a subtle animation on category assignment */
+.category-high,
+.category-medium,
+.category-low {
+  animation: categoryFadeIn 0.4s ease;
+}
+
+@keyframes categoryFadeIn {
+  from {
+    background-color: transparent;
+    border-left-color: transparent;
+  }
+}
+
 {% endblock %}
 
 {% block content %}
@@ -596,12 +638,8 @@ function createCategoryTable(categoryId, categoryName, attributes) {
   table.className = 'item-table';
   const columns = [
     'Quantity',
-    'Category', // Add this column
     'Subcategory',
     'Model',
-    'CashConverters Mode',
-    'CashGenerator Mode',
-    'Movement Category',
     'CEX Price',
     'CEX Price Last Updated',
     '% Used for suggested RRP',
@@ -610,21 +648,22 @@ function createCategoryTable(categoryId, categoryName, attributes) {
     'Second Offer',
     'Third Offer (Match CEX)',
     'MAX Offer',
+    'CC Mode',
+    'CG Mode',
     'Current Offer',
-    'Margin',
-    'Actions'
+    'Margin'
+    // Removed 'Actions' column
   ];
 
   table.innerHTML = `
     <thead><tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr></thead>
-    <tbody><tr class="placeholder"><td colspan="${columns.length}" style="text-align:center; color:#777;">No items added yet.</td></tr></tbody>
+    <tbody><tr class="placeholder"><td colspan="${columns.length}" style="text-align:center; color:#777;">No items added yet. Double-click any row to delete.</td></tr></tbody>
   `;
   
   tablesContainer.append(table);
   globalTableBody = table.querySelector('tbody');
   return globalTableBody;
 }
-
 
 function attachQuantityListeners() {
   document.querySelectorAll('.item-table tbody tr:not(.placeholder) .qty-input').forEach(input => {
@@ -700,12 +739,8 @@ async function addItemToTable() {
 
   const cells = [
     `<td><input type="number" class="qty-input" min="1" value="1"></td>`,
-    `<td>${catName}</td>`, // Add this line
     `<td>${subcategory}</td>`,
-    `<td>${model}</td>`,
-    `<td class="cc-mode">—</td>`,
-    `<td class="cg-mode">—</td>`,
-    `<td class="cex-movement-category">—</td>`,
+    `<td class="model-cell">${model}</td>`,
     `<td class="cex-price">—</td>`,
     `<td class="cex-price-last-updated">—</td>`,
     `<td class="cex-rrp-pct">—</td>`,
@@ -714,6 +749,8 @@ async function addItemToTable() {
     `<td class="mid-offer">—</td>`,
     `<td class="final-offer">—</td>`,
     `<td class="max-offer">—</td>`,
+    `<td class="cc-mode">—</td>`,
+    `<td class="cg-mode">—</td>`,
     `<td class="current-offer">
         <div class="buying-range-cell">
           <button class="qty-btn decrease-buying">−</button>
@@ -739,6 +776,39 @@ async function addItemToTable() {
     subcategoryName: subcategory
   });
   row.dataset.model = baseModel;
+
+
+  // Create the details URL and add it to the model cell
+  const query = new URLSearchParams({
+    categoryId: catId,
+    subcategoryId: modalItemSubcategory.value,
+    modelId: modalItemModel.value,
+    attributes: JSON.stringify(attributesPayload),
+    name: itemName || 'Unnamed Item'
+  });
+  
+  const modelCell = row.querySelector('.model-cell');
+  modelCell.innerHTML = `<a href="/item-buying-analyser/?${query.toString()}" target="_blank" class="model-link">${model}</a>`;
+
+  // Add double-click to delete functionality
+  row.addEventListener('dblclick', function(e) {
+    // Don't trigger if double-clicking on input fields or buttons
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'A') {
+      return;
+    }
+    
+    if (confirm('Delete this item?')) {
+      const tb = row.parentElement;
+      row.remove();
+      if (!tb.children.length) {
+        const colCount = tb.parentElement.querySelectorAll('th').length;
+        tb.innerHTML = `<tr class="placeholder"><td colspan="${colCount}" style="text-align:center; color:#777;">No items added yet. Double-click any row to delete.</td></tr>`;
+      }
+      updateSummary();
+    }
+  });
+
+
 
 
   tbody.appendChild(row);
@@ -801,7 +871,7 @@ async function handleAnalyseClick(row) {
   const category = row.dataset.categoryName;
   const subcategory = row.dataset.subcategoryName;
 
-  const model = row.querySelector('td:nth-child(3)')?.textContent?.trim() || '';
+  const model = row.querySelector('td:nth-child(2)')?.textContent?.trim() || '';
   const attributes = JSON.parse(row.dataset.attributes || '{}');
 
   try {
@@ -880,7 +950,6 @@ async function updatePriceCells(row, category, model, attributes) {
   rrpCell.textContent = `£${sellingPrice.toFixed(2)}`;
   if (reasons.selling_price) rrpCell.title = reasons.selling_price;
   
-  const moveCategoryCell = row.querySelector('.cex-movement-category');
 
   const categoryMap = {
     fast: 'High',
@@ -888,7 +957,27 @@ async function updatePriceCells(row, category, model, attributes) {
     slow: 'Low'
   };
 
-  moveCategoryCell.textContent = categoryMap[priceResult.category] || 'Unknown';
+  const movementCategory = categoryMap[priceResult.category] || 'Unknown';
+
+  // Apply color coding to model cell and CEX price cell
+  const modelCell = row.querySelector('.model-cell');
+  const cexCell = row.querySelector('.cex-price');
+
+  // Remove any existing category classes
+  modelCell.classList.remove('category-high', 'category-medium', 'category-low');
+  cexCell.classList.remove('category-high', 'category-medium', 'category-low');
+
+  // Add the appropriate class based on category
+  if (movementCategory === 'High') {
+    modelCell.classList.add('category-high');
+    cexCell.classList.add('category-high');
+  } else if (movementCategory === 'Medium') {
+    modelCell.classList.add('category-medium');
+    cexCell.classList.add('category-medium');
+  } else if (movementCategory === 'Low') {
+    modelCell.classList.add('category-low');
+    cexCell.classList.add('category-low');
+  }
 
   // Starting offer 
   const startingOfferCell = row.querySelector('.starting-offer');
@@ -990,7 +1079,6 @@ async function updatePriceCells(row, category, model, attributes) {
   currentOfferCell.dataset.adjustPercent = "0";
 
   // CEX price link
-  const cexCell = row.querySelector('.cex-price');
   if (priceResult.cex_selling_price && priceResult.cex_url) {
     cexCell.innerHTML = `<a href="${priceResult.cex_url}" target="_blank">£${parseFloat(priceResult.cex_selling_price).toFixed(2)}</a>`;
   } else {
@@ -1147,7 +1235,7 @@ function updateSummary() {
 
 
 async function scrapePricesForRow(row, selectedCompetitors = []) {
-  const modelName = row.querySelector('td:nth-child(3)')?.textContent?.trim() || '';
+  const modelName = row.querySelector('td:nth-child(2)')?.textContent?.trim() || '';
   const rawAttributes = JSON.parse(row.dataset.attributes || '{}');
   
   const attributes = {};
