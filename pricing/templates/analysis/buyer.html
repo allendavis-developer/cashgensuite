@@ -428,7 +428,59 @@
   to { transform: rotate(360deg); }
 }
 
+/* Max Offer - Hidden State (Blacked Out) */
+.max-offer-hidden {
+  background: #000;
+  color: transparent;
+  user-select: none;
+  cursor: pointer;
+  position: relative;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  display: inline-block;
+  min-width: 120px;
+  text-align: center;
+}
 
+/* "Click to reveal" overlay text */
+.max-offer-hidden::before {
+  content: "Click to reveal";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #888;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+/* Hover effect on hidden state */
+.max-offer-hidden:hover {
+  background: #1a1a1a;
+}
+
+.max-offer-hidden:hover::before {
+  color: #aaa;
+}
+
+/* Revealed state with animation */
+.max-offer-revealed {
+  animation: reveal 0.3s ease;
+}
+
+@keyframes reveal {
+  from {
+    background: #000;
+    color: transparent;
+  }
+  to {
+    background: transparent;
+    color: inherit;
+  }
+}
 
 {% endblock %}
 
@@ -844,9 +896,26 @@ async function updatePriceCells(row, category, model, attributes) {
   startingOfferCell.textContent = `£${buyingStartPrice.toFixed(2)} (${startingOfferMargin.toFixed(1)}%)`;
 
   const maxOfferCell = row.querySelector('.max-offer');
-  const maxOfferMargin = 0.28
-  const maxOffer = (1 - maxOfferMargin) * sellingPrice
-  maxOfferCell.textContent = `£${maxOffer.toFixed(2)} (${(maxOfferMargin * 100).toFixed(1)}%)`;
+  const maxOfferMargin = 0.28;
+  const maxOffer = (1 - maxOfferMargin) * sellingPrice;
+
+  // Create the content but hide it initially
+  const maxOfferContent = `£${maxOffer.toFixed(2)} (${(maxOfferMargin * 100).toFixed(1)}%)`;
+  maxOfferCell.textContent = maxOfferContent;
+  maxOfferCell.classList.add('max-offer-hidden');
+  maxOfferCell.title = 'Click to reveal max offer';
+
+  // Add click-to-reveal functionality
+  maxOfferCell.style.cursor = 'pointer';
+  maxOfferCell.onclick = function() {
+    if (this.classList.contains('max-offer-hidden')) {
+      this.classList.remove('max-offer-hidden');
+      this.classList.add('max-offer-revealed');
+      this.title = '';
+      this.style.cursor = 'default';
+      this.onclick = null; // Remove the click handler after revealing
+    }
+  };
 
 
   startingOfferCell.classList.add('offer-green');
@@ -913,7 +982,10 @@ async function updatePriceCells(row, category, model, attributes) {
   currentOfferCell.dataset.buyMin = 0;
   currentOfferCell.dataset.baseBuyMin = buyingStartPrice;
   currentOfferCell.dataset.baseBuyMid = midOffer;
-  currentOfferCell.dataset.baseBuyMax = cexOfferCashPrice;
+  currentOfferCell.dataset.baseBuyThird = cexOfferCashPrice;
+  currentOfferCell.dataset.baseBuyMaxOffer = maxOffer;     // ADD THIS - the 28% margin price
+
+
 
   currentOfferCell.dataset.adjustPercent = "0";
 
@@ -964,17 +1036,19 @@ function adjustBuying(td, direction) {
   // Read base values
   const baseMin = parseFloat(td.dataset.baseBuyMin);
   const baseMid = parseFloat(td.dataset.baseBuyMid);
-  const baseMax = parseFloat(td.dataset.baseBuyMax);
+  const baseThird = parseFloat(td.dataset.baseBuyThird);
+  const baseMaxOffer = parseFloat(td.dataset.baseBuyMaxOffer);  // ADD THIS
+
 
   // Get current mode (min, mid, or max)
   let currentMode = td.dataset.buyMode || "min";
-  const modes = ["min", "mid", "max"];
+  const modes = ["min", "mid", "third", "maxoffer"];
   let index = modes.indexOf(currentMode);
 
   // Adjust direction (+1 = up, -1 = down)
   index += direction;
   if (index < 0) index = 0;
-  if (index > 2) index = 2;
+  if (index > 3) index = 3;
 
   currentMode = modes[index];
   td.dataset.buyMode = currentMode;
@@ -991,10 +1065,15 @@ function adjustBuying(td, direction) {
       newValue = baseMid;
       colorClass = "offer-yellow";
       break;
-    case "max":
-      newValue = baseMax;
+    case "third":
+      newValue = baseThird;
       colorClass = "offer-red";
       break;
+    case "maxoffer":  // ADD THIS CASE
+      newValue = baseMaxOffer;
+      colorClass = "offer-red";  // or create a new color class if you want
+      break;
+
   }
 
   // Update dataset and display
