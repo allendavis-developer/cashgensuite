@@ -436,7 +436,8 @@ def get_selling_and_buying_price(request):
         if not box_data:
             return JsonResponse({"success": False, "error": "Failed to fetch CeX box details"})
 
-        query = cc_build_query(category, subcategory, model, attributes)
+        url = cc_search_url(model, subcategory, category, attributes)
+        print(url)
 
         # Extract values to pass into compute function
         out_of_stock = False
@@ -493,50 +494,54 @@ def get_selling_and_buying_price(request):
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
+
+
+
+import urllib.parse
+
 CC_CATEGORY_MAP = {
-    "Laptops": "1073742012",
+    "smartphones and mobile": "1073741966",
+    "games (discs & cartridges)": "1073741887",
+    "tablets": "1073741998",
+    "laptops": "1073742012",
 }
 
 
-def cc_build_query(category, subcategory, model, attributes):
+def cc_search_url(model=None, subcategory=None, category=None, attributes=None):
     """
-    Convert your internal item definition (category, subcategory, model, attributes)
-    into a search query string suitable for Cash Converters.
-
-    This is the base version: predictable, shallow, and ready for extension.
+    Build a Cash Converters search URL using:
+        query = model + " " + all attribute values
+    No query parameter is taken directly.
     """
-    print(category)
-    print(subcategory)
-    print(model)
-    print(attributes)
+    attributes = attributes or {}
 
+    # Map category to CashConverters ID
+    category_id = "all"
+    if category:
+        category_id = CC_CATEGORY_MAP.get(category.lower(), "all")
+
+    # Build query text: "model attr1 attr2 ..."
     parts = []
-
-    # Always include model — it's usually the strongest signal
     if model:
         parts.append(str(model))
 
-    # Category/Subcategory can help narrow the item
-    # (e.g. "iPhone 15 mobile phone", "PS5 console")
-    if subcategory:
-        parts.append(str(subcategory))
-    elif category:
-        parts.append(str(category))
+    for val in attributes.values():
+        if isinstance(val, str) and val.strip():
+            parts.append(val.strip())
 
-    # Attributes can fill in useful details:
-    # e.g. {"Storage": "128GB", "Colour": "Black"}
-    # You can expand these rules as you learn what the CC API responds to.
-    for key, value in attributes.items():
-        # Keep only simple attributes that read naturally in a query
-        # (screen size, capacity, model codes, colours, etc.)
-        if isinstance(value, str) and len(value) < 30:
-            parts.append(value)
+    query_string = " ".join(parts)
+    encoded_query = urllib.parse.quote(query_string)
 
-    # Join with spaces. CC search is fairly forgiving.
-    query = " ".join(part for part in parts if part)
+    # Build final URL
+    url = (
+        "https://www.cashconverters.co.uk/c3api/search/results"
+        "?Sort=default&page=1"
+        f"&f%5Bcategory%5D%5B0%5D={category_id}"
+        f"&f%5Blocations%5D%5B0%5D=all"
+        f"&query={encoded_query}"
+    )
 
-    return query.strip()
-
+    return url
 
 
 # ----------------------- HOME PAGE VIEWS -------------------------------------
