@@ -550,7 +550,6 @@ function createCategoryTable(categoryId, categoryName, attributes) {
     'CashConverters Mode',
     'CashGenerator Mode',
     'Movement Category',
-    'CEX Margin',
     'CEX Price',
     'CEX Price Last Updated',
     '% Used for suggested RRP',
@@ -558,6 +557,7 @@ function createCategoryTable(categoryId, categoryName, attributes) {
     'Starting Offer',
     'Second Offer',
     'Third Offer (Match CEX)',
+    'MAX Offer',
     'Current Offer',
     'Margin',
     'Actions'
@@ -654,7 +654,6 @@ async function addItemToTable() {
     `<td class="cc-mode">—</td>`,
     `<td class="cg-mode">—</td>`,
     `<td class="cex-movement-category">—</td>`,
-    `<td class="cex-margin">—</td>`,
     `<td class="cex-price">—</td>`,
     `<td class="cex-price-last-updated">—</td>`,
     `<td class="cex-rrp-pct">—</td>`,
@@ -662,6 +661,7 @@ async function addItemToTable() {
     `<td class="starting-offer">—</td>`,
     `<td class="mid-offer">—</td>`,
     `<td class="final-offer">—</td>`,
+    `<td class="max-offer">—</td>`,
     `<td class="current-offer">
         <div class="buying-range-cell">
           <button class="qty-btn decrease-buying">−</button>
@@ -843,6 +843,12 @@ async function updatePriceCells(row, category, model, attributes) {
   const startingOfferMargin = ((sellingPrice - buyingStartPrice)/sellingPrice) * 100
   startingOfferCell.textContent = `£${buyingStartPrice.toFixed(2)} (${startingOfferMargin.toFixed(1)}%)`;
 
+  const maxOfferCell = row.querySelector('.max-offer');
+  const maxOfferMargin = 0.28
+  const maxOffer = (1 - maxOfferMargin) * sellingPrice
+  maxOfferCell.textContent = `£${maxOffer.toFixed(2)} (${(maxOfferMargin * 100).toFixed(1)}%)`;
+
+
   startingOfferCell.classList.add('offer-green');
   if (reasons.buying_start_price) startingOfferCell.title = reasons.buying_start_price;
   
@@ -922,11 +928,6 @@ async function updatePriceCells(row, category, model, attributes) {
   const cexPriceLastUpdatedCell = row.querySelector('.cex-price-last-updated');
   cexPriceLastUpdatedCell.textContent = `${priceResult.cex_last_price_updated_date}`
   
-  const cexMarginCell = row.querySelector('.cex-margin');
-  cexProfit = priceResult.cex_selling_price - priceResult.cex_buying_price;
-  cexMargin = cexProfit/priceResult.cex_selling_price * 100;
-  cexMarginCell.textContent = `${cexMargin.toFixed(1)}%`
-
   if (priceResult.competitor_stats) {
   const updateModeCell = (cell, stats) => {
     if (stats.mode != null) {
