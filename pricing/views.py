@@ -200,31 +200,8 @@ def fetch_cex_box_details(stable_id):
         print(f"CeX price lookup failed for {stable_id}: {e}")
         return None
 
-def fetch_cc_search_results(query):
-    """
-    Fetch raw search results from Cash Converters UK API using only a query string.
-    Prints the JSON response for now.
-    """
-    base_url = "https://www.cashconverters.co.uk/c3api/search/results"
 
-    params = {
-        "Sort": "newest",
-        "page": 1,
-        "query": query,
-    }
 
-    try:
-        response = requests.get(base_url, params=params, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        print("Response JSON:", data)
-        return data
-    except requests.RequestException as e:
-        print(f"Request failed: {e}")
-        return None
-    except ValueError:
-        print("Failed to parse JSON response")
-        return None
 
 def classify_mover(cex_sale_price, cex_cash_trade_price):
     if not cex_sale_price or not cex_cash_trade_price:
@@ -413,6 +390,25 @@ def get_selling_and_buying_price(request):
         if not market_item:
             return JsonResponse({"success": False, "error": "No matching market item found."})
 
+        url = cc_search_url(model, subcategory, category, attributes)
+        raw_cc_data = fetch_cc_search_results(url)
+        print(url)
+
+        # --- Parse It ---
+        parsed_results = parse_cashconverters_results(raw_cc_data)
+
+        # --- Save To Database (reuse your existing pipeline) ---
+        save_scraped_data_internal(
+            item_name=search_term,
+            category_id=category_id,
+            model_id=model_id,
+            attributes=attributes,
+            results=parsed_results
+        )
+
+        print(parsed_results)
+
+
         competitor_stats = get_competitor_price_stats(market_item)
 
         # Get best CEX listing
@@ -435,9 +431,7 @@ def get_selling_and_buying_price(request):
         
         if not box_data:
             return JsonResponse({"success": False, "error": "Failed to fetch CeX box details"})
-
-        url = cc_search_url(model, subcategory, category, attributes)
-        print(url)
+        
 
         # Extract values to pass into compute function
         out_of_stock = False
@@ -496,7 +490,6 @@ def get_selling_and_buying_price(request):
 
 
 
-
 import urllib.parse
 
 CC_CATEGORY_MAP = {
@@ -543,6 +536,72 @@ def cc_search_url(model=None, subcategory=None, category=None, attributes=None):
 
     return url
 
+def fetch_cc_search_results(query):
+    """
+    Fetch raw search results from Cash Converters UK API using only a query string.
+    Prints the JSON response for now.
+    """
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/118.0.5993.117 Safari/537.36"
+        ),
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "Referer": "https://www.cex.uk/",
+    }
+
+    try:
+        response = requests.get(query, headers=headers, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.RequestException as e:
+        print(f"Request failed: {e}")
+        return None
+    except ValueError:
+        print("Failed to parse JSON response")
+        return None
+
+def parse_cashconverters_results(payload):
+    """
+    Convert CashConverters API JSON into the structure expected by save_scraped_data().
+    Returns a list of dicts, each representing one competitor listing.
+    """
+
+    try:
+        items = (
+            payload.get("Value", {})
+                  .get("ProductList", {})
+                  .get("ProductListItems", [])
+        )
+    except Exception:
+        return []
+
+    parsed = []
+
+    for raw in items:
+        # CC fields (based on their typical structure)
+        title = raw.get("Title", "")
+        price = raw.get("Sp", 0)
+        url = raw.get("Url", "")
+        store = raw.get("StoreNameWithState", "") 
+        condition = raw.get("Condition", "") or raw.get("ProductCondition", "")
+        stable_id = raw.get("Code") 
+
+        parsed.append({
+            "competitor": "CashConverters",
+            "stable_id": stable_id,
+            "price": price,
+            "title": title,
+            "description": "",   
+            "condition": condition,
+            "store": store,
+            "url": f"https://www.cashconverters.co.uk{url}" if url.startswith("/") else url
+        })
+
+    return parsed
 
 # ----------------------- HOME PAGE VIEWS -------------------------------------
 def home_view(request):
@@ -769,27 +828,6 @@ def save_scraped_data(request):
         print(f"Created {len(listings_to_create)} listings, updated {len(listings_to_update)}, "
               f"added {len(histories_to_create)} histories")
 
-        # # --- Fetch CeX cash price for the first active CEX listing ---
-        # cex_listing = CompetitorListing.objects.filter(
-        #     competitor="CEX",
-        #     market_item=market_item,
-        #     is_active=True
-        # ).order_by("id").first()
-
-        # if cex_listing:
-        #     # Save the sale price from the first CEX listing
-        #     market_item.cex_sale_price = cex_listing.price
-        #     market_item.cex_url = f"https://uk.webuy.com/product-detail?id={cex_listing.stable_id}"
-        #     if cex_listing.stable_id:
-        #         cex_cash_trade_price = fetch_cex_cash_price(cex_listing.stable_id)
-        #         if cex_cash_trade_price is not None:
-        #             market_item.cex_cash_trade_price = cex_cash_trade_price
-        #             print(f"Updated market_item.cex_cash_trade_price to {cex_cash_trade_price}")
-
-        #     market_item.save()
-        #     print(f"Updated market_item.cex_sale_price to {cex_listing.price}")
-
-
         return JsonResponse({
             'success': True,
             'created': len(listings_to_create),
@@ -800,6 +838,21 @@ def save_scraped_data(request):
     except Exception as e:
         print("❌ Error saving scraped data:", e)
         return JsonResponse({'success': False, 'error': str(e)})
+
+def save_scraped_data_internal(item_name, category_id, model_id, attributes, results):
+    fake_request_payload = {
+        "item_name": item_name,
+        "category": category_id,
+        "item_model": model_id,
+        "attributes": attributes,
+        "results": results
+    }
+
+    fake_request = type("Req", (), {})()
+    fake_request.body = json.dumps(fake_request_payload).encode("utf-8")
+    fake_request.method = "POST"   # <-- REQUIRED for @require_POST
+
+    return save_scraped_data(fake_request)
 
 
 from django.contrib.admin.views.decorators import staff_member_required
