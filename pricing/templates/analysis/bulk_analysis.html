@@ -72,7 +72,7 @@
   <div class="input-row">
     <input type="text" id="barcodeInput" placeholder="Scan or enter barcode">
     <button onclick="addBarcode()">Add</button>
-    <button id="scrapeBtn" onclick="startScraping()">Start Scraping</button>
+    <button id="scrapeBtn" onclick="startScraping()">GET NOSPOS DETAILS</button>
   </div>
 
   <div class="table-container">
@@ -175,7 +175,7 @@ function addBarcode() {
   // After adding new items, change button back to "Scrape" if we already had scraped items
   const scrapeBtn = document.getElementById("scrapeBtn");
   if (!isFirstScrape) {
-    scrapeBtn.textContent = "Scrape New Items";
+    scrapeBtn.textContent = "GET NOSPOS DETAILS FOR New Items";
     scrapeBtn.onclick = startScraping;
   }
 }
@@ -228,6 +228,8 @@ function normalizeBranchName(branch) {
     return "Wythenshawe";
   if (stripped.includes("warr"))
     return "Warrington";
+  if (stripped.includes("helens"))
+    return "St. Helens";
 
   // fallback
   return "Warrington";
