@@ -1,3 +1,25 @@
+function setSelectValueWithTomSelect(selectElement, value) {
+    if (!selectElement) return;
+    if (selectElement.tomselect) {
+        selectElement.tomselect.setValue(value, false);
+        selectElement.dispatchEvent(new Event('change'));
+    } else {
+        selectElement.value = value;
+        selectElement.dispatchEvent(new Event('change'));
+    }
+}
+
+function setPrimaryOrNativeSelectValue(selectId, value) {
+    if (typeof setPrimarySelectValue === 'function') {
+        setPrimarySelectValue(selectId, value);
+        return;
+    }
+    const select = document.getElementById(selectId);
+    if (select) {
+        setSelectValueWithTomSelect(select, value);
+    }
+}
+
 async function prefillFormFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
 
@@ -27,26 +49,23 @@ async function prefillFormFromURL() {
         // 1. Select category
         const categorySelect = document.getElementById('category');
         if (categorySelect) {
-            categorySelect.value = categoryId;
-            categorySelect.dispatchEvent(new Event('change'));
+            setPrimaryOrNativeSelectValue('category', categoryId);
 
             // Wait for subcategories to load
             await waitForElement('#subcategory option[value]:not([value=""])');
 
             // 2. Select subcategory
-            const subcategorySelect = document.getElementById('subcategory');
-            if (subcategorySelect) {
-                subcategorySelect.value = subcategoryId;
-                subcategorySelect.dispatchEvent(new Event('change'));
+                const subcategorySelect = document.getElementById('subcategory');
+                if (subcategorySelect) {
+                    setPrimaryOrNativeSelectValue('subcategory', subcategoryId);
 
                 // Wait for models to load
                 await waitForElement('#model option[value]:not([value=""])');
 
                 // 3. Select model
-                const modelSelect = document.getElementById('model');
-                if (modelSelect) {
-                    modelSelect.value = modelId;
-                    modelSelect.dispatchEvent(new Event('change'));
+                    const modelSelect = document.getElementById('model');
+                    if (modelSelect) {
+                        setPrimaryOrNativeSelectValue('model', modelId);
 
                     if (attributes && Object.keys(attributes).length > 0) {
                         // Wait for at least one attribute field to appear
@@ -58,8 +77,7 @@ async function prefillFormFromURL() {
                             attributes.forEach(attr => {
                                 const attrSelect = document.getElementById(`attr_${attr.id}`);
                                 if (attrSelect) {
-                                    attrSelect.value = attr.value;
-                                    attrSelect.dispatchEvent(new Event('change'));
+                                    setSelectValueWithTomSelect(attrSelect, attr.value);
                                     console.log(`Set attribute ${attr.id} to ${attr.value}`);
                                 } else {
                                     console.warn(`Attribute field attr_${attr.id} not found`);
@@ -70,8 +88,7 @@ async function prefillFormFromURL() {
                             for (const [key, value] of Object.entries(attributes)) {
                                 const attrSelect = document.getElementById(`attr_${key}`);
                                 if (attrSelect) {
-                                    attrSelect.value = value;
-                                    attrSelect.dispatchEvent(new Event('change'));
+                                    setSelectValueWithTomSelect(attrSelect, value);
                                     console.log(`Set attribute ${key} to ${value}`);
                                 } else {
                                     console.warn(`Attribute field attr_${key} not found`);

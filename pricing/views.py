@@ -390,23 +390,23 @@ def get_selling_and_buying_price(request):
         if not market_item:
             return JsonResponse({"success": False, "error": "No matching market item found."})
 
-        url = cc_search_url(model, subcategory, category, attributes)
-        raw_cc_data = fetch_cc_search_results(url)
-        print(url)
+        # url = cc_search_url(model, subcategory, category, attributes)
+        # raw_cc_data = fetch_cc_search_results(url)
+        # print(url)
 
-        # --- Parse It ---
-        parsed_results = parse_cashconverters_results(raw_cc_data)
+        # # --- Parse It ---
+        # parsed_results = parse_cashconverters_results(raw_cc_data)
 
-        # --- Save To Database (reuse your existing pipeline) ---
-        save_scraped_data_internal(
-            item_name=search_term,
-            category_id=category_id,
-            model_id=model_id,
-            attributes=attributes,
-            results=parsed_results
-        )
+        # # --- Save To Database (reuse your existing pipeline) ---
+        # save_scraped_data_internal(
+        #     item_name=search_term,
+        #     category_id=category_id,
+        #     model_id=model_id,
+        #     attributes=attributes,
+        #     results=parsed_results
+        # )
 
-        print(parsed_results)
+        # print(parsed_results)
 
 
         competitor_stats = get_competitor_price_stats(market_item)

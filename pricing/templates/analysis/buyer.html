@@ -201,57 +201,6 @@
 }
 .modal-close:hover { color: #fff; }
 
-.actions-links {
-  display: flex;
-  flex-direction: row;
-  gap: 6px;
-  align-items: center;
-}
-
-.actions-links a {
-  text-decoration: none;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 6px 10px;
-  border-radius: 4px;
-  transition: background 0.2s, color 0.2s;
-}
-
-/* Details button (blue) */
-.actions-links .details {
-  color: #4da6ff;
-  display: none;
-
-  border: 1px solid #4da6ff;
-}
-.actions-links .details:hover {
-  background: #4da6ff;
-
-  color: #000;
-}
-
-/* Remove button (red) */
-.actions-links .remove {
-  color: #ff5555;
-  display: none;
-
-  border: 1px solid #ff5555;
-}
-.actions-links .remove:hover {
-  background: #ff5555;
-  color: #000;
-}
-
-/* Analyse button (green) */
-.actions-links .analyse {
-  color: #4caf50;
-  border: 1px solid #4caf50;
-  display: none;
-}
-.actions-links .analyse:hover {
-  background: #4caf50;
-  color: #000;
-}
 
 /* =====================
    Item Table Styling
@@ -294,12 +243,6 @@
   border-bottom: none;
 }
 
-/* Action column */
-.item-table .actions {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-}
 
 /* Buying Range Adjust Buttons */
 .buying-range-cell {
@@ -594,15 +537,20 @@
 <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 
 <script>
-// TODO: Fix the issue with the analyse details and remove buttons being have to be there, they shouldn't be there anymore and we don't need to rely on this.classList.remove
-// We also need to stop having support for multi tables
 const addItemBtn = document.getElementById('addItemBtn');
 const tablesContainer = document.getElementById('tablesContainer');
 const categories = {{ categories|safe }};
 
 document.addEventListener('DOMContentLoaded', updateSummary);
 
-// Add this at the top of your script, before DOMContentLoaded
+// Constants
+const MAX_OFFER_MARGIN = 0.28; // 28% margin for max offer
+const CATEGORY_COLOR_MAP = {
+  fast: 'High',
+  medium: 'Medium',
+  slow: 'Low'
+};
+
 let globalTableBody = null;
 
 function showRowSpinner(row) {
@@ -636,12 +584,30 @@ function hideRowSpinner(row) {
   });
 }
 
+function applyCategoryColor(modelCell, cexCell, movementCategory) {
+  // Remove any existing category classes
+  modelCell.classList.remove('category-high', 'category-medium', 'category-low');
+  cexCell.classList.remove('category-high', 'category-medium', 'category-low');
 
-function createCategoryTable(categoryId, categoryName, attributes) {
-  // If table already exists, just return its tbody
+  // Add the appropriate class based on category
+  if (movementCategory === 'High') {
+    modelCell.classList.add('category-high');
+    cexCell.classList.add('category-high');
+  } else if (movementCategory === 'Medium') {
+    modelCell.classList.add('category-medium');
+    cexCell.classList.add('category-medium');
+  } else if (movementCategory === 'Low') {
+    modelCell.classList.add('category-low');
+    cexCell.classList.add('category-low');
+  }
+}
+
+
+function createCategoryTable() {
+  // Return existing table body if table already exists
   if (globalTableBody) return globalTableBody;
 
-  // Create the single table once
+  // Create the single table
   const table = document.createElement('table');
   table.className = 'item-table';
   const columns = [
@@ -660,7 +626,6 @@ function createCategoryTable(categoryId, categoryName, attributes) {
     'CG Mode',
     'Current Offer',
     'Margin'
-    // Removed 'Actions' column
   ];
 
   table.innerHTML = `
@@ -707,7 +672,7 @@ async function addItemToTable() {
   const catName = modalItemCategory.options[modalItemCategory.selectedIndex]?.text;
   const subcategory = modalItemSubcategory.options[modalItemSubcategory.selectedIndex]?.text || '—';
   const baseModel = modalItemModel.options[modalItemModel.selectedIndex]?.text || '—';
-  const tbody = createCategoryTable(catId, catName, currentAttributes);
+  const tbody = createCategoryTable();
   if (tbody.querySelector('.placeholder')) tbody.innerHTML = '';
 
   const attributesPayload = {};
@@ -772,7 +737,6 @@ async function addItemToTable() {
 
   const row = document.createElement('tr');
   row.innerHTML = cells.join('');
-  row.appendChild(createActionsCell(row));
 
   Object.assign(row.dataset, {
     categoryId: catId,
@@ -829,52 +793,9 @@ async function addItemToTable() {
   
 }
 
-function createActionsCell(row) {
-  const td = document.createElement('td');
-  td.innerHTML = `<div class="actions-links">
-    <a href="#" class="details">Details</a>
-    <a href="#" class="analyse">Analyse</a>
-    <a href="#" class="remove">Remove</a>
-  </div>`;
-
-  const [details, analyse, remove] = td.querySelectorAll('a');
-
-  details.onclick = e => {
-    e.preventDefault();
-    const query = new URLSearchParams({
-      categoryId: row.dataset.categoryId,
-      subcategoryId: row.dataset.subcategoryId,
-      modelId: row.dataset.modelId,
-      attributes: row.dataset.attributes,
-      name: row.dataset.itemName || 'Unnamed Item'
-    });
-    window.open('/item-buying-analyser/?' + query.toString(), '_blank');
-  };
-
-  analyse.onclick = async e => {
-    e.preventDefault();
-    await handleAnalyseClick(row);
-  };
-
-  remove.onclick = e => {
-    e.preventDefault();
-    const tb = row.parentElement;
-    row.remove();
-    if (!tb.children.length) {
-      const colCount = tb.parentElement.querySelectorAll('th').length;
-      tb.innerHTML = `<tr class="placeholder"><td colspan="${colCount}" style="text-align:center; color:#777;">No items added yet.</td></tr>`;
-    }
-    updateSummary();
-  };
-
-  return td;
-}
 
 async function handleAnalyseClick(row) {
-  const scrapeBtn = row.querySelector('.analyse');
-  scrapeBtn.disabled = true;
-  scrapeBtn.textContent = 'Checking...';
-  showRowSpinner(row);  // ← add this
+  showRowSpinner(row);
 
   const category = row.dataset.categoryName;
   const subcategory = row.dataset.subcategoryName;
@@ -898,25 +819,18 @@ async function handleAnalyseClick(row) {
     if (checkResult.competitor_count > 0) {
       await updatePriceCells(row, category, model, attributes);
     } else {
-      {% comment %} let scrapeSources = [];
-      const sourcesResponse = await fetch(`/api/get-scrape-sources-for-category/?category_name=${encodeURIComponent(category)}`);
-      const sourcesResult = await sourcesResponse.json();
-      if (Array.isArray(sourcesResult)) scrapeSources = sourcesResult;
-      if (scrapeSources.length === 0) scrapeSources = ['CEX', 'CashConverters', 'CashGenerator'];
-
-      await scrapePricesForRow(row, scrapeSources);
-      await updatePriceCells(row, category, model, attributes); {% endcomment %}
+      // No competitor data available
+      hideRowSpinner(row);
+      alert('No competitor data found for this item.');
     }
   } catch (error) {
     console.error('Analyse error:', error);
     alert('Error during analysis: ' + error.message);
-  } finally {
-    scrapeBtn.disabled = false;
-    scrapeBtn.textContent = 'Analyse';
+    hideRowSpinner(row);
   }
 }
 
-async function updatePriceCells(row, category, model, attributes) {
+async function fetchPriceData(row, category, model, attributes) {
   const priceResponse = await fetch('/api/get-selling-and-buying-price/', {
     method: 'POST',
     headers: {
@@ -937,8 +851,158 @@ async function updatePriceCells(row, category, model, attributes) {
   const priceResult = await priceResponse.json();
   console.log(priceResult);
   if (!priceResult.success) throw new Error(priceResult.error || 'Failed to get selling price');
+  
+  return priceResult;
+}
 
-  hideRowSpinner(row);  // ← remove spinner
+function updateRRPCells(row, priceResult, sellingPrice, reasons) {
+  const rrpPctCell = row.querySelector('.cex-rrp-pct');
+  rrpPctCell.textContent = `${priceResult.cex_rrp_pct * 100}%`;
+
+  const rrpCell = row.querySelector('.suggested-rrp');
+  rrpCell.textContent = `£${sellingPrice.toFixed(2)}`;
+  if (reasons.selling_price) rrpCell.title = reasons.selling_price;
+}
+
+function updateOfferCells(row, sellingPrice, buyingStartPrice, buyingSecondPrice, buyingThirdPrice, maxOffer, reasons) {
+  // Starting offer
+  const startingOfferCell = row.querySelector('.starting-offer');
+  const startingOfferMargin = ((sellingPrice - buyingStartPrice) / sellingPrice) * 100;
+  startingOfferCell.textContent = `£${buyingStartPrice.toFixed(2)} (${startingOfferMargin.toFixed(1)}%)`;
+  startingOfferCell.classList.add('offer-green');
+  if (reasons.buying_start_price) startingOfferCell.title = reasons.buying_start_price;
+
+  // Max offer (hidden initially)
+  const maxOfferCell = row.querySelector('.max-offer');
+  const maxOfferContent = `£${maxOffer.toFixed(2)} (${(MAX_OFFER_MARGIN * 100).toFixed(1)}%)`;
+  maxOfferCell.textContent = maxOfferContent;
+  maxOfferCell.classList.add('max-offer-hidden');
+  maxOfferCell.title = 'Click to reveal max offer';
+  maxOfferCell.style.cursor = 'pointer';
+  maxOfferCell.onclick = function() {
+    if (this.classList.contains('max-offer-hidden')) {
+      this.classList.remove('max-offer-hidden');
+      this.classList.add('max-offer-revealed');
+      this.title = '';
+      this.style.cursor = 'default';
+      this.onclick = null;
+    }
+  };
+
+  // Mid offer
+  const midOfferCell = row.querySelector('.mid-offer');
+  const midOffer = buyingSecondPrice;
+  const midOfferMargin = ((sellingPrice - midOffer) / sellingPrice) * 100;
+  midOfferCell.textContent = `£${midOffer.toFixed(2)} (${midOfferMargin.toFixed(1)}%)`;
+  if (reasons.buying_mid_price) midOfferCell.title = reasons.buying_mid_price;
+  midOfferCell.classList.add('offer-yellow');
+
+  // Final offer
+  const finalOfferCell = row.querySelector('.final-offer');
+  const finalOfferMargin = ((sellingPrice - buyingThirdPrice) / sellingPrice) * 100;
+  finalOfferCell.textContent = `£${buyingThirdPrice.toFixed(2)} (${finalOfferMargin.toFixed(1)}%)`;
+  if (reasons.buying_end_price) finalOfferCell.title = reasons.buying_end_price;
+  finalOfferCell.classList.add('offer-red');
+
+  return midOffer;
+}
+
+function updateCurrentOffer(row, buyingStartPrice, midOffer, cexOfferCashPrice, maxOffer, reasons) {
+  const currentOfferCell = row.querySelector('.current-offer');
+
+  // Set dataset values for adjustBuying function
+  currentOfferCell.dataset.buyMin = 0;
+  currentOfferCell.dataset.baseBuyMin = buyingStartPrice;
+  currentOfferCell.dataset.baseBuyMid = midOffer;
+  currentOfferCell.dataset.baseBuyThird = cexOfferCashPrice;
+  currentOfferCell.dataset.baseBuyMaxOffer = maxOffer;
+  currentOfferCell.dataset.adjustPercent = "0";
+
+  if (buyingStartPrice === 0) {
+    // Manual input for zero starting price
+    currentOfferCell.innerHTML = '';
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.min = '0';
+    input.step = '0.01';
+    input.value = '';
+    input.placeholder = 'Enter offer';
+    input.classList.add('manual-offer-input');
+    input.addEventListener('input', () => {
+      const val = parseFloat(input.value) || 0;
+      currentOfferCell.dataset.buyMin = val;
+      updateSummary();
+    });
+    currentOfferCell.appendChild(input);
+  } else {
+    // Normal non-zero behavior with buttons
+    const buyVal = currentOfferCell.querySelector('.buying-value');
+    buyVal.textContent = `£${buyingStartPrice.toFixed(2)}`;
+    buyVal.classList.add('offer-green');
+    if (reasons.buying_start_price) {
+      buyVal.title = "Initially set at start price but can be switched to mid and max price";
+    }
+    const decreaseBtn = currentOfferCell.querySelector('.decrease-buying');
+    const increaseBtn = currentOfferCell.querySelector('.increase-buying');
+    decreaseBtn.onclick = () => adjustBuying(currentOfferCell, -1);
+    increaseBtn.onclick = () => adjustBuying(currentOfferCell, 1);
+  }
+}
+
+function updateCEXInfo(row, priceResult, cexCell) {
+  // CEX price link
+  if (priceResult.cex_selling_price && priceResult.cex_url) {
+    cexCell.innerHTML = `<a href="${priceResult.cex_url}" target="_blank">£${parseFloat(priceResult.cex_selling_price).toFixed(2)}</a>`;
+  } else {
+    cexCell.textContent = '—';
+  }
+
+  // OUT OF STOCK tag
+  if (priceResult.out_of_stock === true) {
+    const outTag = document.createElement('span');
+    outTag.textContent = ' OUT OF STOCK';
+    outTag.classList.add('out-of-stock-tag');
+    cexCell.appendChild(outTag);
+  }
+
+  // CEX price last updated
+  const cexPriceLastUpdatedCell = row.querySelector('.cex-price-last-updated');
+  cexPriceLastUpdatedCell.textContent = priceResult.cex_last_price_updated_date || '—';
+}
+
+function updateCompetitorStats(row, competitorStats) {
+  if (!competitorStats) return;
+
+  const updateModeCell = (cell, stats) => {
+    if (stats.mode != null) {
+      const totalListings = stats.total_listings ?? 0;
+      const listingsText = totalListings
+        ? `${stats.frequency}/${totalListings} listings`
+        : `${stats.frequency} listings`;
+
+      cell.innerHTML = `
+        £${parseFloat(stats.mode).toFixed(2)} (${listingsText})<br>
+        £${parseFloat(stats.low).toFixed(2)} - £${parseFloat(stats.high).toFixed(2)}
+      `;
+    } else {
+      cell.textContent = '—';
+    }
+  };
+
+  updateModeCell(row.querySelector('.cc-mode'), competitorStats.CashConverters || {});
+  updateModeCell(row.querySelector('.cg-mode'), competitorStats.CashGenerator || {});
+}
+
+function updateMargin(row, sellingPrice, buyingStartPrice) {
+  const margin = sellingPrice > 0
+    ? ((sellingPrice - buyingStartPrice) / sellingPrice) * 100
+    : 0;
+  row.querySelector('.margin').textContent = `${margin.toFixed(1)}%`;
+}
+
+async function updatePriceCells(row, category, model, attributes) {
+  const priceResult = await fetchPriceData(row, category, model, attributes);
+  hideRowSpinner(row);
 
   const sellingPrice = parseFloat(priceResult.selling_price);
   const buyingStartPrice = parseFloat(priceResult.buying_start_price);
@@ -948,59 +1012,105 @@ async function updatePriceCells(row, category, model, attributes) {
 
   const cexOfferCashPrice = parseFloat(priceResult.cex_buying_price);
 
-  reasons = priceResult.reasons;
+  const reasons = priceResult.reasons;
+  const maxOffer = (1 - MAX_OFFER_MARGIN) * sellingPrice;
+  const movementCategory = CATEGORY_COLOR_MAP[priceResult.category] || 'Unknown';
 
-  const rrpPctCell = row.querySelector('.cex-rrp-pct');
-  rrpPctCell.textContent = `${priceResult.cex_rrp_pct * 100}%`;
-
-  // Suggested RRP
-  const rrpCell = row.querySelector('.suggested-rrp');
-  rrpCell.textContent = `£${sellingPrice.toFixed(2)}`;
-  if (reasons.selling_price) rrpCell.title = reasons.selling_price;
-  
-
-  const categoryMap = {
-    fast: 'High',
-    medium: 'Medium',
-    slow: 'Low'
-  };
-
-  const movementCategory = categoryMap[priceResult.category] || 'Unknown';
-
-  // Apply color coding to model cell and CEX price cell
+  // Get cells
   const modelCell = row.querySelector('.model-cell');
   const cexCell = row.querySelector('.cex-price');
 
-  // Remove any existing category classes
-  modelCell.classList.remove('category-high', 'category-medium', 'category-low');
-  cexCell.classList.remove('category-high', 'category-medium', 'category-low');
+  // Update all cells using helper functions
+  updateRRPCells(row, priceResult, sellingPrice, reasons);
+  applyCategoryColor(modelCell, cexCell, movementCategory);
+  const midOffer = updateOfferCells(row, sellingPrice, buyingStartPrice, buyingSecondPrice, buyingThirdPrice, maxOffer, reasons);
+  updateCurrentOffer(row, buyingStartPrice, midOffer, cexOfferCashPrice, maxOffer, reasons);
+  updateCEXInfo(row, priceResult, cexCell);
+  updateCompetitorStats(row, priceResult.competitor_stats);
+  updateMargin(row, sellingPrice, buyingStartPrice);
 
-  // Add the appropriate class based on category
-  if (movementCategory === 'High') {
-    modelCell.classList.add('category-high');
-    cexCell.classList.add('category-high');
-  } else if (movementCategory === 'Medium') {
-    modelCell.classList.add('category-medium');
-    cexCell.classList.add('category-medium');
-  } else if (movementCategory === 'Low') {
-    modelCell.classList.add('category-low');
-    cexCell.classList.add('category-low');
+  updateSummary();
+}
+
+
+function adjustBuying(td, direction) {
+  // Read base values
+  const baseMin = parseFloat(td.dataset.baseBuyMin);
+  const baseMid = parseFloat(td.dataset.baseBuyMid);
+  const baseThird = parseFloat(td.dataset.baseBuyThird);
+  const baseMaxOffer = parseFloat(td.dataset.baseBuyMaxOffer);  
+
+  // Check if max offer has been revealed
+  const row = td.closest("tr");
+  const maxOfferCell = row.querySelector('.max-offer');
+  const isMaxOfferRevealed = !maxOfferCell.classList.contains('max-offer-hidden');
+
+
+  // Get current mode (min, mid, or max)
+  let currentMode = td.dataset.buyMode || "min";
+  const modes = ["min", "mid", "third", "maxoffer"];
+  let index = modes.indexOf(currentMode);
+
+  // Adjust direction (+1 = up, -1 = down)
+  index += direction;
+  if (index < 0) index = 0;
+  
+  // Limit max index based on whether max offer is revealed
+  const maxAllowedIndex = isMaxOfferRevealed ? 3 : 2;
+  if (index > maxAllowedIndex) index = maxAllowedIndex;
+
+  currentMode = modes[index];
+  td.dataset.buyMode = currentMode;
+
+  // Pick the correct value
+  let newValue;
+  let colorClass;
+  switch (currentMode) {
+    case "min":
+      newValue = baseMin;
+      colorClass = "offer-green";
+      break;
+    case "mid":
+      newValue = baseMid;
+      colorClass = "offer-yellow";
+      break;
+    case "third":
+      newValue = baseThird;
+      colorClass = "offer-red";
+      break;
+    case "maxoffer":
+      newValue = baseMaxOffer;
+      colorClass = "offer-red";
+      break;
   }
 
-  // Starting offer 
-  const startingOfferCell = row.querySelector('.starting-offer');
-  const startingOfferMargin = ((sellingPrice - buyingStartPrice)/sellingPrice) * 100
-  startingOfferCell.textContent = `£${buyingStartPrice.toFixed(2)} (${startingOfferMargin.toFixed(1)}%)`;
+  // Update dataset and display
+  td.dataset.buyMin = newValue;
+  const buyingValue = td.querySelector(".buying-value");
+  buyingValue.textContent = `£${newValue.toFixed(2)}`;
+  
+  // Update color
+  buyingValue.classList.remove('offer-green', 'offer-yellow', 'offer-red');
+  buyingValue.classList.add(colorClass);
 
-  const maxOfferCell = row.querySelector('.max-offer');
-  const maxOfferMargin = 0.28;
-  const maxOffer = (1 - maxOfferMargin) * sellingPrice;
+  // Recalculate margin for the row
+  const sellingPrice = parseFloat(
+    row.querySelector(".suggested-rrp")?.textContent.replace(/[£,]/g, "")
+  ) || 0;
 
-  // Create the content but hide it initially
-  const maxOfferContent = `£${maxOffer.toFixed(2)} (${(maxOfferMargin * 100).toFixed(1)}%)`;
-  maxOfferCell.textContent = maxOfferContent;
-  maxOfferCell.classList.add('max-offer-hidden');
-  maxOfferCell.title = 'Click to reveal max offer';
+  const marginCell = row.querySelector(".margin");
+  if (sellingPrice > 0) {
+    const margin = ((sellingPrice - newValue) / sellingPrice) * 100;
+    marginCell.textContent = `${margin.toFixed(1)}%`;
+  } else {
+    marginCell.textContent = "—";
+  }
+
+  updateSummary();
+}
+
+
+function updateSummary() {
 
   // Add click-to-reveal functionality
   maxOfferCell.style.cursor = 'pointer';
@@ -1136,9 +1246,7 @@ async function updatePriceCells(row, category, model, attributes) {
 }
 
 
-
-function adjustBuying(td, direction) {
-  // Read base values
+function updateSummary() {
   const baseMin = parseFloat(td.dataset.baseBuyMin);
   const baseMid = parseFloat(td.dataset.baseBuyMid);
   const baseThird = parseFloat(td.dataset.baseBuyThird);
@@ -1258,62 +1366,6 @@ function updateSummary() {
 
 
 
-async function scrapePricesForRow(row, selectedCompetitors = []) {
-  const modelName = row.querySelector('td:nth-child(2)')?.textContent?.trim() || '';
-  const rawAttributes = JSON.parse(row.dataset.attributes || '{}');
-  
-  const attributes = {};
-  Object.entries(rawAttributes).forEach(([key, value]) => {
-    attributes[key.toLowerCase().replace(/\s+/g, '_')] = value || '';
-  });
-
-  const itemName = row.dataset.itemName || 'Unnamed Item';
-  const scrapeBtn = row.querySelector('.analyse');
-  scrapeBtn.disabled = true;
-  scrapeBtn.textContent = 'Scraping...';
-
-  try {
-    const response = await sendExtensionMessage({
-      action: "scrape",
-      data: {
-        query: itemName,
-        competitors: selectedCompetitors,
-        category: row.dataset.categoryName,
-        subcategory: row.dataset.subcategoryName,
-        model: modelName,
-        attributes
-      }
-    });
-
-    if (!response.success) throw new Error(response.error || "Unknown scraping error");
-
-    console.log(response.results);
-    console.log("Finished scraping! Time to save data now...");
-
-    await fetch("/save_scraped_data/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken"),
-      },
-      body: JSON.stringify({
-        item_name: itemName,
-        category: parseInt(row.dataset.categoryId),
-        item_model: parseInt(row.dataset.modelId),
-        attributes,
-        results: response.results
-      })
-    });
-    
-    console.log("Saved scraped data to database!");
-  } catch (error) {
-    console.error('Scraping error:', error);
-    alert('Error running scraper: ' + error.message);
-  } finally {
-    scrapeBtn.disabled = false;
-    scrapeBtn.textContent = 'Analyse';
-  }
-}
 
 </script>
 

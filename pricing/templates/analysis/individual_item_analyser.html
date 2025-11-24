@@ -10,46 +10,57 @@
 {% block search_term %}
 
 
-<div class="input-group">
-    <!-- Display original prefilled data as a heading -->
-{% if prefilled_data.name %}
-  <h3 id="original-search-term" style="margin-bottom: 10px; color: white; display: flex; gap: 0.5rem; align-items: center">
-    {{ prefilled_data.name }}
-  </h3>
-{% endif %}
+<div class="tomselect-stack">
+  <!-- Display original prefilled data as a heading -->
+  {% if prefilled_data.name %}
+    <h3 id="original-search-term" class="prefill-heading">
+      {{ prefilled_data.name }}
+    </h3>
+  {% endif %}
+
   <!-- Prefill the forms -->
   <script src="{% static 'analysis/prefill_form_analyser.js' %}"></script>
-    <label for="category">Category</label>
-    <div style="display: flex; gap: 0.5rem; align-items: center;">
-      <select id="category" class="input-field" style="flex: 1;">
-        <option value="" selected disabled>-- Select Category --</option>
-        {% for cat in categories %}
-        <option value="{{ cat.id }}">{{ cat.name }}</option>
-        {% endfor %}
-      </select>
-      <button type="button" class="add-btn" onclick="openAddModal('category')">+</button>
+
+  <div class="tomselect-row">
+    <div class="tomselect-field">
+      <label for="category" class="input-label">Category</label>
+      <span class="tomselect-guide">-- Select Category --</span>
+      <div class="tomselect-control">
+        <select id="category" class="tomselect-input" autocomplete="off">
+          <option value="" selected disabled>-- Select Category --</option>
+          {% for cat in categories %}
+          <option value="{{ cat.id }}">{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+        <button type="button" class="add-btn" onclick="openAddModal('category')">+</button>
+      </div>
+    </div>
+
+    <div class="tomselect-field">
+      <label for="subcategory" class="input-label">Subcategory</label>
+      <span class="tomselect-guide">-- Select Subcategory --</span>
+      <div class="tomselect-control">
+        <select id="subcategory" class="tomselect-input" autocomplete="off" disabled>
+          <option value="" selected disabled>-- Select Subcategory --</option>
+        </select>
+        <button type="button" class="add-btn" onclick="openAddModal('subcategory')" disabled>+</button>
+      </div>
     </div>
   </div>
 
-  <div class="input-group">
-    <label for="subcategory">Subcategory</label>
-    <div style="display: flex; gap: 0.5rem; align-items: center;">
-      <select id="subcategory" class="input-field" disabled style="flex: 1;">
-        <option value="" selected disabled>-- Select Subcategory --</option>
-      </select>
-      <button type="button" class="add-btn" onclick="openAddModal('subcategory')" disabled>+</button>
+  <div class="tomselect-row">
+    <div class="tomselect-field" style="flex: 1;">
+      <label for="model" class="input-label">Model</label>
+      <span class="tomselect-guide">-- Select Model --</span>
+      <div class="tomselect-control">
+        <select id="model" class="tomselect-input" autocomplete="off" disabled>
+          <option value="" selected disabled>-- Select Model --</option>
+        </select>
+        <button type="button" class="add-btn" onclick="openAddModal('model')" disabled>+</button>
+      </div>
     </div>
   </div>
-
-  <div class="input-group">
-    <label for="model">Model</label>
-    <div style="display: flex; gap: 0.5rem; align-items: center;">
-      <select id="model" class="input-field" disabled style="flex: 1;">
-        <option value="" selected disabled>-- Select Model --</option>
-      </select>
-      <button type="button" class="add-btn" onclick="openAddModal('model')" disabled>+</button>
-    </div>
-  </div>
+</div>
 
   <div id="attributes-container" style="margin-top: 10px;"></div>
 
@@ -326,6 +337,96 @@
 
 
 {% block extra_style %}
+  @import url('https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css');
+
+  .prefill-heading {
+    margin-bottom: 10px;
+    color: #fff;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .tomselect-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .tomselect-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .tomselect-field {
+    flex: 1;
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .tomselect-guide {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #888;
+  }
+
+  .tomselect-control {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .tomselect-input {
+    flex: 1;
+  }
+
+  .ts-wrapper,
+  .ts-dropdown {
+    background-color: #1e1e1e !important;
+    color: #f5f5f5 !important;
+    border-color: #333 !important;
+    font-size: 0.95rem;
+  }
+
+  .ts-control {
+    background-color: #1e1e1e !important;
+    color: #f5f5f5 !important;
+    border: 1px solid #333 !important;
+    border-radius: 0.5rem;
+  }
+
+  .ts-control input {
+    color: #ccc !important;
+  }
+
+  .ts-dropdown .option {
+    background-color: #1e1e1e !important;
+    color: #e0e0e0 !important;
+  }
+
+  .ts-dropdown .option:hover,
+  .ts-dropdown .active {
+    background-color: #333 !important;
+    color: #fff !important;
+  }
+
+  .ts-wrapper.multi .item {
+    background-color: #333 !important;
+    border: 1px solid #555 !important;
+    color: #fff !important;
+    border-radius: 0.4rem;
+  }
+
+  .ts-control.focus {
+    border-color: #666 !important;
+    box-shadow: 0 0 0 1px #666 !important;
+  }
+
+
   /* Checkbox container styling */
   #competitor-checkboxes {
     display: flex;
@@ -420,7 +521,196 @@
 {% endblock %}
 
 {% block extra_script %}
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 <script>
+const primaryTomSelects = {};
+const attributeTomSelects = {};
+
+function destroyAttributeTomSelects() {
+    Object.values(attributeTomSelects).forEach(instance => {
+        if (instance && typeof instance.destroy === 'function') {
+            instance.destroy();
+        }
+    });
+    Object.keys(attributeTomSelects).forEach(key => delete attributeTomSelects[key]);
+}
+
+function getPrimaryTomSelect(id) {
+    return primaryTomSelects[id] || document.getElementById(id)?.tomselect || null;
+}
+
+function initPrimaryTomSelects() {
+    const selectConfigs = [
+        { id: 'category', placeholder: 'Select category...' },
+        { id: 'subcategory', placeholder: 'Select subcategory...' },
+        { id: 'model', placeholder: 'Select model...' }
+    ];
+
+    selectConfigs.forEach(({ id, placeholder }) => {
+        const element = document.getElementById(id);
+        if (!element) return;
+
+        if (primaryTomSelects[id]) {
+            primaryTomSelects[id].destroy();
+        }
+
+        primaryTomSelects[id] = new TomSelect(`#${id}`, {
+            placeholder,
+            create: false,
+            allowEmptyOption: true,
+            searchField: ['text'],
+            maxOptions: null,
+            plugins: ['dropdown_input'],
+            sortField: [
+                { field: 'text', direction: 'asc' }
+            ]
+        });
+
+        if (element.disabled) {
+            primaryTomSelects[id].disable();
+        }
+    });
+
+    setupPrimarySelectNavigation();
+}
+
+function setupPrimarySelectNavigation() {
+    const categoryTS = getPrimaryTomSelect('category');
+    const subcategoryTS = getPrimaryTomSelect('subcategory');
+    const modelTS = getPrimaryTomSelect('model');
+
+    if (!categoryTS || !subcategoryTS || !modelTS) return;
+
+    const focusNext = (ts) => {
+        if (!ts) return;
+        setTimeout(() => {
+            ts.focus();
+            ts.open();
+        }, 80);
+    };
+
+    categoryTS.on('item_add', () => focusNext(subcategoryTS));
+    subcategoryTS.on('item_add', () => focusNext(modelTS));
+    modelTS.on('item_add', () => focusNext(null));
+}
+
+function setPrimarySelectDisabled(id, disabled) {
+    const select = document.getElementById(id);
+    if (select) {
+        select.disabled = disabled;
+    }
+    const ts = getPrimaryTomSelect(id);
+    if (ts) {
+        disabled ? ts.disable() : ts.enable();
+    }
+}
+
+function replacePrimarySelectOptions(id, options, placeholderLabel) {
+    const select = document.getElementById(id);
+    if (!select) return;
+
+    select.innerHTML = '';
+    const placeholderOption = document.createElement('option');
+    placeholderOption.value = '';
+    placeholderOption.textContent = placeholderLabel;
+    placeholderOption.disabled = true;
+    placeholderOption.selected = true;
+    placeholderOption.hidden = true;
+    select.appendChild(placeholderOption);
+
+    const normalized = options
+        .map(opt => {
+            const rawValue = opt.id ?? opt.value ?? opt.pk ?? null;
+            const rawLabel = opt.name ?? opt.text ?? opt.label ?? opt.title ?? '';
+            if (rawValue === null || rawValue === undefined) return null;
+            return {
+                value: String(rawValue),
+                label: rawLabel
+            };
+        })
+        .filter(Boolean);
+
+    normalized.forEach(opt => {
+        const optionEl = document.createElement('option');
+        optionEl.value = opt.value;
+        optionEl.textContent = opt.label;
+        select.appendChild(optionEl);
+    });
+
+    const ts = getPrimaryTomSelect(id);
+    if (ts) {
+        ts.clear(true);
+        ts.clearOptions();
+        ts.settings.placeholder = placeholderLabel;
+        normalized.forEach(opt => ts.addOption({ value: opt.value, text: opt.label }));
+        ts.refreshOptions(false);
+    }
+
+    setPrimarySelectValue(id, '', { emitChange: false });
+}
+
+function setPrimarySelectValue(id, value, options = {}) {
+    const emitChange = options.emitChange !== false;
+    const select = document.getElementById(id);
+    if (select) {
+        select.value = value;
+    }
+    const ts = getPrimaryTomSelect(id);
+    if (ts) {
+        if (value === undefined || value === null || value === '') {
+            ts.clear(true);
+        } else {
+            ts.setValue(value, false);
+        }
+        ts.refreshItems();
+    }
+    if (select && emitChange) {
+        select.dispatchEvent(new Event('change'));
+    }
+}
+
+function getPrimarySelectLabel(id) {
+    const ts = getPrimaryTomSelect(id);
+    if (ts) {
+        const value = ts.getValue();
+        if (!value) return '';
+        const option = ts.options?.[value];
+        return option?.text ?? '';
+    }
+    const select = document.getElementById(id);
+    return select?.options[select.selectedIndex]?.text?.trim() || '';
+}
+
+function getPrimarySelectValue(id) {
+    const ts = getPrimaryTomSelect(id);
+    if (ts) {
+        const value = ts.getValue();
+        return Array.isArray(value) ? value[0] : value;
+    }
+    return document.getElementById(id)?.value || '';
+}
+
+function upsertPrimarySelectOption(id, value, label) {
+    const select = document.getElementById(id);
+    if (select) {
+        const exists = Array.from(select.options).some(opt => opt.value === value);
+        if (!exists) {
+            const optionEl = document.createElement('option');
+            optionEl.value = value;
+            optionEl.textContent = label;
+            select.appendChild(optionEl);
+        }
+    }
+
+    const ts = getPrimaryTomSelect(id);
+    if (ts && !ts.options[value]) {
+        ts.addOption({ value, text: label });
+        ts.refreshOptions(false);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', initPrimaryTomSelects);
+
 function toggleModal(modal, show = true) {
     modal.style.display = show ? 'flex' : 'none';
     modal.classList.toggle('hidden', !show);
@@ -1001,8 +1291,8 @@ async function saveNewItem() {
 
   // Handle model dependencies
   if (currentAddType === 'model') {
-    const categoryId = document.getElementById('category').value;
-    const subcategoryId = document.getElementById('subcategory').value;
+    const categoryId = getPrimarySelectValue('category');
+    const subcategoryId = getPrimarySelectValue('subcategory');
 
     if (!categoryId || !subcategoryId) {
       alert('Please select both a category and subcategory first.');
@@ -1025,7 +1315,7 @@ async function saveNewItem() {
   }
 
   if (currentAddType === 'subcategory') {
-    const categoryId = document.getElementById('category').value;
+    const categoryId = getPrimarySelectValue('category');
     if (!categoryId) {
         alert('Please select a category first.');
         return;
@@ -1064,49 +1354,27 @@ async function saveNewItem() {
       if (typeof loadCategories === 'function') {
         await loadCategories();
       }
-      const catSelect = document.getElementById('category');
       const newIdStr = String(result.id);
-      if (![...catSelect.options].some(o => o.value === newIdStr)) {
-        const opt = document.createElement('option');
-        opt.value = newIdStr;
-        opt.textContent = result.name;
-        catSelect.appendChild(opt);
-      }
-      catSelect.value = newIdStr;
-      catSelect.dispatchEvent(new Event('change'));
+      upsertPrimarySelectOption('category', newIdStr, result.name);
+      setPrimarySelectValue('category', newIdStr);
     }
 
     // Handle Subcategory refresh
     else if (currentAddType === 'subcategory') {
       const subcategorySelect = document.getElementById('subcategory');
-      subcategorySelect.disabled = false;
-
       const newIdStr = String(result.id);
-      if (![...subcategorySelect.options].some(o => o.value === newIdStr)) {
-        const opt = document.createElement('option');
-        opt.value = newIdStr;
-        opt.textContent = result.name;
-        subcategorySelect.appendChild(opt);
-      }
-
-      subcategorySelect.value = newIdStr;
-      subcategorySelect.dispatchEvent(new Event('change'));
+      setPrimarySelectDisabled('subcategory', false);
+      upsertPrimarySelectOption('subcategory', newIdStr, result.name);
+      setPrimarySelectValue('subcategory', newIdStr);
     }
 
     // Handle Model refresh
     else if (currentAddType === 'model') {
       const modelSelect = document.getElementById('model');
-      modelSelect.disabled = false;
-
       const newIdStr = String(result.id);
-      if (![...modelSelect.options].some(o => o.value === newIdStr)) {
-        const opt = document.createElement('option');
-        opt.value = newIdStr;
-        opt.textContent = result.name;
-        modelSelect.appendChild(opt);
-      }
-      modelSelect.value = newIdStr;
-      modelSelect.dispatchEvent(new Event('change'));
+      setPrimarySelectDisabled('model', false);
+      upsertPrimarySelectOption('model', newIdStr, result.name);
+      setPrimarySelectValue('model', newIdStr);
     }
 
     // Handle Attribute Option refresh
@@ -1187,22 +1455,19 @@ async function maybeCheckExistingItems() {
 // 🧱 ATTRIBUTE COLLECTION
 // -------------------------------
 function collectAttributeData() {
-    const categorySelect = document.getElementById('category');
-    const subcategorySelect = document.getElementById('subcategory');
-    const modelSelect = document.getElementById('model');
+    const categoryId = getPrimarySelectValue('category');
+    const subcategoryId = getPrimarySelectValue('subcategory');
+    const modelId = getPrimarySelectValue('model');
 
-    if (!categorySelect?.value || !subcategorySelect?.value || !modelSelect?.value) {
+    if (!categoryId || !subcategoryId || !modelId) {
         console.warn("Category, subcategory, or model not selected yet.");
         return null;
     }
 
     // Add IDs and names for all three
-    const categoryId = categorySelect.value;
-    const categoryName = categorySelect.options[categorySelect.selectedIndex]?.text.trim() || '';
-    const subcategoryId = subcategorySelect.value;
-    const subcategoryName = subcategorySelect.options[subcategorySelect.selectedIndex]?.text.trim() || '';
-    const modelId = modelSelect.value;
-    const modelName = modelSelect.options[modelSelect.selectedIndex]?.text.trim() || '';
+    const categoryName = getPrimarySelectLabel('category');
+    const subcategoryName = getPrimarySelectLabel('subcategory');
+    const modelName = getPrimarySelectLabel('model');
 
     // Collect attributes the same way as before
     const attributeInputs = document.querySelectorAll('#attributes-container .input-field');
@@ -1216,7 +1481,16 @@ function collectAttributeData() {
         if (!labelText) return;
 
         const key = labelText.toLowerCase().replace(/\s+/g, '_');
-        const value = input.value.trim();
+        let rawValue;
+        if (input.tomselect) {
+            rawValue = input.tomselect.getValue();
+            if (Array.isArray(rawValue)) {
+                rawValue = rawValue[0] || '';
+            }
+        } else {
+            rawValue = input.value;
+        }
+        const value = (rawValue || '').toString().trim();
         if (value) attributes[key] = value;
     });
 
@@ -1276,6 +1550,7 @@ async function fetchGeneratedSearchTerm() {
 function renderAttributes(attributes) {
     const container = document.getElementById('attributes-container');
     container.innerHTML = '';
+    destroyAttributeTomSelects();
 
     if (!attributes || attributes.length === 0) {
         return;
@@ -1307,12 +1582,6 @@ function renderAttributes(attributes) {
                 select.appendChild(o);
             });
 
-            // Add change listener to update search term and check existing items
-            select.addEventListener('change', () => {
-                fetchGeneratedSearchTerm();
-                maybeCheckExistingItems();
-            });
-
             // Optional: Add button to suggest valid combinations
             const addBtn = document.createElement('button');
             addBtn.type = 'button';
@@ -1321,11 +1590,41 @@ function renderAttributes(attributes) {
             addBtn.title = 'Show valid combinations';
             addBtn.onclick = () => showValidCombinations(attr.name);
 
+            const guide = document.createElement('span');
+            guide.classList.add('tomselect-guide');
+            guide.textContent = `-- Select ${attr.label || attr.name} --`;
+
             wrapper.appendChild(select);
             wrapper.appendChild(addBtn);
             inputGroup.appendChild(label);
+            inputGroup.appendChild(guide);
             inputGroup.appendChild(wrapper);
+
+            // Initialize TomSelect for attribute dropdown
+            const attrTomSelect = new TomSelect(select, {
+                placeholder: `Select ${attr.label || attr.name}...`,
+                create: false,
+                allowEmptyOption: true,
+                searchField: ['text'],
+                maxOptions: null,
+                plugins: ['clear_button', 'dropdown_input'],
+                sortField: [
+                    { field: '$order', direction: 'asc' },
+                    { field: 'text', direction: 'asc' }
+                ]
+            });
+
+            attributeTomSelects[attr.name] = attrTomSelect;
+
+            attrTomSelect.on('change', () => {
+                fetchGeneratedSearchTerm();
+                maybeCheckExistingItems();
+            });
         } else {
+            const guide = document.createElement('span');
+            guide.classList.add('tomselect-guide');
+            guide.textContent = `-- Enter ${attr.label || attr.name} --`;
+
             const input = document.createElement('input');
             input.type = attr.field_type === 'number' ? 'number' : 'text';
             input.id = `attr_${attr.name}`;
@@ -1337,6 +1636,7 @@ function renderAttributes(attributes) {
             });
             
             inputGroup.appendChild(label);
+            inputGroup.appendChild(guide);
             inputGroup.appendChild(input);
         }
 
@@ -1372,37 +1672,44 @@ document.getElementById('category').addEventListener('change', async (e) => {
       // Clear competitor table
     updateCompetitorData([], 0);
 
-    document.getElementById('subcategory').disabled = true;
-    document.getElementById('model').disabled = true;
+    setPrimarySelectDisabled('subcategory', true);
+    setPrimarySelectDisabled('model', true);
+    setPrimarySelectValue('subcategory', '', { emitChange: false });
+    setPrimarySelectValue('model', '', { emitChange: false });
     document.getElementById('attributes-container').innerHTML = '';
+
+    const subcategorySelect = document.getElementById('subcategory');
+    const subcategoryAddBtn = subcategorySelect?.nextElementSibling;
+    if (subcategoryAddBtn) subcategoryAddBtn.disabled = true;
+
+    const modelSelect = document.getElementById('model');
+    const modelAddBtn = modelSelect?.nextElementSibling;
+    if (modelAddBtn) modelAddBtn.disabled = true;
 
     // Fetch subcategorys for this category
     const response = await fetch(`/api/subcategorys/?category=${categoryId}`);
     const subcategorys = await response.json();
 
-    const subcategorySelect = document.getElementById('subcategory');
-    subcategorySelect.innerHTML = `<option value="" selected disabled>-- Select Subcategory --</option>`;
-    subcategorys.forEach(m => {
-        subcategorySelect.innerHTML += `<option value="${m.id}">${m.name}</option>`;
-    });
-    subcategorySelect.disabled = false;
+    replacePrimarySelectOptions('subcategory', subcategorys, '-- Select Subcategory --');
+    setPrimarySelectDisabled('subcategory', false);
 
-    const addNewBtn = subcategorySelect.nextElementSibling;
-    addNewBtn.disabled = false
+    if (subcategoryAddBtn) subcategoryAddBtn.disabled = false;
 
 });
 
-document.getElementById('subcategory').addEventListener('change', async (e) => {
-    const categoryId = document.getElementById('category').value;
-    const subcategoryId = e.target.value;
+document.getElementById('subcategory').addEventListener('change', async () => {
+    const categoryId = getPrimarySelectValue('category');
+    const subcategoryId = getPrimarySelectValue('subcategory');
 
     // Clear competitor table
     updateCompetitorData([], 0);
 
 
     const modelSelect = document.getElementById('model');
-    modelSelect.disabled = true;
-    modelSelect.innerHTML = `<option value="" selected disabled>-- Select Model --</option>`;
+    const modelAddBtn = modelSelect?.nextElementSibling;
+    setPrimarySelectDisabled('model', true);
+    setPrimarySelectValue('model', '', { emitChange: false });
+    if (modelAddBtn) modelAddBtn.disabled = true;
 
     // Fetch models for category + subcategory
     const response = await fetch(`/api/models/?category=${categoryId}&subcategory=${subcategoryId}`);
@@ -1412,18 +1719,14 @@ document.getElementById('subcategory').addEventListener('change', async (e) => {
     // Sort models alphabetically by name
     models.sort((a, b) => a.name.localeCompare(b.name));
 
-    models.forEach(m => {
-        modelSelect.innerHTML += `<option value="${m.id}">${m.name}</option>`;
-    });
-    modelSelect.disabled = false;
-
-    const addNewBtn = modelSelect.nextElementSibling;
-    addNewBtn.disabled = false
+    replacePrimarySelectOptions('model', models, '-- Select Model --');
+    setPrimarySelectDisabled('model', false);
+    if (modelAddBtn) modelAddBtn.disabled = false;
 });
 
 // Update the model change listener to use the save_input API
 document.getElementById('model').addEventListener('change', async (e) => {
-    const modelId = e.target.value;
+    const modelId = getPrimarySelectValue('model') || e.target.value;
     
     // Clear competitor table
     updateCompetitorData([], 0);
