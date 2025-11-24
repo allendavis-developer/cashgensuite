@@ -9,6 +9,8 @@
 
 {% block search_term %}
 
+<link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 
 <div class="tomselect-stack">
   <!-- Display original prefilled data as a heading -->
@@ -24,10 +26,9 @@
   <div class="tomselect-row">
     <div class="tomselect-field">
       <label for="category" class="input-label">Category</label>
-      <span class="tomselect-guide">-- Select Category --</span>
       <div class="tomselect-control">
         <select id="category" class="tomselect-input" autocomplete="off">
-          <option value="" selected disabled>-- Select Category --</option>
+          <option value="" selected disabled></option>
           {% for cat in categories %}
           <option value="{{ cat.id }}">{{ cat.name }}</option>
           {% endfor %}
@@ -38,10 +39,9 @@
 
     <div class="tomselect-field">
       <label for="subcategory" class="input-label">Subcategory</label>
-      <span class="tomselect-guide">-- Select Subcategory --</span>
       <div class="tomselect-control">
         <select id="subcategory" class="tomselect-input" autocomplete="off" disabled>
-          <option value="" selected disabled>-- Select Subcategory --</option>
+          <option value="" selected disabled></option>
         </select>
         <button type="button" class="add-btn" onclick="openAddModal('subcategory')" disabled>+</button>
       </div>
@@ -51,10 +51,9 @@
   <div class="tomselect-row">
     <div class="tomselect-field" style="flex: 1;">
       <label for="model" class="input-label">Model</label>
-      <span class="tomselect-guide">-- Select Model --</span>
       <div class="tomselect-control">
         <select id="model" class="tomselect-input" autocomplete="off" disabled>
-          <option value="" selected disabled>-- Select Model --</option>
+          <option value="" selected disabled></option>
         </select>
         <button type="button" class="add-btn" onclick="openAddModal('model')" disabled>+</button>
       </div>
@@ -74,7 +73,6 @@
         class="input-field"
         value="{{ prefilled_data.name|default:'' }}"
         placeholder="This will be filled automatically when you scrape."
-        readonly
       >
     </div>
   </div>
@@ -144,7 +142,7 @@
       <div id="competitor-checkboxes" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px;">
         <label><input type="checkbox" name="competitors" value="CashConverters" checked> CashConverters</label>
         <label><input type="checkbox" name="competitors" value="CashGenerator" checked> CashGenerator</label>
-        <label><input type="checkbox" name="competitors" value="CEX" checked> CEX</label>
+        <label><input type="checkbox" name="competitors" value="CEX"> CEX</label>
         <label><input type="checkbox" name="competitors" value="eBay"> eBay</label>
       </div>
     </div>
@@ -337,8 +335,6 @@
 
 
 {% block extra_style %}
-  @import url('https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css');
-
   .prefill-heading {
     margin-bottom: 10px;
     color: #fff;
@@ -364,14 +360,7 @@
     min-width: 220px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-  }
-
-  .tomselect-guide {
-    font-size: 0.75rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #888;
+    gap: 6px;
   }
 
   .tomselect-control {
@@ -386,46 +375,45 @@
 
   .ts-wrapper,
   .ts-dropdown {
-    background-color: #1e1e1e !important;
-    color: #f5f5f5 !important;
-    border-color: #333 !important;
+    background-color: #1e1e1e;
+    color: #f5f5f5;
+    border-color: #333;
     font-size: 0.95rem;
   }
 
   .ts-control {
-    background-color: #1e1e1e !important;
-    color: #f5f5f5 !important;
-    border: 1px solid #333 !important;
+    background-color: #1e1e1e;
+    color: #f5f5f5;
+    border: 1px solid #333;
     border-radius: 0.5rem;
   }
 
   .ts-control input {
-    color: #ccc !important;
+    color: #ccc;
   }
 
   .ts-dropdown .option {
-    background-color: #1e1e1e !important;
-    color: #e0e0e0 !important;
+    background-color: #1e1e1e;
+    color: #e0e0e0;
   }
 
   .ts-dropdown .option:hover,
   .ts-dropdown .active {
-    background-color: #333 !important;
-    color: #fff !important;
+    background-color: #333;
+    color: #fff;
   }
 
   .ts-wrapper.multi .item {
-    background-color: #333 !important;
-    border: 1px solid #555 !important;
-    color: #fff !important;
+    background-color: #333;
+    border: 1px solid #555;
+    color: #fff;
     border-radius: 0.4rem;
   }
 
   .ts-control.focus {
-    border-color: #666 !important;
-    box-shadow: 0 0 0 1px #666 !important;
+    border-color: #666;
+    box-shadow: 0 0 0 1px #666;
   }
-
 
   /* Checkbox container styling */
   #competitor-checkboxes {
@@ -521,19 +509,8 @@
 {% endblock %}
 
 {% block extra_script %}
-<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 <script>
 const primaryTomSelects = {};
-const attributeTomSelects = {};
-
-function destroyAttributeTomSelects() {
-    Object.values(attributeTomSelects).forEach(instance => {
-        if (instance && typeof instance.destroy === 'function') {
-            instance.destroy();
-        }
-    });
-    Object.keys(attributeTomSelects).forEach(key => delete attributeTomSelects[key]);
-}
 
 function getPrimaryTomSelect(id) {
     return primaryTomSelects[id] || document.getElementById(id)?.tomselect || null;
@@ -558,9 +535,6 @@ function initPrimaryTomSelects() {
             placeholder,
             create: false,
             allowEmptyOption: true,
-            searchField: ['text'],
-            maxOptions: null,
-            plugins: ['dropdown_input'],
             sortField: [
                 { field: 'text', direction: 'asc' }
             ]
@@ -831,7 +805,8 @@ modalSubmitBtn.addEventListener('click', async function() {
 // 🧱 SCRAPING PHASE
 // -------------------------------
 async function scrapePrices() {
-    await fetchGeneratedSearchTerm();
+    console.log("scraping");
+    {% comment %} await setSearchTerm(); {% endcomment %}
     const itemName = document.getElementById('item-name').value.trim();
     if (!itemName) {
         alert('Please enter an item name first.');
@@ -860,6 +835,10 @@ async function scrapePrices() {
         return;
     }
 
+
+    nameInDB = await getSearchTermFromModelAndAttributes();
+    console.log("name in db is:", nameInDB);
+
     try {
         // Send to extension
         const response = await sendExtensionMessage({
@@ -882,7 +861,7 @@ async function scrapePrices() {
                 "X-CSRFToken": getCookie("csrftoken"),
             },
             body: JSON.stringify({
-                item_name: itemName,
+                item_name: nameInDB,
                 category: data.categoryId,
                 item_model: data.modelId,
                 attributes: data.attributes,
@@ -896,10 +875,16 @@ async function scrapePrices() {
             const formattedData = response.results.map(item => {
                 return `${item.competitor} | ${item.title || ""} | £${item.price} | ${item.store || ""} | ${item.url || ""}`;
             });
-            updateCompetitorData(formattedData, formattedData.length);
+            
+            console.log("saved data succesfully", formattedData)
+
+
+            {% comment %} updateCompetitorData(formattedData, formattedData.length); {% endcomment %}
             if (response.partial) {
                 alert("Scraping partially completed. Some sites may have timed out.");
-            }
+            } 
+            
+            maybeCheckExistingItems()
         } else {
             alert("Scraping failed: " + (response.error || "Unknown error"));
         }
@@ -1481,16 +1466,7 @@ function collectAttributeData() {
         if (!labelText) return;
 
         const key = labelText.toLowerCase().replace(/\s+/g, '_');
-        let rawValue;
-        if (input.tomselect) {
-            rawValue = input.tomselect.getValue();
-            if (Array.isArray(rawValue)) {
-                rawValue = rawValue[0] || '';
-            }
-        } else {
-            rawValue = input.value;
-        }
-        const value = (rawValue || '').toString().trim();
+        const value = input.value.trim();
         if (value) attributes[key] = value;
     });
 
@@ -1508,7 +1484,7 @@ function collectAttributeData() {
 // -------------------------------
 // 🧱 FETCH GENERATED SEARCH TERM
 // -------------------------------
-async function fetchGeneratedSearchTerm() {
+async function setSearchTerm() {
     const data = collectAttributeData();
 
     if (!data) return;
@@ -1540,6 +1516,36 @@ async function fetchGeneratedSearchTerm() {
     }
 }
 
+async function getSearchTermFromModelAndAttributes() {
+    const data = collectAttributeData();
+    if (!data) return;
+
+    try {
+        const response = await fetch('/api/generate_search_term/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                category: data.categoryName,
+                subcategory: data.subcategoryName,
+                model: data.modelName,
+                attributes: data.attributes
+            })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            return result.data.generated_search_term;
+            console.log("Generated Search Term:", result.data.generated_search_term);
+        } else {
+            console.error("Error generating search term:", result.error);
+        }
+    } catch (err) {
+        console.error("Network error:", err);
+    }
+}
 
 // --------------------
 // Render attributes 
@@ -1550,7 +1556,6 @@ async function fetchGeneratedSearchTerm() {
 function renderAttributes(attributes) {
     const container = document.getElementById('attributes-container');
     container.innerHTML = '';
-    destroyAttributeTomSelects();
 
     if (!attributes || attributes.length === 0) {
         return;
@@ -1582,6 +1587,12 @@ function renderAttributes(attributes) {
                 select.appendChild(o);
             });
 
+            // Add change listener to update search term and check existing items
+            select.addEventListener('change', () => {
+                setSearchTerm();
+                maybeCheckExistingItems();
+            });
+
             // Optional: Add button to suggest valid combinations
             const addBtn = document.createElement('button');
             addBtn.type = 'button';
@@ -1590,53 +1601,22 @@ function renderAttributes(attributes) {
             addBtn.title = 'Show valid combinations';
             addBtn.onclick = () => showValidCombinations(attr.name);
 
-            const guide = document.createElement('span');
-            guide.classList.add('tomselect-guide');
-            guide.textContent = `-- Select ${attr.label || attr.name} --`;
-
             wrapper.appendChild(select);
             wrapper.appendChild(addBtn);
             inputGroup.appendChild(label);
-            inputGroup.appendChild(guide);
             inputGroup.appendChild(wrapper);
-
-            // Initialize TomSelect for attribute dropdown
-            const attrTomSelect = new TomSelect(select, {
-                placeholder: `Select ${attr.label || attr.name}...`,
-                create: false,
-                allowEmptyOption: true,
-                searchField: ['text'],
-                maxOptions: null,
-                plugins: ['clear_button', 'dropdown_input'],
-                sortField: [
-                    { field: '$order', direction: 'asc' },
-                    { field: 'text', direction: 'asc' }
-                ]
-            });
-
-            attributeTomSelects[attr.name] = attrTomSelect;
-
-            attrTomSelect.on('change', () => {
-                fetchGeneratedSearchTerm();
-                maybeCheckExistingItems();
-            });
         } else {
-            const guide = document.createElement('span');
-            guide.classList.add('tomselect-guide');
-            guide.textContent = `-- Enter ${attr.label || attr.name} --`;
-
             const input = document.createElement('input');
             input.type = attr.field_type === 'number' ? 'number' : 'text';
             input.id = `attr_${attr.name}`;
             input.classList.add('input-field');
             
             input.addEventListener('input', () => {
-                fetchGeneratedSearchTerm();
+                setSearchTerm();
                 maybeCheckExistingItems();
             });
             
             inputGroup.appendChild(label);
-            inputGroup.appendChild(guide);
             inputGroup.appendChild(input);
         }
 
@@ -1735,7 +1715,7 @@ document.getElementById('model').addEventListener('change', async (e) => {
     await sendFieldUpdate('model', modelId);
     
     // Generate search term after attributes are rendered
-    fetchGeneratedSearchTerm();
+    setSearchTerm();
     
     // Check existing items
     maybeCheckExistingItems();
@@ -1790,7 +1770,7 @@ async function sendFieldUpdate(fieldName, value) {
 // Listen for both user and programmatic changes (like the prefiller)
 const attrContainer = document.getElementById('attributes-container');
 ['input', 'change'].forEach(event =>
-    attrContainer.addEventListener(event, fetchGeneratedSearchTerm)
+    attrContainer.addEventListener(event, setSearchTerm)
 );
 
 ['input', 'change'].forEach(event =>
