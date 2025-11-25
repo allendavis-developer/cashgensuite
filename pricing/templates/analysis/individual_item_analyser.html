@@ -274,7 +274,7 @@
       ">
         <option value="" selected disabled>-- Choose Source --</option>
         <option value="CashConverters">CashConverters Recommended Price</option>
-        <option value="CashGenerator">CashGenerator Recommended Price</option>
+        <option value="CashGenerator" selected>CashGenerator Recommended Price</option>
       </select>
     </div>
 
@@ -545,27 +545,6 @@ function initPrimaryTomSelects() {
         }
     });
 
-    setupPrimarySelectNavigation();
-}
-
-function setupPrimarySelectNavigation() {
-    const categoryTS = getPrimaryTomSelect('category');
-    const subcategoryTS = getPrimaryTomSelect('subcategory');
-    const modelTS = getPrimaryTomSelect('model');
-
-    if (!categoryTS || !subcategoryTS || !modelTS) return;
-
-    const focusNext = (ts) => {
-        if (!ts) return;
-        setTimeout(() => {
-            ts.focus();
-            ts.open();
-        }, 80);
-    };
-
-    categoryTS.on('item_add', () => focusNext(subcategoryTS));
-    subcategoryTS.on('item_add', () => focusNext(modelTS));
-    modelTS.on('item_add', () => focusNext(null));
 }
 
 function setPrimarySelectDisabled(id, disabled) {
@@ -620,6 +599,7 @@ function replacePrimarySelectOptions(id, options, placeholderLabel) {
         ts.refreshOptions(false);
     }
 
+    console.log("replacing options");
     setPrimarySelectValue(id, '', { emitChange: false });
 }
 
@@ -641,6 +621,8 @@ function setPrimarySelectValue(id, value, options = {}) {
     if (select && emitChange) {
         select.dispatchEvent(new Event('change'));
     }
+
+    console.log("setting ", id, " to ", value);
 }
 
 function getPrimarySelectLabel(id) {
@@ -712,6 +694,15 @@ confirmListBtn.addEventListener('click', () => {
     modalDescription.value = document.getElementById('description').value;
     document.getElementById('modal-serial-number').value = document.getElementById('barserial').value;
     document.getElementById('modal-branch').value = document.getElementById('branch').value;
+
+    priceValue = document.getElementById('recommended-price-cashgenerator')?.textContent.trim() || "";
+     // Clean up the price string (remove £ if present)
+    priceValue = parseFloat(priceValue.replace(/[^0-9.]/g, ''));
+    // Round to nearest multiple of 2 before fixing decimals
+    priceValue = roundToNearest2(priceValue)
+
+    modalPrice.value = priceValue.toFixed(2);
+
 });
 
 modalClose.addEventListener('click', () => {
@@ -1359,6 +1350,7 @@ async function saveNewItem() {
       const newIdStr = String(result.id);
       setPrimarySelectDisabled('model', false);
       upsertPrimarySelectOption('model', newIdStr, result.name);
+      console.log("setting model to at 1");
       setPrimarySelectValue('model', newIdStr);
     }
 
@@ -1655,7 +1647,9 @@ document.getElementById('category').addEventListener('change', async (e) => {
     setPrimarySelectDisabled('subcategory', true);
     setPrimarySelectDisabled('model', true);
     setPrimarySelectValue('subcategory', '', { emitChange: false });
+      console.log("setting model to at 2");
     setPrimarySelectValue('model', '', { emitChange: false });
+    console.log("emptying model");
     document.getElementById('attributes-container').innerHTML = '';
 
     const subcategorySelect = document.getElementById('subcategory');
@@ -1677,18 +1671,20 @@ document.getElementById('category').addEventListener('change', async (e) => {
 
 });
 
-document.getElementById('subcategory').addEventListener('change', async () => {
+async function loadModelsAndPopulate() {
     const categoryId = getPrimarySelectValue('category');
     const subcategoryId = getPrimarySelectValue('subcategory');
 
     // Clear competitor table
     updateCompetitorData([], 0);
 
-
     const modelSelect = document.getElementById('model');
     const modelAddBtn = modelSelect?.nextElementSibling;
     setPrimarySelectDisabled('model', true);
-    setPrimarySelectValue('model', '', { emitChange: false });
+    
+    // Store current model value to restore it if it exists in new options
+    const currentModelValue = getPrimarySelectValue('model');
+    
     if (modelAddBtn) modelAddBtn.disabled = true;
 
     // Fetch models for category + subcategory
@@ -1700,12 +1696,19 @@ document.getElementById('subcategory').addEventListener('change', async () => {
     models.sort((a, b) => a.name.localeCompare(b.name));
 
     replacePrimarySelectOptions('model', models, '-- Select Model --');
+
+    console.log("currentmodelvalue", currentModelValue);
+    
+    // Restore model value if it exists in the new options
+    if (currentModelValue && models.some(m => String(m.id) === String(currentModelValue))) {
+        setPrimarySelectValue('model', currentModelValue, { emitChange: false });
+    }
+    
     setPrimarySelectDisabled('model', false);
     if (modelAddBtn) modelAddBtn.disabled = false;
-});
+}
 
-// Update the model change listener to use the save_input API
-document.getElementById('model').addEventListener('change', async (e) => {
+async function loadListings() {
     const modelId = getPrimarySelectValue('model') || e.target.value;
     
     // Clear competitor table
@@ -1713,13 +1716,14 @@ document.getElementById('model').addEventListener('change', async (e) => {
     
     // Send model selection to backend - this will return variants
     await sendFieldUpdate('model', modelId);
+    console.log("i'm here sending field update!");
     
     // Generate search term after attributes are rendered
     setSearchTerm();
     
     // Check existing items
     maybeCheckExistingItems();
-});
+}
 
 
 // TODO: DUPLICATED IN add_item_modal.js

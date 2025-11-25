@@ -533,7 +533,7 @@ def cc_search_url(model=None, subcategory=None, category=None, attributes=None):
         f"&f%5Blocations%5D%5B0%5D=all"
         f"&query={encoded_query}"
     )
-
+    print("CC Search URL: ", url)
     return url
 
 def fetch_cc_search_results(query):

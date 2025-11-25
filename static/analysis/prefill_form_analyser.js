@@ -11,6 +11,7 @@ function setSelectValueWithTomSelect(selectElement, value) {
 
 function setPrimaryOrNativeSelectValue(selectId, value) {
     if (typeof setPrimarySelectValue === 'function') {
+        console.log("setPrimaryOrNativeSelectValue");
         setPrimarySelectValue(selectId, value);
         return;
     }
@@ -58,50 +59,24 @@ async function prefillFormFromURL() {
                 const subcategorySelect = document.getElementById('subcategory');
                 if (subcategorySelect) {
                     setPrimaryOrNativeSelectValue('subcategory', subcategoryId);
-
+                    
+                await loadModelsAndPopulate();
                 // Wait for models to load
                 await waitForElement('#model option[value]:not([value=""])');
 
                 // 3. Select model
-                    const modelSelect = document.getElementById('model');
-                    if (modelSelect) {
-                        setPrimaryOrNativeSelectValue('model', modelId);
-
-                    if (attributes && Object.keys(attributes).length > 0) {
-                        // Wait for at least one attribute field to appear
-                        await waitForElement('[id^="attr_"]', 5000); // waits up to 5s for any attribute field
-
-                        // 4. Fill in attributes
-                        if (Array.isArray(attributes)) {
-                            // Array-style attributes: [{id, value}, ...]
-                            attributes.forEach(attr => {
-                                const attrSelect = document.getElementById(`attr_${attr.id}`);
-                                if (attrSelect) {
-                                    setSelectValueWithTomSelect(attrSelect, attr.value);
-                                    console.log(`Set attribute ${attr.id} to ${attr.value}`);
-                                } else {
-                                    console.warn(`Attribute field attr_${attr.id} not found`);
-                                }
-                            });
-                        } else {
-                            // Object-style attributes: {key: value, ...}
-                            for (const [key, value] of Object.entries(attributes)) {
-                                const attrSelect = document.getElementById(`attr_${key}`);
-                                if (attrSelect) {
-                                    setSelectValueWithTomSelect(attrSelect, value);
-                                    console.log(`Set attribute ${key} to ${value}`);
-                                } else {
-                                    console.warn(`Attribute field attr_${key} not found`);
-                                }
-                            }
-                        }
-                    }
+                const modelSelect = document.getElementById('model');
+                if (modelSelect) {
+                    console.log("setting model!", modelId);
+                    setPrimaryOrNativeSelectValue('model', modelId);
                 }
+
+                await loadListings();
             }
         }
 
         console.log('Form prefilled successfully');
-        fetchGeneratedSearchTerm();
+        setSearchTerm();
         maybeCheckExistingItems();
 
 
