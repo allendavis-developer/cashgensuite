@@ -1671,6 +1671,11 @@ document.getElementById('category').addEventListener('change', async (e) => {
 
 });
 
+document.getElementById('model').addEventListener('change', async (e) => {
+    maybeCheckExistingItems();
+});
+
+
 async function loadModelsAndPopulate() {
     const categoryId = getPrimarySelectValue('category');
     const subcategoryId = getPrimarySelectValue('subcategory');
