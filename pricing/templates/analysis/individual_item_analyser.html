@@ -844,7 +844,7 @@ async function scrapePrices() {
             }
         });
         
-        // Save scraped data to backend
+        {% comment %} // Save scraped data to backend
         await fetch("/save_scraped_data/", {
             method: "POST",
             headers: {
@@ -860,7 +860,7 @@ async function scrapePrices() {
                 results: response.results,
                 timestamp: new Date().toISOString(),
             }),
-        });
+        }); {% endcomment %}
 
         if (response.success) {
             const formattedData = response.results.map(item => {
@@ -870,12 +870,11 @@ async function scrapePrices() {
             console.log("saved data succesfully", formattedData)
 
 
-            {% comment %} updateCompetitorData(formattedData, formattedData.length); {% endcomment %}
+            updateCompetitorData(formattedData, formattedData.length);
             if (response.partial) {
                 alert("Scraping partially completed. Some sites may have timed out.");
             } 
             
-            maybeCheckExistingItems()
         } else {
             alert("Scraping failed: " + (response.error || "Unknown error"));
         }
@@ -1393,40 +1392,6 @@ async function loadCategoryAttributes(categoryId) {
   }
 }
 
-// Called when model changes or attribute values change
-async function maybeCheckExistingItems() {
-    const data = collectAttributeData();
-    console.log(data);
-    if (!data) return;
-
-    // data.attributes may be empty — that's fine
-    try {
-        const response = await fetch('/api/check_existing_items/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                category: data.categoryName,
-                subcategory: data.subcategoryName,
-                model: data.modelName,
-                attributes: data.attributes  // optional, empty object if none
-            })
-        });
-
-        const result = await response.json();
-        if (result.success) {
-            updateCompetitorData(result.competitor_data, result.competitor_count);
-            console.log(`Found ${result.competitor_count} existing item(s)`);
-        } else {
-            console.error("Error checking items:", result.error);
-        }
-    } catch (err) {
-        console.error("Network error:", err);
-    }
-}
-
 
 // -------------------------------
 // 🧱 ATTRIBUTE COLLECTION
@@ -1473,22 +1438,88 @@ function collectAttributeData() {
     };
 }
 
+
+
 // -------------------------------
 // 🧱 FETCH GENERATED SEARCH TERM
 // -------------------------------
-async function setSearchTerm() {
+// Alternative approach: only check when ALL attributes have values
+function setSearchTerm() {
     const data = collectAttributeData();
 
     if (!data) return;
 
+    fetch('/api/generate_search_term/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            category: data.categoryName,
+            subcategory: data.subcategoryName,
+            model: data.modelName,
+            attributes: data.attributes
+        })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            document.getElementById('item-name').value = result.data.generated_search_term;
+            console.log("Generated Search Term:", result.data.generated_search_term);
+            
+            // Only fetch prices when ALL attributes are filled
+            if (areAllAttributesFilled()) {
+                fetchSellingAndBuyingPrice();
+            }
+        } else {
+            console.error("Error generating search term:", result.error);
+        }
+    })
+    .catch(err => {
+        console.error("Network error:", err);
+    });
+}
+
+function areAllAttributesFilled() {
+    const container = document.getElementById('attributes-container');
+    const allInputs = container.querySelectorAll('.input-field');
+    
+    // Return true if all inputs have a value
+    return Array.from(allInputs).every(input => {
+        const value = input.value.trim();
+        return value !== '' && value !== '-- Select' && !value.startsWith('--');
+    });
+}
+
+
+async function fetchSellingAndBuyingPrice() {
+    const data = collectAttributeData();
+    if (!data) return;
+
+    // Get the elements where prices will be displayed
+    const cexModeEl = document.getElementById('cex-mode');
+    const cexDiscountEl = document.getElementById('cex-discount-cell');
+    
+    // Store original content
+    const originalCexMode = cexModeEl.textContent;
+    const originalCexDiscount = cexDiscountEl.textContent;
+    
+    // Show spinners
+    cexModeEl.innerHTML = '<span class="loading-spinner" style="width: 14px; height: 14px; border-width: 2px;"></span>';
+    cexDiscountEl.innerHTML = '<span class="loading-spinner" style="width: 14px; height: 14px; border-width: 2px;"></span>';
+
     try {
-        const response = await fetch('/api/generate_search_term/', {
+        const response = await fetch('/api/get-selling-and-buying-price/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken')
             },
             body: JSON.stringify({
+                categoryId: data.categoryId,
+                subcategoryId: data.subcategoryId,
+                modelId: data.modelId,
                 category: data.categoryName,
                 subcategory: data.subcategoryName,
                 model: data.modelName,
@@ -1497,16 +1528,29 @@ async function setSearchTerm() {
         });
 
         const result = await response.json();
-        if (result.success) {
-            document.getElementById('item-name').value = result.data.generated_search_term;
-            console.log("Generated Search Term:", result.data.generated_search_term);
-        } else {
-            console.error("Error generating search term:", result.error);
+
+        if (!result.success) {
+            console.error("Failed getting prices:", result.error);
+            // Restore original content or show error
+            cexModeEl.textContent = originalCexMode || '-';
+            cexDiscountEl.textContent = originalCexDiscount || '-';
+            return;
         }
+
+        console.log("Fetched Prices:", result);
+
+        // Update with fetched prices
+        cexModeEl.textContent = `£${result.cex_selling_price}`;
+        cexDiscountEl.textContent = `£${result.selling_price}`;
+
     } catch (err) {
         console.error("Network error:", err);
+        // Restore original content on error
+        cexModeEl.textContent = originalCexMode || '-';
+        cexDiscountEl.textContent = originalCexDiscount || '-';
     }
 }
+
 
 async function getSearchTermFromModelAndAttributes() {
     const data = collectAttributeData();
@@ -1582,7 +1626,6 @@ function renderAttributes(attributes) {
             // Add change listener to update search term and check existing items
             select.addEventListener('change', () => {
                 setSearchTerm();
-                maybeCheckExistingItems();
             });
 
             // Optional: Add button to suggest valid combinations
@@ -1605,7 +1648,6 @@ function renderAttributes(attributes) {
             
             input.addEventListener('input', () => {
                 setSearchTerm();
-                maybeCheckExistingItems();
             });
             
             inputGroup.appendChild(label);
@@ -1671,10 +1713,9 @@ document.getElementById('category').addEventListener('change', async (e) => {
 
 });
 
-document.getElementById('model').addEventListener('change', async (e) => {
-    maybeCheckExistingItems();
+document.getElementById('subcategory').addEventListener('change', async (e) => {
+    loadModelsAndPopulate();
 });
-
 
 async function loadModelsAndPopulate() {
     const categoryId = getPrimarySelectValue('category');
@@ -1713,6 +1754,12 @@ async function loadModelsAndPopulate() {
     if (modelAddBtn) modelAddBtn.disabled = false;
 }
 
+document.getElementById('model').addEventListener('change', async (e) => {
+    const modelId = getPrimarySelectValue('model') || e.target.value;
+    await sendFieldUpdate('model', modelId);
+    setSearchTerm();
+}); 
+
 async function loadListings() {
     const modelId = getPrimarySelectValue('model') || e.target.value;
     
@@ -1721,13 +1768,10 @@ async function loadListings() {
     
     // Send model selection to backend - this will return variants
     await sendFieldUpdate('model', modelId);
-    console.log("i'm here sending field update!");
     
     // Generate search term after attributes are rendered
     setSearchTerm();
     
-    // Check existing items
-    maybeCheckExistingItems();
 }
 
 
@@ -1781,11 +1825,6 @@ const attrContainer = document.getElementById('attributes-container');
 ['input', 'change'].forEach(event =>
     attrContainer.addEventListener(event, setSearchTerm)
 );
-
-['input', 'change'].forEach(event =>
-    attrContainer.addEventListener(event, maybeCheckExistingItems)
-);
-
 
 </script>
 

@@ -610,27 +610,10 @@
             </div>
         {% endblock search_term %}
 
-        {% block slider %}
-        <div class="input-group">
-          <label class="input-label" for="custom-slider">CEX Discount Percent (0–30)</label>
-          <input
-            type="range"
-            id="custom-slider"
-            class="input-field"
-            min="0"
-            max="30"
-            step="1"
-            value="20"
-            oninput="document.getElementById('slider-value').textContent = this.value"
-          >
-          <span id="slider-value">20</span>
-        </div>
-        {% endblock slider %}
-       
         {% block margin %}
           <div class="input-group">
             <label class="input-label">Minimum Margin (%)</label>
-            <input type="number" id="minimum-margin" class="input-field" placeholder="37.5" value="37.5" step="0.1" min="0" max="100">
+            <input type="number" id="minimum-margin" class="input-field" placeholder="28" value="28" step="0.1" min="0" max="100">
           </div>
         {% endblock margin %}
 
@@ -676,7 +659,7 @@
           <thead>
             <tr>
               <th>CEX Result</th>
-              <th>CEX - Discount</th>
+              <th>Suggested RRP</th>
               <th>Cost Price + Minimum Margin</th>
               <th>Cash Converters Lowest</th>
               <th>Cash Converters Mode</th>
@@ -1147,16 +1130,15 @@ function computeSourceAverages() {
     const cex = normalized['CEX'] || {};
     const cc = normalized['CASHCONVERTERS'] || {};
     const cg = normalized['CASHGENERATOR'] || {};
+
     currentCexMode = cex.mode || null; // store globally for use by the event listener
-
     cexMinusDiscount = 0.8 * cex.mode;
-
     const suggestedRRP = '';
 
     tbody.innerHTML = `
         <tr>
             <td id="cex-mode">${cex.mode ? `£${cex.mode.toFixed(0)}` : '-'}</td>
-            <td id="cex-discount-cell">${cexMinusDiscount}</td>
+            <td id="cex-discount-cell">${cexMinusDiscount ? `£${cexMinusDiscount.toFixed(0)}` : '-'}</td>
             <td id="rrp-cell">${suggestedRRP}</td>
             <td>${cc.min ? `£${cc.min.toFixed(0)}` : '-'}</td>
             <td>${cc.mode ? `£${cc.mode.toFixed(0)}` : '-'}</td>
@@ -1166,7 +1148,7 @@ function computeSourceAverages() {
     `;
 
     updateRRPCell();
-    updateCEXDiscountCell(cex.mode);
+    {% comment %} updateCEXDiscountCell(cex.mode); {% endcomment %}
 }
 
 function updateCEXDiscountCell(cexMode) {
@@ -1220,6 +1202,8 @@ function updateRRPCell() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+computeSourceAverages();
+
 // Auto-update when margin field changes
     const marginInput = document.getElementById('minimum-margin');
     if (marginInput) {

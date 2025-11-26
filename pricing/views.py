@@ -489,7 +489,6 @@ def get_selling_and_buying_price(request):
 
 
 
-
 import urllib.parse
 
 CC_CATEGORY_MAP = {
