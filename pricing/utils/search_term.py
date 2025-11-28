@@ -1,3 +1,4 @@
+# this is the search that will be done on the database
 CATEGORY_SEARCH_FORMAT = {
     "smartphones and mobile": ["item_name", "storage"],  
     "games (discs/cartridges)": ["subcategory", "item_name"],
@@ -14,14 +15,35 @@ CATEGORY_SEARCH_FORMAT = {
     # Add more categories here
 }
 
+# this is the search on the cc and cg website
+CATEGORY_SEARCH_FORMAT_ONLINE = {
+    "smartphones and mobile": ["item_name", "storage"],  
+    "games (discs/cartridges)": ["item_name"],
+    "gaming consoles": ["item_name", "storage",],
+    "laptops": ["item_name", "ram", "storage",],
+    "tablets": ["item_name", "storage",],
+    "televisions": ["item_name", "size",],
+    "smartwatches": ["item_name", "size",],
+    "cameras": ["item_name",],
+    "music tech": ["item_name",],
+    "headphones": ["item_name",],
+    "media player accessories": ["item_name",],
+    "console accessories": ["item_name",]
+    # Add more categories here
+}
+
 from pricing.models import MarketItem
 
-def build_search_term(item_name, category, subcategory=None, attributes=None):
+def build_search_term(item_name, category, subcategory=None, attributes=None, is_online=False):
     """
     Build a search term string based on category mapping, subcategory, and attributes.
     """
     attributes = attributes or {}
-    format_fields = CATEGORY_SEARCH_FORMAT.get(category.lower(), ["item_name"])
+    if is_online:
+        format_fields = CATEGORY_SEARCH_FORMAT_ONLINE.get(category.lower(), ["item_name"])
+    else:
+        format_fields = CATEGORY_SEARCH_FORMAT.get(category.lower(), ["item_name"])
+
 
     print(f"Looking up: '{category.lower()}' in format mapping")
     print(f"Found fields: {format_fields}")

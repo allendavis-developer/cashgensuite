@@ -275,6 +275,7 @@
         <option value="" selected disabled>-- Choose Source --</option>
         <option value="CashConverters">CashConverters Recommended Price</option>
         <option value="CashGenerator" selected>CashGenerator Recommended Price</option>
+        <option value="Suggested RRP">Suggested RRP</option>
       </select>
     </div>
 
@@ -723,6 +724,10 @@ priceSourceSelect.addEventListener('change', () => {
         priceValue = document.getElementById('recommended-price-cashconverters')?.textContent.trim() || "";
     } else if (source === "CashGenerator") {
         priceValue = document.getElementById('recommended-price-cashgenerator')?.textContent.trim() || "";
+    } else if (source === "Suggested RRP") {
+        let rawValue = document.getElementById('cex-discount-cell')?.textContent.trim() || "";
+        priceValue = rawValue.replace(/[^0-9.]/g, "");
+        console.log("discountcell value:", priceValue)
     }
 
     if (!priceValue || priceValue === "-") {
@@ -827,8 +832,8 @@ async function scrapePrices() {
     }
 
 
-    nameInDB = await getSearchTermFromModelAndAttributes();
-    console.log("name in db is:", nameInDB);
+    nameInDB = await getSearchTermFromModelAndAttributes(true);
+
 
     try {
         // Send to extension
@@ -843,24 +848,6 @@ async function scrapePrices() {
                 attributes: data.attributes
             }
         });
-        
-        {% comment %} // Save scraped data to backend
-        await fetch("/save_scraped_data/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": getCookie("csrftoken"),
-            },
-            body: JSON.stringify({
-                item_name: nameInDB,
-                category: data.categoryId,
-                item_model: data.modelId,
-                attributes: data.attributes,
-                competitors: selectedCompetitors,
-                results: response.results,
-                timestamp: new Date().toISOString(),
-            }),
-        }); {% endcomment %}
 
         if (response.success) {
             const formattedData = response.results.map(item => {
@@ -1459,14 +1446,15 @@ function setSearchTerm() {
             category: data.categoryName,
             subcategory: data.subcategoryName,
             model: data.modelName,
-            attributes: data.attributes
+            attributes: data.attributes,
+            is_online: true,
         })
     })
     .then(response => response.json())
     .then(result => {
         if (result.success) {
+            console.log(result.data.generated_search_term);
             document.getElementById('item-name').value = result.data.generated_search_term;
-            console.log("Generated Search Term:", result.data.generated_search_term);
             
             // Only fetch prices when ALL attributes are filled
             if (areAllAttributesFilled()) {
@@ -1542,6 +1530,11 @@ async function fetchSellingAndBuyingPrice() {
         // Update with fetched prices
         cexModeEl.textContent = `£${result.cex_selling_price}`;
         cexDiscountEl.textContent = `£${result.selling_price}`;
+        document.getElementById('cc-min').textContent = "-"; // reset these
+        document.getElementById('cc-mode').textContent = "-"; // reset these
+        document.getElementById('cg-min').textContent = "-"; // reset these
+        document.getElementById('cg-mode').textContent = "-"; // reset these
+
 
     } catch (err) {
         console.error("Network error:", err);
@@ -1552,7 +1545,7 @@ async function fetchSellingAndBuyingPrice() {
 }
 
 
-async function getSearchTermFromModelAndAttributes() {
+async function getSearchTermFromModelAndAttributes(isOnline = false) {
     const data = collectAttributeData();
     if (!data) return;
 
@@ -1567,7 +1560,8 @@ async function getSearchTermFromModelAndAttributes() {
                 category: data.categoryName,
                 subcategory: data.subcategoryName,
                 model: data.modelName,
-                attributes: data.attributes
+                attributes: data.attributes,
+                is_online: isOnline,
             })
         });
 

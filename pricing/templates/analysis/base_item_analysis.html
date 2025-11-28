@@ -669,9 +669,13 @@
           </thead>
           <tbody id="analysis-tbody">
             <tr>
-              <td colspan="5" style="text-align: center; color: #666; font-style: italic;">
-                No market summary data available
-              </td>
+              <td id="cex-mode">-</td>
+              <td id="cex-discount-cell">-</td>
+              <td id="rrp-cell">-</td>
+              <td id="cc-min">-</td>
+              <td id="cc-mode">-</td>
+              <td id="cg-min">-</td>
+              <td id="cg-mode">-</td>
             </tr>
           </tbody>
         </table>
@@ -1133,42 +1137,22 @@ function computeSourceAverages() {
 
     currentCexMode = cex.mode || null; // store globally for use by the event listener
     cexMinusDiscount = 0.8 * cex.mode;
-    const suggestedRRP = '';
 
-    tbody.innerHTML = `
-        <tr>
-            <td id="cex-mode">${cex.mode ? `£${cex.mode.toFixed(0)}` : '-'}</td>
-            <td id="cex-discount-cell">${cexMinusDiscount ? `£${cexMinusDiscount.toFixed(0)}` : '-'}</td>
-            <td id="rrp-cell">${suggestedRRP}</td>
-            <td>${cc.min ? `£${cc.min.toFixed(0)}` : '-'}</td>
-            <td>${cc.mode ? `£${cc.mode.toFixed(0)}` : '-'}</td>
-            <td>${cg.min ? `£${cg.min.toFixed(0)}` : '-'}</td>
-            <td>${cg.mode ? `£${cg.mode.toFixed(0)}` : '-'}</td>
-        </tr>
-    `;
+    document.getElementById('cc-min').textContent =
+      cc.min ? `£${cc.min.toFixed(0)}` : '';
 
-    updateRRPCell();
-    {% comment %} updateCEXDiscountCell(cex.mode); {% endcomment %}
-}
+    document.getElementById('cc-mode').textContent =
+      cc.mode ? `£${cc.mode.toFixed(0)}` : '';
 
-function updateCEXDiscountCell(cexMode) {
-  const discountSlider = document.getElementById('custom-slider');
-  const discountPercent = discountSlider ? parseFloat(discountSlider.value) : 0;
+    document.getElementById('cg-min').textContent =
+      cg.min ? `£${cg.min.toFixed(0)}` : '';
 
-  const discountMultiplier = (100 - discountPercent) / 100;
+    document.getElementById('cg-mode').textContent =
+      cg.mode ? `£${cg.mode.toFixed(0)}` : '';
 
-  const cexMinusDiscount = cexMode
-    ? `£${(cexMode * discountMultiplier).toFixed(0)}`
-    : '-';
-
-  const cexDiscountCell = document.getElementById('cex-discount-cell');
-    if (!cexDiscountCell) {
-        console.warn("CEX Discount cell not found in table");
-        return;
-    }
     
-  cexDiscountCell.textContent = cexMinusDiscount;
-}
+    updateRRPCell();
+  }
 
 // Store cost price
 function setRRPAfterTable(costPrice) {

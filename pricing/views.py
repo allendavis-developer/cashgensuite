@@ -1028,14 +1028,13 @@ def generate_search_term(request):
             subcategory = data.get("subcategory") 
             model = data.get("model")
             attributes = data.get("attributes", {})
-
-            print(data)
+            is_online=data.get("is_online", {})
 
             if not category or not model:
                 return JsonResponse({"success": False, "error": "Category and model are required."}, status=400)
 
             # Build the search term - FIXED: model is the item_name
-            search_term = build_search_term(model, category, subcategory, attributes)  # ← CHANGED ORDER
+            search_term = build_search_term(model, category, subcategory, attributes, is_online=is_online)  
             
             print("Model (item_name):", model)
             print("Category:", category)
