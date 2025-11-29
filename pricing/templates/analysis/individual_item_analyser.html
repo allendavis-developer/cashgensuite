@@ -1554,6 +1554,9 @@ async function fetchSellingAndBuyingPrice() {
 
         console.log("Fetched Prices:", result);
 
+        // Clear competitor table
+        updateCompetitorData([], 0);
+
         // Update with fetched prices
         cexModeEl.innerHTML = `<a href="${result.cex_url}" target="_blank" rel="noopener noreferrer">£${result.cex_selling_price}</a>`;
         cexDiscountEl.textContent = `£${result.selling_price}`;
@@ -1732,11 +1735,22 @@ document.getElementById('category').addEventListener('change', async (e) => {
     setPrimarySelectDisabled('subcategory', false);
 
     if (subcategoryAddBtn) subcategoryAddBtn.disabled = false;
+    resetCEXData();
 
 });
 
+function resetCEXData() {
+    const cexModeEl = document.getElementById('cex-mode');
+    const cexDiscountEl = document.getElementById('cex-discount-cell');
+
+    cexModeEl.innerHTML = '-'
+    cexDiscountEl.innerHTML = '-'
+
+}
+
 document.getElementById('subcategory').addEventListener('change', async (e) => {
     loadModelsAndPopulate();
+    resetCEXData();
 });
 
 async function loadModelsAndPopulate() {
@@ -1780,6 +1794,7 @@ document.getElementById('model').addEventListener('change', async (e) => {
     const modelId = getPrimarySelectValue('model') || e.target.value;
     await sendFieldUpdate('model', modelId);
     setSearchTerm();
+    resetCEXData();
 }); 
 
 async function loadListings() {

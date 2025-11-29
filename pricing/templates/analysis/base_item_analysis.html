@@ -610,13 +610,13 @@
             </div>
         {% endblock search_term %}
 
-        {% block margin %}
+        {% comment %} {% block margin %}
           <div class="input-group">
             <label class="input-label">Minimum Margin (%)</label>
             <input type="number" id="minimum-margin" class="input-field" placeholder="28" value="28" step="0.1" min="0" max="100">
           </div>
         {% endblock margin %}
-
+ {% endcomment %}
         {% block description %}
           <div class="input-group">
             <label class="input-label">Description</label>
@@ -660,7 +660,6 @@
             <tr>
               <th>CEX Result</th>
               <th>Suggested RRP</th>
-              <th>Cost Price + Minimum Margin</th>
               <th>Cash Converters Lowest</th>
               <th>Cash Converters Mode</th>
               <th>Cash Generator Lowest</th>
@@ -671,7 +670,6 @@
             <tr>
               <td id="cex-mode">-</td>
               <td id="cex-discount-cell">-</td>
-              <td id="rrp-cell">-</td>
               <td id="cc-min">-</td>
               <td id="cc-mode">-</td>
               <td id="cg-min">-</td>
@@ -701,9 +699,9 @@
 
           <label for="filter-source">Filter by:</label>
           <select id="filter-source">
-            <option value="all" selected>All Sources</option>
+            <option value="all">All Sources</option>
             <option value="CashConverters">CashConverters</option>
-            <option value="CashGenerator">CashGenerator</option>
+            <option value="CashGenerator" selected>CashGenerator</option>
             <option value="CeX">CeX</option>
             <option value="eBay">eBay</option>
           </select>
@@ -1151,7 +1149,6 @@ function computeSourceAverages() {
       cg.mode ? `£${cg.mode.toFixed(0)}` : '';
 
     
-    updateRRPCell();
   }
 
 // Store cost price
@@ -1165,36 +1162,8 @@ function setRRPAfterTable(costPrice) {
     console.log('Cost price stored:', currentCostPrice);
 }
 
-function updateRRPCell() {
-    if (!currentCostPrice) {
-        console.warn("No cost price available to update RRP cell");
-        return;
-    }
-
-    const rrpCell = document.getElementById('rrp-cell');
-    if (!rrpCell) {
-        console.warn("RRP cell not found in table");
-        return;
-    }
-
-    // 🔹 Get user-entered margin %
-    const marginInput = document.getElementById('minimum-margin');
-    const marginPercent = parseFloat(marginInput?.value || 37.5); // fallback to 37.5%
-    const rrp = (currentCostPrice / (1 - marginPercent / 100)).toFixed(2);
-
-    rrpCell.textContent = `£${rrp}`;
-}
-
 document.addEventListener('DOMContentLoaded', () => {
 computeSourceAverages();
-
-// Auto-update when margin field changes
-    const marginInput = document.getElementById('minimum-margin');
-    if (marginInput) {
-        marginInput.addEventListener('input', () => {
-            updateRRPCell();
-        });
-    }
 
     const discountSlider = document.getElementById('custom-slider');
     if (discountSlider) {
