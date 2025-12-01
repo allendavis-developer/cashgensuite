@@ -670,6 +670,7 @@
               <th>Cash Converters Mode</th>
               <th>Cash Generator Lowest</th>
               <th>Cash Generator Mode</th>
+              <th>eBay Mode</th>
             </tr>
           </thead>
           <tbody id="analysis-tbody">
@@ -680,6 +681,7 @@
               <td id="cc-mode">-</td>
               <td id="cg-min">-</td>
               <td id="cg-mode">-</td>
+              <td id="ebay-mode">-</td>
             </tr>
           </tbody>
         </table>
@@ -1162,6 +1164,8 @@ function computeSourceAverages() {
     const cex = normalized['CEX'] || {};
     const cc = normalized['CASHCONVERTERS'] || {};
     const cg = normalized['CASHGENERATOR'] || {};
+    const ebay = normalized['EBAY'] || {};
+
 
     currentCexMode = cex.mode || null; // store globally for use by the event listener
     cexMinusDiscount = 0.8 * cex.mode;
@@ -1178,6 +1182,8 @@ function computeSourceAverages() {
     document.getElementById('cg-mode').textContent =
       cg.mode ? `£${cg.mode.toFixed(0)}` : '';
 
+    document.getElementById('ebay-mode').textContent =
+      ebay.mode ? `£${ebay.mode.toFixed(0)}` : '';
     
   }
 
