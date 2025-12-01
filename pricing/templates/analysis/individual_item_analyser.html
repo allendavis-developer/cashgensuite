@@ -143,7 +143,16 @@
         <label><input type="checkbox" name="competitors" value="CashConverters" checked> CashConverters</label>
         <label><input type="checkbox" name="competitors" value="CashGenerator" checked> CashGenerator</label>
         <label><input type="checkbox" name="competitors" value="CEX"> CEX</label>
-        <label><input type="checkbox" name="competitors" value="eBay"> eBay</label>
+        <label><input id="ebay-source-checkbox" type="checkbox" name="competitors" value="eBay"> eBay</label>
+
+        <!-- After your existing eBay checkbox -->
+        <div id="ebay-sold-container" style="display: none; margin-left: 1.5rem; margin-top: 0.5rem;">
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="checkbox" id="ebay-sold" style="cursor: pointer;">
+            <span class="input-label" style="margin: 0;">eBay - Filter for Completed & Sold?</span>
+        </label>
+        </div>
+
       </div>
     </div>
 
@@ -517,6 +526,25 @@
 <script>
 const primaryTomSelects = {};
 
+
+// Add this to your existing script section
+document.addEventListener('DOMContentLoaded', () => {
+  const ebayCheckbox = document.getElementById('ebay-source-checkbox'); // Your main eBay checkbox
+  const ebaySoldContainer = document.getElementById('ebay-sold-container');
+  const ebaySoldCheckbox = document.getElementById('ebay-sold');
+
+  if (ebayCheckbox && ebaySoldContainer) {
+    ebayCheckbox.addEventListener('change', function() {
+      if (this.checked) {
+        ebaySoldContainer.style.display = 'block';
+      } else {
+        ebaySoldContainer.style.display = 'none';
+        ebaySoldCheckbox.checked = false; // Uncheck when hiding
+      }
+    });
+  }
+});
+
 function getPrimaryTomSelect(id) {
     return primaryTomSelects[id] || document.getElementById(id)?.tomselect || null;
 }
@@ -562,6 +590,7 @@ function setPrimarySelectDisabled(id, disabled) {
         disabled ? ts.disable() : ts.enable();
     }
 }
+
 
 function replacePrimarySelectOptions(id, options, placeholderLabel) {
     const select = document.getElementById(id);

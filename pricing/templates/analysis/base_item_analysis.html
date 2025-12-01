@@ -548,6 +548,12 @@
       border-left: 3px solid #00e0ff;
     }
 
+    .mode-highlight {
+      background-color: #1a1a00 !important;
+      border-left: 3px solid #ffaa00;
+    }
+
+
     .add-btn {
       background-color: #333;
       color: #fff;
@@ -705,6 +711,7 @@
             <option value="CeX">CeX</option>
             <option value="eBay">eBay</option>
           </select>
+
         </div>
 
         <div class="competitor-count" id="competitor-count">
@@ -1022,7 +1029,8 @@ function computeSourceAverages() {
     });
 
 
-    // Collect prices based on selection logic
+    // Collect prices based on selection logic and track rows for mode highlighting
+    const sourceRowsMap = {}; // Map price to rows for each source
     rows.forEach(row => {
         if (row.cells.length < 5) return;
 
@@ -1033,6 +1041,11 @@ function computeSourceAverages() {
         // Save all prices for mode calculation
         if (!sourceModeData[source]) sourceModeData[source] = [];
         sourceModeData[source].push(price);
+
+        // Track rows by source and price for mode highlighting
+        if (!sourceRowsMap[source]) sourceRowsMap[source] = {};
+        if (!sourceRowsMap[source][price]) sourceRowsMap[source][price] = [];
+        sourceRowsMap[source][price].push(row);
 
         const checkbox = row.querySelector('.range-checkbox');
         // Is this row currently in the visible tbody?
@@ -1070,12 +1083,14 @@ function computeSourceAverages() {
 
     // Compute averages, min, max, mode
     const sourceAverages = {};
+    const sourceModes = {}; // Track mode price for each source
     Object.keys(sourceData).forEach(source => {
         const prices = sourceData[source];
         const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
         const min = Math.min(...prices);
         const max = Math.max(...prices);
 
+        let mode;
         // For CEX, just use the first price (most relevant listing)
         if (source === "CEX") {
             // TODO: Since we're no longer using mode, we should rename this later
@@ -1093,6 +1108,7 @@ function computeSourceAverages() {
             });
         }
 
+        sourceModes[source] = mode; // Store mode for highlighting
         sourceAverages[source] = { average: avg, min, max, count: prices.length, mode };
 
         //  Compute average of all values UNDER the mode
@@ -1106,6 +1122,20 @@ function computeSourceAverages() {
         }
     });
 
+    // Highlight mode rows
+    rows.forEach(row => {
+        row.classList.remove('mode-highlight');
+        if (row.cells.length < 5) return;
+        
+        const source = row.cells[0].textContent.trim().toUpperCase();
+        const price = parseFloat(row.cells[2].textContent.replace(/[^0-9.-]+/g, ""));
+        
+        if (!isNaN(price) && sourceModes[source] === price) {
+            row.classList.add('mode-highlight');
+        }
+    });
+
+    // ... rest of the function continues as before (market stats update, etc.)
 
     // Update market stats based only on the visible prices
     const marketStats = document.getElementById('market-stats');
