@@ -1093,25 +1093,31 @@ function computeSourceAverages() {
         const max = Math.max(...prices);
 
         let mode;
+        let modeFrequency = 0;
+
         // For CEX, just use the first price (most relevant listing)
         if (source === "CEX") {
-            // TODO: Since we're no longer using mode, we should rename this later
             mode = prices[0];
+            modeFrequency = 1;
         } else {
             // For other sources, compute mode
             const freq = {};
-            prices.forEach(p => { freq[p] = (freq[p] || 0) + 1; });
+            prices.forEach(p => { 
+                const rounded = Math.round(p / 5) * 5; // Round to nearest 5
+                freq[rounded] = (freq[rounded] || 0) + 1; 
+            });
             let highest = 0;
             Object.keys(freq).forEach(k => {
                 if (freq[k] > highest) {
                     highest = freq[k];
                     mode = parseFloat(k);
+                    modeFrequency = freq[k];
                 }
             });
         }
 
         sourceModes[source] = mode; // Store mode for highlighting
-        sourceAverages[source] = { average: avg, min, max, count: prices.length, mode };
+        sourceAverages[source] = { average: avg, min, max, count: prices.length, mode, modeFrequency };
 
         //  Compute average of all values UNDER the mode
         const valuesUnderMode = prices.filter(p => p < mode);
@@ -1124,7 +1130,7 @@ function computeSourceAverages() {
         }
     });
 
-    // Highlight mode rows
+    // Highlight mode rows (including all prices that round to the mode)
     rows.forEach(row => {
         row.classList.remove('mode-highlight');
         if (row.cells.length < 5) return;
@@ -1132,8 +1138,13 @@ function computeSourceAverages() {
         const source = row.cells[0].textContent.trim().toUpperCase();
         const price = parseFloat(row.cells[2].textContent.replace(/[^0-9.-]+/g, ""));
         
-        if (!isNaN(price) && sourceModes[source] === price) {
-            row.classList.add('mode-highlight');
+        if (!isNaN(price) && sourceModes[source] !== undefined) {
+            const roundedPrice = Math.round(price / 5) * 5;
+            const roundedMode = Math.round(sourceModes[source] / 5) * 5;
+            
+            if (roundedPrice === roundedMode) {
+                row.classList.add('mode-highlight');
+            }
         }
     });
 
@@ -1170,22 +1181,22 @@ function computeSourceAverages() {
     currentCexMode = cex.mode || null; // store globally for use by the event listener
     cexMinusDiscount = 0.8 * cex.mode;
 
-    document.getElementById('cc-min').textContent =
-      cc.min ? `£${cc.min.toFixed(0)}` : '';
-
     document.getElementById('cc-mode').textContent =
-      cc.mode ? `£${cc.mode.toFixed(0)}` : '';
+      cc.mode ? `£${cc.mode.toFixed(0)} (${cc.modeFrequency || 0}/${cc.count || 0})` : '';
+
+    document.getElementById('cc-min').textContent =
+      cc.mode ? `£${cc.mode.toFixed(0)} (${cc.modeFrequency || 0}/${cc.count || 0})` : '';
+      
+    document.getElementById('ebay-mode').textContent =
+    ebay.mode ? `£${ebay.mode.toFixed(0)} (${ebay.modeFrequency || 0}/${ebay.count || 0})` : '';
+      
+    document.getElementById('cg-mode').textContent =
+      cg.mode ? `£${cg.mode.toFixed(0)} (${cg.modeFrequency || 0}/${cg.count || 0})` : '';
 
     document.getElementById('cg-min').textContent =
       cg.min ? `£${cg.min.toFixed(0)}` : '';
-
-    document.getElementById('cg-mode').textContent =
-      cg.mode ? `£${cg.mode.toFixed(0)}` : '';
-
-    document.getElementById('ebay-mode').textContent =
-      ebay.mode ? `£${ebay.mode.toFixed(0)}` : '';
     
-  }
+}
 
 // Store cost price
 function setRRPAfterTable(costPrice) {

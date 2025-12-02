@@ -148,7 +148,7 @@
         <!-- After your existing eBay checkbox -->
         <div id="ebay-sold-container" style="display: none; margin-left: 1.5rem; margin-top: 0.5rem;">
         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-            <input type="checkbox" id="ebay-sold" style="cursor: pointer;">
+            <input type="checkbox" id="ebay-sold" style="cursor: pointer;" checked>
             <span class="input-label" style="margin: 0;">eBay - Filter for Completed & Sold?</span>
         </label>
         </div>
@@ -835,7 +835,6 @@ modalSubmitBtn.addEventListener('click', async function() {
 // -------------------------------
 async function scrapePrices() {
     console.log("scraping");
-    {% comment %} await setSearchTerm(); {% endcomment %}
     const itemName = document.getElementById('item-name').value.trim();
     if (!itemName) {
         alert('Please enter an item name first.');
@@ -864,12 +863,16 @@ async function scrapePrices() {
         return;
     }
 
+    // Check if eBay completed & sold filter is enabled
+    const ebayCheckbox = document.getElementById('ebay-source-checkbox');
+    const ebaySoldCheckbox = document.getElementById('ebay-sold');
+    const ebayFilterSold = ebayCheckbox?.checked && ebaySoldCheckbox?.checked;
+    console.log(ebayFilterSold);
 
     nameInDB = await getSearchTermFromModelAndAttributes(true);
 
-
     try {
-        // Send to extension
+        // Send to extension with eBay filter status
         const response = await sendExtensionMessage({
             action: "scrape",
             data: {
@@ -878,7 +881,8 @@ async function scrapePrices() {
                 category: data.categoryName,
                 subcategory: data.subcategoryName,
                 model: data.modelName,
-                attributes: data.attributes
+                attributes: data.attributes,
+                ebayFilterSold: ebayFilterSold  // Add this parameter
             }
         });
 
@@ -887,8 +891,7 @@ async function scrapePrices() {
                 return `${item.competitor} | ${item.title || ""} | £${item.price} | ${item.store || ""} | ${item.url || ""}`;
             });
             
-            console.log("saved data succesfully", formattedData)
-
+            console.log("saved data successfully", formattedData);
 
             updateCompetitorData(formattedData, formattedData.length);
             if (response.partial) {
@@ -1038,58 +1041,86 @@ function getCCAndCGData() {
 }
 
 async function analyzeTable() {
-    const itemName = document.getElementById('item-name').value.trim();
-    const description = document.getElementById('description').value.trim();
     const costPrice = parseFloat(document.getElementById('cost-price').value) || 0;
-
-    const competitorDataSets = getCCAndCGData();
-    if (!competitorDataSets) return;
-
-    const { cashConvertersData, cashGeneratorData } = competitorDataSets;
 
     const analysisSection = document.getElementById('analysis-section');
     const reasoningText = document.getElementById('reasoning-text');
+    
+    // Clear previous results
     document.getElementById('recommended-price-cashconverters').innerHTML = '-';
     document.getElementById('recommended-price-cashgenerator').innerHTML = '-';
     document.getElementById('recommended-price-rrp').innerHTML = '-';
     reasoningText.innerHTML = '';
     analysisSection.style.display = 'none';
 
-    // Get the suggested RRP from CEX discount cell
-    const cexDiscountCell = document.getElementById('cex-discount-cell');
-    if (cexDiscountCell && cexDiscountCell.textContent.trim() !== '-') {
-        const rrpValue = cexDiscountCell.textContent.trim();
-        const priceValue = parseFloat(rrpValue.replace(/[^0-9.]/g, ''));
-        
-        if (!isNaN(priceValue) && priceValue > 0) {
-            // Calculate margin for RRP
-            let marginText = "";
-            if (costPrice > 0) {
-                const margin = ((priceValue - costPrice) / priceValue) * 100;
-                const minMargin = parseFloat(document.getElementById('minimum-margin')?.value) || 0;
-                const color = margin < minMargin ? '#f00' : '#0f0';
-                marginText = ` (<span style="color:${color};">${margin.toFixed(1)}%</span> margin)`;
-            } else {
-                marginText = ` (<span style="color:#888;">n/a</span>)`;
-            }
-            
-            const roundedPrice = roundToNearest2(priceValue);
-            document.getElementById('recommended-price-rrp').innerHTML = `£${roundedPrice.toFixed(2)}${marginText}`;
+    let hasAnyData = false;
+
+    // Helper function to round down to nearest multiple of 2
+    function roundDownToNearest2(value) {
+        if (value % 2 !== 0) {
+            // odd → drop to nearest even
+            return value - 1;
+        } else {
+            // even → drop two steps
+            return value - 2;
         }
     }
 
-    // 🔹 Run analyses and display results
-    if (cashConvertersData.length > 0) {
-        const { suggested, reasoning } = getSuggestedPrice(cashConvertersData);
-        displayDualAnalysis(reasoning, suggested, 'CashConverters');
+
+    // Helper function to calculate and format margin
+    function getMarginHTML(price) {
+        if (costPrice > 0) {
+            const margin = ((price - costPrice) / price) * 100;
+            const minMargin = parseFloat(document.getElementById('minimum-margin')?.value) || 0;
+            const color = margin < minMargin ? '#f00' : '#0f0';
+            return ` (<span style="color:${color};">${margin.toFixed(1)}%</span> margin)`;
+        }
+        return ` (<span style="color:#888;">n/a</span>)`;
     }
 
-    if (cashGeneratorData.length > 0) {
-        const { suggested, reasoning } = getSuggestedPrice(cashGeneratorData);
-        displayDualAnalysis(reasoning, suggested, 'CashGenerator');
+    // Read Cash Converters Mode
+    const ccModeCell = document.getElementById('cc-mode');
+    if (ccModeCell && ccModeCell.textContent.trim() !== '-' && ccModeCell.textContent.trim() !== '') {
+        const match = ccModeCell.textContent.match(/\d+(\.\d+)?/);
+        const ccModeValue = match ? parseFloat(match[0]) : NaN;
+        if (!isNaN(ccModeValue) && ccModeValue > 0) {
+            const roundedPrice = roundDownToNearest2(ccModeValue);
+            document.getElementById('recommended-price-cashconverters').innerHTML = 
+                `£${roundedPrice.toFixed(2)}${getMarginHTML(roundedPrice)}`;
+            hasAnyData = true;
+        }
     }
 
-    analysisSection.style.display = 'block';
+
+    // Read Cash Generator Mode
+    const cgModeCell = document.getElementById('cg-mode');
+    if (cgModeCell && cgModeCell.textContent.trim() !== '-' && cgModeCell.textContent.trim() !== '') {
+        const match = cgModeCell.textContent.match(/\d+(\.\d+)?/);
+        const cgModeValue = match ? parseFloat(match[0]) : NaN;
+        if (!isNaN(cgModeValue) && cgModeValue > 0) {
+            const roundedPrice = roundDownToNearest2(cgModeValue);
+            document.getElementById('recommended-price-cashgenerator').innerHTML = 
+                `£${roundedPrice.toFixed(2)}${getMarginHTML(roundedPrice)}`;
+            hasAnyData = true;
+        }
+    }
+
+    // Read CEX Discount (Suggested RRP)
+    const cexDiscountCell = document.getElementById('cex-discount-cell');
+    if (cexDiscountCell && cexDiscountCell.textContent.trim() !== '-' && cexDiscountCell.textContent.trim() !== '') {
+        const rrpValue = parseFloat(cexDiscountCell.textContent.replace(/[^0-9.]/g, ''));
+        if (!isNaN(rrpValue) && rrpValue > 0) {
+            document.getElementById('recommended-price-rrp').innerHTML = 
+                `£${rrpValue.toFixed(2)}${getMarginHTML(rrpValue)}`;
+            hasAnyData = true;
+        }
+    }
+
+    // Show analysis section if any data was found
+    if (hasAnyData) {
+        reasoningText.innerHTML = 'Prices rounded down to nearest multiple of £2.';
+        analysisSection.style.display = 'block';
+    }
 }
 
 // Extract ALL competitor data (regardless of checkbox state)
@@ -1594,6 +1625,8 @@ async function fetchSellingAndBuyingPrice() {
         document.getElementById('cc-mode').textContent = "-"; // reset these
         document.getElementById('cg-min').textContent = "-"; // reset these
         document.getElementById('cg-mode').textContent = "-"; // reset these
+        document.getElementById('ebay-mode').textContent = "-"; // reset these
+
 
 
     } catch (err) {
