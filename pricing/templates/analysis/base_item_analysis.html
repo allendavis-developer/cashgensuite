@@ -572,8 +572,55 @@
     /* Ensure modal is always on top */
   #add-modal {
     z-index: 9999 !important;
-  }
+    }
 
+#price-switcher {
+  margin-bottom: 1rem;
+}
+
+#price-switcher .price-viewer {
+  margin: 0.5rem 0 1rem 0;
+}
+
+/* Arrow buttons styled like the dark UI */
+.arrow-btn {
+  cursor: pointer;
+  user-select: none;
+  font-size: 1.25rem;
+  padding: 6px 10px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #ccc;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.arrow-btn:hover {
+  background: #222;
+  color: #fff;
+  border-color: #555;
+}
+
+.arrow-btn:active {
+  background: #333;
+  border-color: #666;
+}
+
+/* Label between arrows */
+#current-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Highlighted price column */
+#price-switcher .highlight {
+  background-color: #1a1a1a !important;
+  border-left: 3px solid #00e0ff;
+  transition: background-color 0.2s, border-left-color 0.2s;
+}
 
 
 
@@ -688,24 +735,32 @@
 
         <div class="panel-title" style="margin-top: 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #888;">SUGGESTED PRICES</div>
         
-        <table class="competitor-table" id="">
-          <thead>
-            <tr>
-              <th>Suggested RRP</th>
-              <th>Cash Converters</th>
-              <th>Cash Generator</th>
-              <th>eBay</th>
-            </tr>
-          </thead>
-          <tbody id="analysis-tbody">
-            <tr>
-              <td id="cex-discount-cell">-</td>
-              <td id="recommended-price-cashconverters">-</td>
-              <td id="recommended-price-cashgenerator">-</td>
-              <td id="recommended-price-ebay">-</td>
-            </tr>
-          </tbody>
-        </table>
+        <div id="price-switcher">
+          <div class="price-viewer" style="display:flex; align-items:center; gap:1rem;">
+            <span id="arrow-left" class="arrow-btn">&#9664;</span>
+            <span id="current-label">Suggested RRP</span>
+            <span id="arrow-right" class="arrow-btn">&#9654;</span>
+          </div>
+
+          <table class="competitor-table" id="price-table">
+            <thead>
+              <tr>
+                <th data-label="Suggested RRP">Suggested RRP</th>
+                <th data-label="Cash Converters">Cash Converters</th>
+                <th data-label="Cash Generator">Cash Generator</th>
+                <th data-label="eBay">eBay</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td id="cex-discount-cell">-</td>
+                <td id="recommended-price-cashconverters">-</td>
+                <td id="recommended-price-cashgenerator">-</td>
+                <td id="recommended-price-ebay">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
        <div id="market-stats" style="display: flex; gap: 1rem; align-items: center;">
         <div class="stat-row" style="margin: 0;">
@@ -833,6 +888,36 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+  const wrapper = document.getElementById("price-switcher");
+  const table = wrapper.querySelector("#price-table");
+  const headers = table.querySelectorAll("thead th");
+  const cells = table.querySelectorAll("tbody td");
+  const label = wrapper.querySelector("#current-label");
+
+  let index = 0;
+
+  function updateHighlight() {
+    headers.forEach(h => h.classList.remove("highlight"));
+    cells.forEach(c => c.classList.remove("highlight"));
+
+    headers[index].classList.add("highlight");
+    cells[index].classList.add("highlight");
+
+    label.textContent = headers[index].dataset.label;
+  }
+
+  wrapper.querySelector("#arrow-left").onclick = () => {
+    index = (index - 1 + headers.length) % headers.length;
+    updateHighlight();
+  };
+
+  wrapper.querySelector("#arrow-right").onclick = () => {
+    index = (index + 1) % headers.length;
+    updateHighlight();
+  };
+
+  updateHighlight();
 
 
 let allCompetitorRows = [];
