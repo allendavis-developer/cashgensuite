@@ -268,26 +268,6 @@
     ">
     </div>
 
-
-    <div style="margin-bottom: 12px;">
-      <label style="font-size: 11px; color: #888; text-transform: uppercase;">Select Price Source</label>
-      <select id="price-source-select" style="
-          width: 100%;
-          padding: 10px;
-          background-color: #1a1a1a;
-          border: 1px solid #333;
-          color: #fff;
-          border-radius: 4px;
-          margin-top: 4px;
-          cursor: pointer;
-      ">
-        <option value="" selected disabled>-- Choose Source --</option>
-        <option value="CashConverters">CashConverters Recommended Price</option>
-        <option value="CashGenerator" selected>CashGenerator Recommended Price</option>
-        <option value="Suggested RRP">Suggested RRP</option>
-      </select>
-    </div>
-
     <div style="margin-bottom: 16px;">
       <label style="font-size: 11px; color: #888; text-transform: uppercase;">Price</label>
       <input id="modal-price" type="text" style="
@@ -321,20 +301,6 @@
     <div class="analysis-header">
         <div class="analysis-status">{% block analysis_status %}⚡ ANALYSIS COMPLETE{% endblock %}</div>
         <div class="analysis-time" id="analysis-time">{% block analysis_time %}just now{% endblock %}</div>
-    </div>
-
-    <!-- Flex container for recommended prices -->
-    <div style="display: flex; flex-direction: column; gap: 0.2rem; margin-bottom: 0.5rem;">
-        <div class="recommended-price">
-            CC RECOMMENDED PRICE: <span id="recommended-price-cashconverters">-</span>
-        </div>
-        <div class="recommended-price">
-            CG RECOMMENDED PRICE: <span id="recommended-price-cashgenerator">-</span>
-        </div>
-        <div class="recommended-price">
-            SUGGESTED RRP: <span id="recommended-price-rrp">-</span>
-        </div>
-
     </div>
 
     <div class="reasoning">
@@ -749,35 +715,6 @@ window.addEventListener('click', (e) => {
     }
 });
 
-priceSourceSelect.addEventListener('change', () => {
-    const source = priceSourceSelect.value;
-    let priceValue = "";
-
-    if (source === "CashConverters") {
-        priceValue = document.getElementById('recommended-price-cashconverters')?.textContent.trim() || "";
-    } else if (source === "CashGenerator") {
-        priceValue = document.getElementById('recommended-price-cashgenerator')?.textContent.trim() || "";
-    } else if (source === "Suggested RRP") {
-        let rawValue = document.getElementById('cex-discount-cell')?.textContent.trim() || "";
-        priceValue = rawValue.replace(/[^0-9.]/g, "");
-        console.log("discountcell value:", priceValue)
-    }
-
-    if (!priceValue || priceValue === "-") {    
-        alert("Please analyze prices before selecting a recommended price.");
-        priceSourceSelect.value = "";
-        modalPrice.value = "";
-        return;
-    }
-
-    // Clean up the price string (remove £ if present)
-    priceValue = parseFloat(priceValue.replace(/[^0-9.]/g, ''));
-    // Round to nearest multiple of 2 before fixing decimals
-    priceValue = roundToNearest2(priceValue)
-
-    modalPrice.value = priceValue.toFixed(2);
-});
-
 
 modalSubmitBtn.addEventListener('click', async function() {
     let price = modalPrice.value.trim();
@@ -912,77 +849,6 @@ async function scrapePrices() {
 }
 
 
-// Utility function: Calculate suggested price and reasoning
-function getSuggestedPrice(data) {
-    if (!data || data.length === 0) {
-        return { suggested: null, reasoning: "No data available." };
-    }
-
-    const sortedData = [...data].sort((a, b) => a.price - b.price);
-    const rangeRows = sortedData.filter(d => d.range === true);
-
-    let suggested;
-    let reasoning;
-
-    // Returns the largest multiple of 2 that is STRICTLY less than value.
-    function nextLowerMultipleOf2Strict(value) {
-        let m = Math.floor(value / 2) * 2;
-        if (Math.abs(m - value) < 0.01) m -= 2; // step down if already a multiple of 2
-        if (m < 0) m = 0;
-        return m;
-    }
-
-    if (rangeRows.length > 0) {
-        if (rangeRows.length === 1) {
-            const rangePrice = rangeRows[0].price;
-            const rangeIndex = sortedData.findIndex(d => d.range === true);
-
-            // Find the next *distinct* lower price
-            let lowerPrice = null;
-            for (let i = rangeIndex - 1; i >= 0; i--) {
-                const candidate = sortedData[i].price;
-                if (candidate < rangePrice - 0.01) {
-                    lowerPrice = candidate;
-                    break;
-                }
-            }
-
-            if (!lowerPrice) {
-                suggested = nextLowerMultipleOf2Strict(rangePrice);
-                reasoning = `Range selected at £${rangePrice.toFixed(2)} (no distinct lower price). Suggested next lower multiple of £2: £${suggested.toFixed(2)}.`;
-            } else {
-                const gap = rangePrice - lowerPrice;
-                suggested = lowerPrice + (gap * 0.5);
-                reasoning = `Range selected at £${rangePrice.toFixed(2)}. Next distinct lower price: £${lowerPrice.toFixed(2)}. Suggested midpoint: £${suggested.toFixed(2)}.`;
-            }
-        } else {
-            const prices = rangeRows.map(r => r.price);
-            const max = Math.max(...prices);
-            const min = Math.min(...prices);
-
-            if (Math.abs(max - min) < 0.01) {
-                suggested = nextLowerMultipleOf2Strict(max);
-                reasoning = `Multiple listings selected but all prices equal at £${max.toFixed(2)}. Suggested next lower multiple of £2: £${suggested.toFixed(2)}.`;
-            } else {
-                const avgPrice = prices.reduce((sum, p) => sum + p, 0) / prices.length;
-                suggested = avgPrice;
-                const formattedPrices = prices.map(p => `£${p.toFixed(2)}`).join(" + ");
-                reasoning = `
-                    Multiple listings selected from £${min.toFixed(2)} 
-                    to £${max.toFixed(2)}.<br>
-                    Average calculation: (${formattedPrices}) ÷ ${prices.length} =
-                    <strong>£${avgPrice.toFixed(2)}</strong>.
-                `;
-            }
-        }
-    } else {
-        suggested = null;
-        reasoning = `No range selected. Cannot suggest a price.`;
-    }
-
-    return { suggested, reasoning };
-}
-
 function getCCAndCGData() {
     // Get ALL data first (not just checked)
     const allCompetitorData = extractAllCompetitorTableData();
@@ -1049,7 +915,6 @@ async function analyzeTable() {
     // Clear previous results
     document.getElementById('recommended-price-cashconverters').innerHTML = '-';
     document.getElementById('recommended-price-cashgenerator').innerHTML = '-';
-    document.getElementById('recommended-price-rrp').innerHTML = '-';
     reasoningText.innerHTML = '';
     analysisSection.style.display = 'none';
 
@@ -1104,6 +969,20 @@ async function analyzeTable() {
             hasAnyData = true;
         }
     }
+
+    // Read eBay Mode
+    const ebayModeCell = document.getElementById('ebay-mode');
+    if (ebayModeCell && ebayModeCell.textContent.trim() !== '-' && ebayModeCell.textContent.trim() !== '') {
+        const match = ebayModeCell.textContent.match(/\d+(\.\d+)?/);
+        const ebayModeValue = match ? parseFloat(match[0]) : NaN;
+        if (!isNaN(ebayModeValue) && ebayModeValue > 0) {
+            const roundedPrice = roundDownToNearest2(ebayModeValue);
+            document.getElementById('recommended-price-ebay').innerHTML =
+                `£${roundedPrice.toFixed(2)}${getMarginHTML(roundedPrice)}`;
+            hasAnyData = true;
+        }
+    }
+
 
     // Read CEX Discount (Suggested RRP)
     const cexDiscountCell = document.getElementById('cex-discount-cell');

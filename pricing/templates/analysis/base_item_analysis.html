@@ -665,7 +665,7 @@
           <thead>
             <tr>
               <th>CEX Result</th>
-              <th>Suggested RRP</th>
+              {% comment %} <th>Suggested RRP</th> {% endcomment %}
               <th>Cash Converters Lowest</th>
               <th>Cash Converters Mode</th>
               <th>Cash Generator Lowest</th>
@@ -676,12 +676,33 @@
           <tbody id="analysis-tbody">
             <tr>
               <td id="cex-mode">-</td>
-              <td id="cex-discount-cell">-</td>
+              {% comment %} <td id="cex-discount-cell">-</td> {% endcomment %}
               <td id="cc-min">-</td>
               <td id="cc-mode">-</td>
               <td id="cg-min">-</td>
               <td id="cg-mode">-</td>
               <td id="ebay-mode">-</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="panel-title" style="margin-top: 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #888;">SUGGESTED PRICES</div>
+        
+        <table class="competitor-table" id="">
+          <thead>
+            <tr>
+              <th>Suggested RRP</th>
+              <th>Cash Converters</th>
+              <th>Cash Generator</th>
+              <th>eBay</th>
+            </tr>
+          </thead>
+          <tbody id="analysis-tbody">
+            <tr>
+              <td id="cex-discount-cell">-</td>
+              <td id="recommended-price-cashconverters">-</td>
+              <td id="recommended-price-cashgenerator">-</td>
+              <td id="recommended-price-ebay">-</td>
             </tr>
           </tbody>
         </table>
