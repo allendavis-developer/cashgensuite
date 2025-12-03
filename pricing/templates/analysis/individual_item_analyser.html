@@ -687,6 +687,14 @@ const priceSourceSelect = document.getElementById('price-source-select');
 
 toggleModal(modal, false);
 
+/* Maps price source → table cell ID */
+const priceCellMap = {
+    "Suggested RRP": "cex-discount-cell",
+    "Cash Converters": "recommended-price-cashconverters",
+    "Cash Generator": "recommended-price-cashgenerator",
+    "eBay": "recommended-price-ebay"
+};
+
 confirmListBtn.addEventListener('click', () => {
     toggleModal(modal, true);
 
@@ -695,15 +703,16 @@ confirmListBtn.addEventListener('click', () => {
     document.getElementById('modal-serial-number').value = document.getElementById('barserial').value;
     document.getElementById('modal-branch').value = document.getElementById('branch').value;
 
-    priceValue = document.getElementById('recommended-price-cashgenerator')?.textContent.trim() || "";
-     // Clean up the price string (remove £ if present)
-    priceValue = parseFloat(priceValue.replace(/[^0-9.]/g, ''));
-    // Round to nearest multiple of 2 before fixing decimals
-    priceValue = roundToNearest2(priceValue)
+    /* Fetch price from whichever column is selected */
+    const selectedCellId = priceCellMap[window.currentPriceSource];
+    let priceValue = document.getElementById(selectedCellId)?.textContent.trim() || "";
+
+    priceValue = parseFloat(priceValue.replace(/[^0-9.]/g, '')) || 0;
+    priceValue = roundToNearest2(priceValue);
 
     modalPrice.value = priceValue.toFixed(2);
-
 });
+
 
 modalClose.addEventListener('click', () => {
     toggleModal(modal, false);
@@ -989,7 +998,7 @@ async function analyzeTable() {
     if (cexDiscountCell && cexDiscountCell.textContent.trim() !== '-' && cexDiscountCell.textContent.trim() !== '') {
         const rrpValue = parseFloat(cexDiscountCell.textContent.replace(/[^0-9.]/g, ''));
         if (!isNaN(rrpValue) && rrpValue > 0) {
-            document.getElementById('recommended-price-rrp').innerHTML = 
+            document.getElementById('cex-discount-cell').innerHTML = 
                 `£${rrpValue.toFixed(2)}${getMarginHTML(rrpValue)}`;
             hasAnyData = true;
         }
@@ -1000,6 +1009,31 @@ async function analyzeTable() {
         reasoningText.innerHTML = 'Prices rounded down to nearest multiple of £2.';
         analysisSection.style.display = 'block';
     }
+
+    const minMargin = 28;
+    const ebayCell = document.getElementById('recommended-price-ebay');
+
+    // Extract numeric price from eBay result (before margin)
+    let ebayPriceValue = ebayCell?.textContent.match(/£(\d+(\.\d+)?)/);
+    ebayPriceValue = ebayPriceValue ? parseFloat(ebayPriceValue[1]) : NaN;
+
+    console.log(ebayPriceValue);
+
+    if (!isNaN(ebayPriceValue) && costPrice > 0) {
+        const ebayMargin = ((ebayPriceValue - costPrice) / ebayPriceValue) * 100;
+
+        if (ebayMargin < minMargin) {
+            ebayCell.style.backgroundColor = "rgba(255,0,0,0.2)";
+            ebayCell.style.borderLeft = "3px solid red";
+            ebayCell.classList.add("low-margin-ebay");
+            console.log("low fucking margin");
+        } else {
+            ebayCell.style.backgroundColor = "";
+            ebayCell.style.borderLeft = "";
+            ebayCell.classList.remove("low-margin-ebay");
+        }
+    }
+
 }
 
 // Extract ALL competitor data (regardless of checkbox state)

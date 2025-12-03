@@ -889,35 +889,46 @@ function getCookie(name) {
     return cookieValue;
 }
 
-  const wrapper = document.getElementById("price-switcher");
-  const table = wrapper.querySelector("#price-table");
-  const headers = table.querySelectorAll("thead th");
-  const cells = table.querySelectorAll("tbody td");
-  const label = wrapper.querySelector("#current-label");
+const wrapper = document.getElementById("price-switcher");
+const table = wrapper.querySelector("#price-table");
+const headers = table.querySelectorAll("thead th");
+const cells = table.querySelectorAll("tbody td");
+const label = wrapper.querySelector("#current-label");
 
-  let index = 0;
+/* LABEL MAP: easy to read + accessible elsewhere */
+const sources = Array.from(headers).map(h => h.dataset.label);
 
-  function updateHighlight() {
-    headers.forEach(h => h.classList.remove("highlight"));
-    cells.forEach(c => c.classList.remove("highlight"));
+/* DEFAULT: Set eBay as the starting index */
+let index = sources.indexOf("eBay");
 
-    headers[index].classList.add("highlight");
-    cells[index].classList.add("highlight");
+/* Expose selected source globally */
+window.currentPriceSource = sources[index];
 
-    label.textContent = headers[index].dataset.label;
-  }
+function updateHighlight() {
+  headers.forEach(h => h.classList.remove("highlight"));
+  cells.forEach(c => c.classList.remove("highlight"));
 
-  wrapper.querySelector("#arrow-left").onclick = () => {
-    index = (index - 1 + headers.length) % headers.length;
-    updateHighlight();
-  };
+  headers[index].classList.add("highlight");
+  cells[index].classList.add("highlight");
 
-  wrapper.querySelector("#arrow-right").onclick = () => {
-    index = (index + 1) % headers.length;
-    updateHighlight();
-  };
+  label.textContent = sources[index];
 
+  /* Update global reference */
+  window.currentPriceSource = sources[index];
+}
+
+wrapper.querySelector("#arrow-left").onclick = () => {
+  index = (index - 1 + headers.length) % headers.length;
   updateHighlight();
+};
+
+wrapper.querySelector("#arrow-right").onclick = () => {
+  index = (index + 1) % headers.length;
+  updateHighlight();
+};
+
+updateHighlight(); // initializes with eBay highlighted
+
 
 
 let allCompetitorRows = [];
