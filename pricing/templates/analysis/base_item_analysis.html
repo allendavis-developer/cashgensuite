@@ -956,20 +956,32 @@ function updateCompetitorData(competitorData, competitorCount) {
     tbody.innerHTML = '';
 
     lines.forEach(line => {
-        const parts = typeof line === 'string' ? line.split(' | ') : line;
-        if (parts.length >= 5) {
-            const competitor = typeof line === 'string' ? parts[0] : line.split(' | ')[0];
-            const listingTitle = typeof line === 'string' ? parts[1] : line.split(' | ')[1];
-            const price = typeof line === 'string' ? parts[2] : line.split(' | ')[2];
-            const storeName = typeof line === 'string' ? parts[3] : line.split(' | ')[3];
-            const url = typeof line === 'string' ? parts[4] : line.split(' | ')[4];
+        if (typeof line !== 'string') return;
+        
+        // Find the price by looking for £ symbol
+        const parts = line.split(' | ');
+        
+        if (parts.length < 5) return;
+        
+        // Find which part contains the price (has £)
+        const priceIndex = parts.findIndex(part => part.includes('£'));
+        
+        if (priceIndex === -1) return; // No price found, skip this line
+        
+        // Now we know the structure:
+        const competitor = parts[0].trim();
+        const listingTitle = parts.slice(1, priceIndex).join(' | ').trim(); // Everything between source and price
+        const price = parts[priceIndex].trim();
+        const storeName = parts[priceIndex + 1]?.trim() || 'N/A';
+        const url = parts[priceIndex + 2]?.trim() || '';
 
-            const numericPrice = parseFloat(price.replace(/[^0-9.-]+/g, ""));
-            if (!isNaN(numericPrice)) prices.push(numericPrice);
+        // Validate price is purely numeric
+        const numericPrice = parseFloat(price.replace(/[^0-9.-]+/g, ""));
+        
+        if (!isNaN(numericPrice) && numericPrice > 0) {
+            prices.push(numericPrice);
 
             const row = document.createElement('tr');
-
-
             row.innerHTML = `
                 <td>${competitor}</td>
                 <td><a href="${url}" target="_blank" rel="noopener noreferrer">${listingTitle}</a></td>
@@ -982,7 +994,6 @@ function updateCompetitorData(competitorData, competitorCount) {
             allCompetitorRows.push(row);
         }
     });
-
     if (prices.length > 0) {
         const minPrice = Math.min(...prices);
         const maxPrice = Math.max(...prices);
@@ -1064,7 +1075,7 @@ function handleRangeSelect(checkbox) {
     document.querySelectorAll('#competitor-tbody tr').forEach(r => {
         const cb = r.querySelector('.range-checkbox');
         if (!cb) return;
-        r.classList.toggle('highlight-range', cb.checked);
+        {% comment %} r.classList.toggle('highlight-range', cb.checked); {% endcomment %}
     });
 
     computeSourceAverages();
