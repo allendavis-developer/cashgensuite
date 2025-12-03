@@ -994,13 +994,18 @@ async function analyzeTable() {
 
 
     // Read CEX Discount (Suggested RRP)
-    const cexDiscountCell = document.getElementById('cex-discount-cell');
-    if (cexDiscountCell && cexDiscountCell.textContent.trim() !== '-' && cexDiscountCell.textContent.trim() !== '') {
-        const rrpValue = parseFloat(cexDiscountCell.textContent.replace(/[^0-9.]/g, ''));
+    const cexPriceCell = document.getElementById('cex-mode');
+    if (cexPriceCell && cexPriceCell.textContent.trim() !== '-' && cexPriceCell.textContent.trim() !== '') {
+        const text = cexPriceCell.textContent;
+        const match = text.match(/\d+(\.\d+)?/); // first number only
+        const rrpValue = match[0] * cexDiscountPct;
+        console.log("cex value is ", match[0]);
         if (!isNaN(rrpValue) && rrpValue > 0) {
             document.getElementById('cex-discount-cell').innerHTML = 
                 `£${rrpValue.toFixed(2)}${getMarginHTML(rrpValue)}`;
             hasAnyData = true;
+            console.log("RRP VALUE BASED ON CEX_PRICE IS: ", rrpValue);
+            console.log("cex discount pct is ", cexDiscountPct);
         }
     }
 
@@ -1480,6 +1485,7 @@ function areAllAttributesFilled() {
     });
 }
 
+let cexDiscountPct = 0.8; 
 
 async function fetchSellingAndBuyingPrice() {
     const data = collectAttributeData();
@@ -1524,7 +1530,7 @@ async function fetchSellingAndBuyingPrice() {
             cexDiscountEl.textContent = originalCexDiscount || '-';
             return;
         }
-
+-
         console.log("Fetched Prices:", result);
 
         // Clear competitor table
@@ -1533,14 +1539,17 @@ async function fetchSellingAndBuyingPrice() {
         // Update with fetched prices
         cexModeEl.innerHTML = `<a href="${result.cex_url}" target="_blank" rel="noopener noreferrer">£${result.cex_selling_price}</a>`;
         cexDiscountEl.textContent = `£${result.selling_price} (${result.cex_rrp_pct*100}% of CEX Result)`;
-
+        cexDiscountPct = result.cex_rrp_pct;
         document.getElementById('cc-min').textContent = "-"; // reset these
         document.getElementById('cc-mode').textContent = "-"; // reset these
         document.getElementById('cg-min').textContent = "-"; // reset these
         document.getElementById('cg-mode').textContent = "-"; // reset these
         document.getElementById('ebay-mode').textContent = "-"; // reset these
 
-
+        document.getElementById('cex-discount-cell').textContent = "-"; // reset these
+        document.getElementById('recommended-price-cashconverters').textContent = "-"; // reset these
+        document.getElementById('recommended-price-cashgenerator').textContent = "-"; // reset these
+        document.getElementById('recommended-price-ebay').textContent = "-"; // reset these
 
     } catch (err) {
         console.error("Network error:", err);

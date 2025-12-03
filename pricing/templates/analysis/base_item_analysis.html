@@ -1184,11 +1184,7 @@ function computeSourceAverages() {
         let includeRow = false;
         let includeInVisibleSet = false;
 
-        if (source === "CEX") {
-            //  Always include CEX
-            includeRow = true;
-            includeInVisibleSet = isVisible;
-        } else if (sourceCheckedState[source]) {
+        if (sourceCheckedState[source]) {
             // Some rows checked → include only checked
             includeRow = checkbox && checkbox.checked;
             includeInVisibleSet = includeRow && isVisible;
@@ -1223,26 +1219,21 @@ function computeSourceAverages() {
         let mode;
         let modeFrequency = 0;
 
-        // For CEX, just use the first price (most relevant listing)
-        if (source === "CEX") {
-            mode = prices[0];
-            modeFrequency = 1;
-        } else {
-            // For other sources, compute mode
-            const freq = {};
-            prices.forEach(p => { 
-                const rounded = Math.round(p / 5) * 5; // Round to nearest 5
-                freq[rounded] = (freq[rounded] || 0) + 1; 
-            });
-            let highest = 0;
-            Object.keys(freq).forEach(k => {
-                if (freq[k] > highest) {
-                    highest = freq[k];
-                    mode = parseFloat(k);
-                    modeFrequency = freq[k];
-                }
-            });
-        }
+        // For other sources, compute mode
+        const freq = {};
+          prices.forEach(p => { 
+              const rounded = (source === 'EBAY') ? Math.round(p / 5) * 5 : p; 
+              freq[rounded] = (freq[rounded] || 0) + 1; 
+          });
+
+        let highest = 0;
+        Object.keys(freq).forEach(k => {
+            if (freq[k] > highest) {
+                highest = freq[k];
+                mode = parseFloat(k);
+                modeFrequency = freq[k];
+            }
+        });
 
         sourceModes[source] = mode; // Store mode for highlighting
         sourceAverages[source] = { average: avg, min, max, count: prices.length, mode, modeFrequency };
@@ -1267,9 +1258,9 @@ function computeSourceAverages() {
         const price = parseFloat(row.cells[2].textContent.replace(/[^0-9.-]+/g, ""));
         
         if (!isNaN(price) && sourceModes[source] !== undefined) {
-            const roundedPrice = Math.round(price / 5) * 5;
-            const roundedMode = Math.round(sourceModes[source] / 5) * 5;
-            
+            const roundedPrice = (source === 'EBAY') ? Math.round(price / 5) * 5 : price;
+            const roundedMode = (source === 'EBAY') ? Math.round(sourceModes[source] / 5) * 5 : sourceModes[source];
+
             if (roundedPrice === roundedMode) {
                 row.classList.add('mode-highlight');
             }
@@ -1323,6 +1314,9 @@ function computeSourceAverages() {
 
     document.getElementById('cg-min').textContent =
       cg.min ? `£${cg.min.toFixed(0)}` : '';
+
+    document.getElementById('cex-mode').textContent =
+      cex.mode ? `£${cex.mode.toFixed(0)} (${cex.modeFrequency || 0}/${cex.count || 0})` : '';
     
 }
 
