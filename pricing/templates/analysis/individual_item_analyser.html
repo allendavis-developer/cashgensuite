@@ -1532,7 +1532,7 @@ async function fetchSellingAndBuyingPrice() {
 
         // Update with fetched prices
         cexModeEl.innerHTML = `<a href="${result.cex_url}" target="_blank" rel="noopener noreferrer">£${result.cex_selling_price}</a>`;
-        cexDiscountEl.textContent = `£${result.selling_price}`;
+        cexDiscountEl.textContent = `£${result.selling_price} (${result.cex_rrp_pct*100}% of CEX Result)`;
 
         document.getElementById('cc-min').textContent = "-"; // reset these
         document.getElementById('cc-mode').textContent = "-"; // reset these

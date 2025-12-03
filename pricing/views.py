@@ -441,9 +441,12 @@ def get_selling_and_buying_price(request):
         cex_cash_trade_price = cex_listing.trade_cash_price
         cex_url = cex_listing.url
 
+        cex_price = box_data["price"]
+
+
         # Pure compute
         prices = compute_prices_from_cex_rule(
-            cex_sale_price=cex_sale_price,
+            cex_sale_price=cex_price,
             cex_cash_trade_price=cex_cash_trade_price,
             cex_url=cex_url,
             out_of_stock=False,
@@ -461,6 +464,7 @@ def get_selling_and_buying_price(request):
             date_formatted = yyyymmdd[2] + "/" + yyyymmdd[1] + "/" + yyyymmdd[0]
         else:
             date_formatted = "N/A"
+        
 
         # Send response
         return JsonResponse({
@@ -471,7 +475,7 @@ def get_selling_and_buying_price(request):
             "buying_mid_price": prices["buying_mid_price"],
             "buying_end_price": prices["buying_end_price"],
             "cex_buying_price": prices["cex_trade_cash_price"],
-            "cex_selling_price": prices["cex_sale_price"],
+            "cex_selling_price": cex_price,
             "category": prices["category"],
             "cex_url": prices["cex_url"],
             "competitor_stats": competitor_stats,
