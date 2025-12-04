@@ -963,8 +963,10 @@ function updateCompetitorData(competitorData, competitorCount) {
         
         if (parts.length < 5) return;
         
-        // Find which part contains the price (has £)
-        const priceIndex = parts.findIndex(part => part.includes('£'));
+        // Find which part is a valid price, not just any '£'
+        const priceIndex = parts.findIndex(part =>
+            /^£\s*\d[\d,]*(\.\d{1,2})?$/.test(part.trim())
+        );
         
         if (priceIndex === -1) return; // No price found, skip this line
         
@@ -1304,7 +1306,7 @@ function computeSourceAverages() {
       cc.mode ? `£${cc.mode.toFixed(0)} (${cc.modeFrequency || 0}/${cc.count || 0})` : '';
 
     document.getElementById('cc-min').textContent =
-      cc.mode ? `£${cc.mode.toFixed(0)} (${cc.modeFrequency || 0}/${cc.count || 0})` : '';
+      cc.min ? `£${cg.min.toFixed(0)}` : '';
       
     document.getElementById('ebay-mode').textContent =
     ebay.mode ? `£${ebay.mode.toFixed(0)} (${ebay.modeFrequency || 0}/${ebay.count || 0})` : '';
