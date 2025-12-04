@@ -956,9 +956,12 @@ async function analyzeTable() {
         }
 
         // MODE behaviour → always round DOWN to nearest even
-        return whole - (whole % 2);
+        if (whole % 2 === 0) {
+            return whole - 2;   // even
+        } else {
+            return whole - 1;   // odd
+        }
     }
-
 
 
     // Helper function to calculate and format margin
