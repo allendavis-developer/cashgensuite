@@ -734,7 +734,113 @@
         </table>
 
         <div class="panel-title" style="margin-top: 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #888;">SUGGESTED PRICES</div>
-        
+        <!-- Add this after the "SUGGESTED PRICES" panel title and before the price-switcher -->
+
+        <div class="rrp-mode-selector" style="margin-bottom: 1rem;">
+          <label style="font-size: 0.6875rem; font-weight: 600; color: #888888; text-transform: uppercase; margin-bottom: 0.5rem; display: block;">
+            RRP Calculation Method
+          </label>
+          
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 0.75rem; background-color: #1a1a1a; border: 1px solid #333333; border-radius: 0.25rem; transition: all 0.2s;">
+              <input 
+                type="radio" 
+                name="rrp-mode" 
+                value="mode" 
+                checked
+              >
+              <span style="font-size: 0.8125rem; color: #ffffff;">Use Mode</span>
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 0.75rem; background-color: #1a1a1a; border: 1px solid #333333; border-radius: 0.25rem; transition: all 0.2s;">
+              <input 
+                type="radio" 
+                name="rrp-mode" 
+                value="average"
+              >
+              <span style="font-size: 0.8125rem; color: #ffffff;">Use Average</span>
+            </label>
+          </div>
+        </div>
+
+        <style>
+        /* Radio button styling */
+        input[type="radio"][name="rrp-mode"] {
+          appearance: none !important;
+          -webkit-appearance: none !important;
+          -moz-appearance: none !important;
+          width: 16px;
+          height: 16px;
+          border: 2px solid #666;
+          border-radius: 50%;
+          background-color: #000;
+          cursor: pointer;
+          position: relative;
+          transition: all 0.2s;
+          flex-shrink: 0;
+        }
+
+        input[type="radio"][name="rrp-mode"]:checked {
+          background-color: #fff !important;
+          border-color: #fff !important;
+        }
+
+        input[type="radio"][name="rrp-mode"]:checked::after {
+          content: "" !important;
+          position: absolute;
+          width: 8px;
+          height: 8px;
+          background-color: #000;
+          border-radius: 50%;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          display: block;
+        }
+
+        /* Hover effects for labels */
+        .rrp-mode-selector label:has(input:checked) {
+          background-color: #222222 !important;
+          border-color: #555555 !important;
+        }
+
+        .rrp-mode-selector label:hover {
+          background-color: #222222;
+          border-color: #555555;
+        }
+
+        input[type="radio"][name="rrp-mode"]:hover {
+          border-color: #888;
+        }
+        </style>
+
+        <script>
+          // Add event listener to handle mode changes
+          document.addEventListener('DOMContentLoaded', () => {
+            const radioButtons = document.querySelectorAll('input[name="rrp-mode"]');
+            
+            radioButtons.forEach(radio => {
+              radio.addEventListener('change', (e) => {
+                const selectedMode = e.target.value;
+                console.log('RRP Mode changed to:', selectedMode);
+                
+                analyzeTable();
+                
+                // You can trigger analyzeTable() or another function here
+                if (typeof analyzeTable === 'function') {
+                  // analyzeTable();
+                }
+              });
+            });
+          });
+
+          // Helper function to get current RRP mode
+          function getRRPMode() {
+            const selected = document.querySelector('input[name="rrp-mode"]:checked');
+            return selected ? selected.value : 'mode';
+          }
+        </script>
+
         <div id="price-switcher">
           <div class="price-viewer" style="display:flex; align-items:center; gap:1rem;">
             <span id="arrow-left" class="arrow-btn">&#9664;</span>
@@ -1142,6 +1248,14 @@ document.getElementById('filter-source').addEventListener('change', applySortAnd
 let currentCexMode = null;
 
 
+// Global variables to store source statistics
+let sourceStats = {
+    CEX: null,
+    CASHCONVERTERS: null,
+    CASHGENERATOR: null,
+    EBAY: null
+};
+
 function computeSourceAverages() {
     const rows = allCompetitorRows;
 
@@ -1159,7 +1273,6 @@ function computeSourceAverages() {
         if (!sourceCheckedState[source]) sourceCheckedState[source] = false;
         if (checkbox && checkbox.checked) sourceCheckedState[source] = true;
     });
-
 
     // Collect prices based on selection logic and track rows for mode highlighting
     const sourceRowsMap = {}; // Map price to rows for each source
@@ -1190,9 +1303,8 @@ function computeSourceAverages() {
             // Some rows checked → include only checked
             includeRow = checkbox && checkbox.checked;
             includeInVisibleSet = includeRow && isVisible;
-
         } else {
-            //  No rows checked → include all
+            // No rows checked → include all
             includeRow = true;
             includeInVisibleSet = isVisible;
         }
@@ -1208,7 +1320,6 @@ function computeSourceAverages() {
         }
     });
 
-
     // Compute averages, min, max, mode
     const sourceAverages = {};
     const sourceModes = {}; // Track mode price for each source
@@ -1221,12 +1332,12 @@ function computeSourceAverages() {
         let mode;
         let modeFrequency = 0;
 
-        // For other sources, compute mode
+        // Compute mode
         const freq = {};
-          prices.forEach(p => { 
-              const rounded = (source === 'EBAY') ? Math.round(p / 5) * 5 : p; 
-              freq[rounded] = (freq[rounded] || 0) + 1; 
-          });
+        prices.forEach(p => { 
+            const rounded = (source === 'EBAY') ? Math.round(p / 5) * 5 : p; 
+            freq[rounded] = (freq[rounded] || 0) + 1; 
+        });
 
         let highest = 0;
         Object.keys(freq).forEach(k => {
@@ -1238,9 +1349,16 @@ function computeSourceAverages() {
         });
 
         sourceModes[source] = mode; // Store mode for highlighting
-        sourceAverages[source] = { average: avg, min, max, count: prices.length, mode, modeFrequency };
+        sourceAverages[source] = { 
+            average: avg, 
+            min, 
+            max, 
+            count: prices.length, 
+            mode, 
+            modeFrequency 
+        };
 
-        //  Compute average of all values UNDER the mode
+        // Compute average of all values UNDER the mode
         const valuesUnderMode = prices.filter(p => p < mode);
         const underModeAverage = valuesUnderMode.length > 0 
             ? valuesUnderMode.reduce((a, b) => a + b, 0) / valuesUnderMode.length 
@@ -1250,6 +1368,15 @@ function computeSourceAverages() {
             console.log(`${source} - Mode: £${mode}, Average of Values Under Mode: £${underModeAverage?.toFixed(2) || '-'}`);
         }
     });
+
+    // Store in global variables for external access
+    const normalized = {};
+    Object.keys(sourceAverages).forEach(k => normalized[k.toUpperCase()] = sourceAverages[k]);
+    
+    sourceStats.CEX = normalized['CEX'] || null;
+    sourceStats.CASHCONVERTERS = normalized['CASHCONVERTERS'] || null;
+    sourceStats.CASHGENERATOR = normalized['CASHGENERATOR'] || null;
+    sourceStats.EBAY = normalized['EBAY'] || null;
 
     // Highlight mode rows (including all prices that round to the mode)
     rows.forEach(row => {
@@ -1268,8 +1395,6 @@ function computeSourceAverages() {
             }
         }
     });
-
-    // ... rest of the function continues as before (market stats update, etc.)
 
     // Update market stats based only on the visible prices
     const marketStats = document.getElementById('market-stats');
@@ -1290,36 +1415,44 @@ function computeSourceAverages() {
     const tbody = document.getElementById('analysis-tbody');
     if (!tbody) return;
 
-    const normalized = {};
-    Object.keys(sourceAverages).forEach(k => normalized[k.toUpperCase()] = sourceAverages[k]);
-
-    const cex = normalized['CEX'] || {};
-    const cc = normalized['CASHCONVERTERS'] || {};
-    const cg = normalized['CASHGENERATOR'] || {};
-    const ebay = normalized['EBAY'] || {};
-
+    const cex = sourceStats.CEX || {};
+    const cc = sourceStats.CASHCONVERTERS || {};
+    const cg = sourceStats.CASHGENERATOR || {};
+    const ebay = sourceStats.EBAY || {};
 
     currentCexMode = cex.mode || null; // store globally for use by the event listener
     cexMinusDiscount = 0.8 * cex.mode;
 
     document.getElementById('cc-mode').textContent =
-      cc.mode ? `£${cc.mode.toFixed(0)} (${cc.modeFrequency || 0}/${cc.count || 0})` : '';
+        cc.mode ? `£${cc.mode.toFixed(0)} (${cc.modeFrequency || 0}/${cc.count || 0})` : '';
 
     document.getElementById('cc-min').textContent =
-      cc.min ? `£${cg.min.toFixed(0)}` : '';
-      
+        cc.min ? `£${cc.min.toFixed(0)}` : '';
+        
     document.getElementById('ebay-mode').textContent =
-    ebay.mode ? `£${ebay.mode.toFixed(0)} (${ebay.modeFrequency || 0}/${ebay.count || 0})` : '';
-      
+        ebay.mode ? `£${ebay.mode.toFixed(0)} (${ebay.modeFrequency || 0}/${ebay.count || 0})` : '';
+        
     document.getElementById('cg-mode').textContent =
-      cg.mode ? `£${cg.mode.toFixed(0)} (${cg.modeFrequency || 0}/${cg.count || 0})` : '';
+        cg.mode ? `£${cg.mode.toFixed(0)} (${cg.modeFrequency || 0}/${cg.count || 0})` : '';
 
     document.getElementById('cg-min').textContent =
-      cg.min ? `£${cg.min.toFixed(0)}` : '';
+        cg.min ? `£${cg.min.toFixed(0)}` : '';
 
     document.getElementById('cex-mode').textContent =
-      cex.mode ? `£${cex.mode.toFixed(0)} (${cex.modeFrequency || 0}/${cex.count || 0})` : '';
+        cex.mode ? `£${cex.mode.toFixed(0)} (${cex.modeFrequency || 0}/${cex.count || 0})` : '';
     
+    analyzeTable(); // this exists in individual_item_analyser
+}
+
+// Helper function to get stats for a specific source
+function getSourceStats(sourceName) {
+    const normalized = sourceName.toUpperCase();
+    return sourceStats[normalized] || null;
+}
+
+// Helper function to get all source stats
+function getAllSourceStats() {
+    return { ...sourceStats };
 }
 
 // Store cost price

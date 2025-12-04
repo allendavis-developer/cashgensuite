@@ -146,7 +146,7 @@
         <label><input id="ebay-source-checkbox" type="checkbox" name="competitors" value="eBay" checked> eBay</label>
 
         <!-- After your existing eBay checkbox -->
-        <div id="ebay-sold-container" style="display: none; margin-left: 1.5rem; margin-top: 0.5rem;">
+        <div id="ebay-sold-container" style="display: block; margin-left: 1.5rem; margin-top: 0.5rem;">
         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
             <input type="checkbox" id="ebay-sold" style="cursor: pointer;" checked>
             <span class="input-label" style="margin: 0;">eBay - Filter for Completed & Sold?</span>
@@ -164,12 +164,12 @@
       <span id="button-text">SCRAPE PRICES</span>
       <span id="button-spinner" class="loading-spinner hidden"></span>
     </button>
-    {% block analyze_range_button %}
+    {% comment %} {% block analyze_range_button %}
       <button type="button" id="analyze-btn" class="analyze-button" onclick="analyzeTable()">
         <span id="button-text">GET SUGGESTIVE PRICE FROM RANGE</span>
         <span id="button-spinner" class="loading-spinner hidden"></span>
       </button>
-    {% endblock analyze_range_button %}
+    {% endblock analyze_range_button %} {% endcomment %}
     {% block analysis_actions %}
   {% block confirm_list_btn %}
   <button id="confirm-list-btn" class="analyze-button" style="margin-bottom:20px;">
@@ -929,16 +929,36 @@ async function analyzeTable() {
 
     let hasAnyData = false;
 
-    // Helper function to round down to nearest multiple of 2
-    function roundDownToNearest2(value) {
-        if (value % 2 !== 0) {
-            // odd → drop to nearest even
-            return value - 1;
-        } else {
-            // even → drop two steps
-            return value - 2;
+    // Get current mode
+    const mode = getRRPMode(); // Returns 'mode' or 'average'
+
+    function getRRPValueFromStats(sourceKey, mode) {
+        const stats = getSourceStats(sourceKey);
+        if (!stats) return NaN;
+
+        if (mode === 'average') {
+            return stats.average || NaN;
         }
+
+        return stats.mode || NaN; // old system
     }
+
+    function getNearestMultipleOf2(value, modeType) {
+        const whole = Math.floor(value);
+
+        if (modeType === 'average') {
+            // Round to nearest even number
+            const up = whole + (whole % 2 === 0 ? 0 : 1);
+            const down = whole - (whole % 2);
+            
+            // Choose nearest
+            return (value - down < up - value) ? down : up;
+        }
+
+        // MODE behaviour → always round DOWN to nearest even
+        return whole - (whole % 2);
+    }
+
 
 
     // Helper function to calculate and format margin
@@ -953,61 +973,51 @@ async function analyzeTable() {
     }
 
     // Read Cash Converters Mode
-    const ccModeCell = document.getElementById('cc-mode');
-    if (ccModeCell && ccModeCell.textContent.trim() !== '-' && ccModeCell.textContent.trim() !== '') {
-        const match = ccModeCell.textContent.match(/\d+(\.\d+)?/);
-        const ccModeValue = match ? parseFloat(match[0]) : NaN;
-        if (!isNaN(ccModeValue) && ccModeValue > 0) {
-            const roundedPrice = roundDownToNearest2(ccModeValue);
-            document.getElementById('recommended-price-cashconverters').innerHTML = 
-                `£${roundedPrice.toFixed(2)}${getMarginHTML(roundedPrice)}`;
-            hasAnyData = true;
-        }
+    const ccValue = getRRPValueFromStats('CASHCONVERTERS', mode);
+    if (!isNaN(ccValue) && ccValue > 0) {
+        const rounded = getNearestMultipleOf2(ccValue, mode);
+        document.getElementById('recommended-price-cashconverters').innerHTML =
+            `£${rounded.toFixed(2)}${getMarginHTML(rounded)}`;
+        hasAnyData = true;
     }
 
 
     // Read Cash Generator Mode
-    const cgModeCell = document.getElementById('cg-mode');
-    if (cgModeCell && cgModeCell.textContent.trim() !== '-' && cgModeCell.textContent.trim() !== '') {
-        const match = cgModeCell.textContent.match(/\d+(\.\d+)?/);
-        const cgModeValue = match ? parseFloat(match[0]) : NaN;
-        if (!isNaN(cgModeValue) && cgModeValue > 0) {
-            const roundedPrice = roundDownToNearest2(cgModeValue);
-            document.getElementById('recommended-price-cashgenerator').innerHTML = 
-                `£${roundedPrice.toFixed(2)}${getMarginHTML(roundedPrice)}`;
-            hasAnyData = true;
-        }
+    const cgValue = getRRPValueFromStats('CASHGENERATOR', mode);
+    if (!isNaN(cgValue) && cgValue > 0) {
+        const rounded = getNearestMultipleOf2(cgValue, mode);
+        document.getElementById('recommended-price-cashgenerator').innerHTML =
+            `£${rounded.toFixed(2)}${getMarginHTML(rounded)}`;
+        hasAnyData = true;
     }
 
     // Read eBay Mode
-    const ebayModeCell = document.getElementById('ebay-mode');
-    if (ebayModeCell && ebayModeCell.textContent.trim() !== '-' && ebayModeCell.textContent.trim() !== '') {
-        const match = ebayModeCell.textContent.match(/\d+(\.\d+)?/);
-        const ebayModeValue = match ? parseFloat(match[0]) : NaN;
-        if (!isNaN(ebayModeValue) && ebayModeValue > 0) {
-            const roundedPrice = roundDownToNearest2(ebayModeValue);
-            document.getElementById('recommended-price-ebay').innerHTML =
-                `£${roundedPrice.toFixed(2)}${getMarginHTML(roundedPrice)}`;
-            hasAnyData = true;
-        }
+    const ebayValue = getRRPValueFromStats('EBAY', mode);
+    if (!isNaN(ebayValue) && ebayValue > 0) {
+        const rounded = getNearestMultipleOf2(ebayValue, mode);
+        document.getElementById('recommended-price-ebay').innerHTML =
+            `£${rounded.toFixed(2)}${getMarginHTML(rounded)}`;
+        hasAnyData = true;
     }
 
 
-    // Read CEX Discount (Suggested RRP)
+  // Read CEX Discount (Suggested RRP)
     const cexPriceCell = document.getElementById('cex-mode');
     if (cexPriceCell && cexPriceCell.textContent.trim() !== '-' && cexPriceCell.textContent.trim() !== '') {
         const text = cexPriceCell.textContent;
         const match = text.match(/\d+(\.\d+)?/); // first number only
-        const rrpValue = match[0] * cexDiscountPct;
-        console.log("cex value is ", match[0]);
-        if (!isNaN(rrpValue) && rrpValue > 0) {
+        const baseValue = parseFloat(match[0]);
+
+        const rawRRP = baseValue * cexDiscountPct;
+        const roundedRRP = Math.round(rawRRP);
+
+        if (!isNaN(roundedRRP) && roundedRRP > 0) {
             document.getElementById('cex-discount-cell').innerHTML = 
-                `£${rrpValue.toFixed(2)}${getMarginHTML(rrpValue)} (${cexDiscountPct*100}% of CEX Price)`;
+                `£${roundedRRP.toFixed(2)}${getMarginHTML(roundedRRP)} (${cexDiscountPct * 100}% of CEX Price)`;
             hasAnyData = true;
-            console.log("RRP VALUE BASED ON CEX_PRICE IS: ", rrpValue);
-            console.log("cex discount pct is ", cexDiscountPct);
         }
     }
+
 
     // Show analysis section if any data was found
     if (hasAnyData) {
@@ -1031,14 +1041,12 @@ async function analyzeTable() {
             ebayCell.style.backgroundColor = "rgba(255,0,0,0.2)";
             ebayCell.style.borderLeft = "3px solid red";
             ebayCell.classList.add("low-margin-ebay");
-            console.log("low fucking margin");
         } else {
             ebayCell.style.backgroundColor = "";
             ebayCell.style.borderLeft = "";
             ebayCell.classList.remove("low-margin-ebay");
         }
     }
-
 }
 
 // Extract ALL competitor data (regardless of checkbox state)
