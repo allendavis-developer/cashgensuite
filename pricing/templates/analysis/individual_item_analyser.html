@@ -708,9 +708,9 @@ confirmListBtn.addEventListener('click', () => {
     let priceValue = document.getElementById(selectedCellId)?.textContent.trim() || "";
 
     priceValue = parseFloat(priceValue.replace(/[^0-9.]/g, '')) || 0;
-    priceValue = roundToNearest2(priceValue);
+    {% comment %} priceValue = roundToNearest2(priceValue); {% endcomment %}
 
-    modalPrice.value = priceValue.toFixed(2);
+    modalPrice.value = priceValue.toFixed(0);
 });
 
 
