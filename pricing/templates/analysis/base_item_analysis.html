@@ -195,11 +195,6 @@
 
   .competitor-table td {
     word-wrap: break-word;
-    max-width: 0;
-  }
-
-  .competitor-table td:nth-child(2) {
-    max-width: 300px;
   }
 
   .market-stats {
@@ -880,14 +875,17 @@
           <table class="competitor-table" id="price-table">
             <thead>
               <tr>
+                <th data-label="Retail Price">Retail Price</th>
                 <th data-label="Suggested RRP">Suggested RRP</th>
                 <th data-label="Cash Converters">Cash Converters</th>
                 <th data-label="Cash Generator">Cash Generator</th>
                 <th data-label="eBay">eBay</th>
+
               </tr>
             </thead>
             <tbody>
               <tr>
+                <td id="current-retail-price">-</td>
                 <td id="cex-discount-cell">-</td>
                 <td id="recommended-price-cashconverters">-</td>
                 <td id="recommended-price-cashgenerator">-</td>
@@ -1034,7 +1032,7 @@ const label = wrapper.querySelector("#current-label");
 const sources = Array.from(headers).map(h => h.dataset.label);
 
 /* DEFAULT: Set eBay as the starting index */
-let index = sources.indexOf("eBay");
+let index = sources.indexOf("Retail Price");
 
 /* Expose selected source globally */
 window.currentPriceSource = sources[index];

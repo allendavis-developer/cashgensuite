@@ -42,6 +42,7 @@ def get_prefilled_data(request):
         "cost_price": request.GET.get("cost_price", ""),
         "barcode": request.GET.get("barcode", ""),
         "branch": request.GET.get("branch", ""),  
+        "retail_price": request.GET.get("branch", ""),
     }
 
 
@@ -338,7 +339,7 @@ def compute_prices_from_cex_rule(
             f"Applied CeX buying rule ({cex_rule.cex_pct * 100:.0f}%)."
         )
     else:
-        reason_buying_start = "Set to 50% of selling price."
+        reason_buying_start = "Matching CEX's margin."
 
     buying_mid_price = round((buying_start_price + buying_end_price) / 2)
     reason_buying_mid = "Average of start and end prices."

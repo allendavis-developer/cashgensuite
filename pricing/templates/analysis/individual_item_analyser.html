@@ -142,7 +142,7 @@
       <div id="competitor-checkboxes" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px;">
         <label><input type="checkbox" name="competitors" value="CashConverters" checked> CashConverters</label>
         <label><input type="checkbox" name="competitors" value="CashGenerator" checked> CashGenerator</label>
-        <label><input type="checkbox" name="competitors" value="CEX"> CEX</label>
+        {% comment %} <label><input type="checkbox" name="competitors" value="CEX"> CEX</label> {% endcomment %}
         <label><input id="ebay-source-checkbox" type="checkbox" name="competitors" value="eBay" checked> eBay</label>
 
         <!-- After your existing eBay checkbox -->
@@ -704,7 +704,9 @@ const priceCellMap = {
     "Suggested RRP": "cex-discount-cell",
     "Cash Converters": "recommended-price-cashconverters",
     "Cash Generator": "recommended-price-cashgenerator",
-    "eBay": "recommended-price-ebay"
+    "eBay": "recommended-price-ebay",
+    "Retail Price": "current-retail-price",
+
 };
 
 confirmListBtn.addEventListener('click', () => {
@@ -718,11 +720,11 @@ confirmListBtn.addEventListener('click', () => {
     /* Fetch price from whichever column is selected */
     const selectedCellId = priceCellMap[window.currentPriceSource];
     let priceValue = document.getElementById(selectedCellId)?.textContent.trim() || "";
+    const match = priceValue.match(/\d+(\.\d+)?/);
+    const parsed = match ? parseFloat(match[0]) : 0;
+    console.log(parsed); // 399.99
 
-    priceValue = parseFloat(priceValue.replace(/[^0-9.]/g, '')) || 0;
-    {% comment %} priceValue = roundToNearest2(priceValue); {% endcomment %}
-
-    modalPrice.value = priceValue.toFixed(0);
+    modalPrice.value = parsed;
 });
 
 
@@ -994,9 +996,7 @@ async function analyzeTable() {
     function getMarginHTML(price) {
         if (costPrice > 0) {
             const margin = ((price - costPrice) / price) * 100;
-            const minMargin = parseFloat(document.getElementById('minimum-margin')?.value) || 0;
-            const color = margin < minMargin ? '#f00' : '#0f0';
-            return ` (<span style="color:${color};">${margin.toFixed(1)}%</span> margin)`;
+            return ` (<span>${margin.toFixed(1)}%</span> margin)`;
         }
         return ` (<span style="color:#888;">n/a</span>)`;
     }
@@ -1030,7 +1030,7 @@ async function analyzeTable() {
     }
 
 
-  // Read CEX Discount (Suggested RRP)
+    // Read CEX Discount (Suggested RRP)
     const cexPriceCell = document.getElementById('cex-mode');
     if (cexPriceCell && cexPriceCell.textContent.trim() !== '-' && cexPriceCell.textContent.trim() !== '') {
         const text = cexPriceCell.textContent;
@@ -1046,7 +1046,6 @@ async function analyzeTable() {
             hasAnyData = true;
         }
     }
-
 
     // Show analysis section if any data was found
     if (hasAnyData) {
@@ -1227,6 +1226,34 @@ document.addEventListener('DOMContentLoaded', function() {
     const costInput = document.getElementById('cost-price');
     if (costInput && costInput.value) {
         setRRPAfterTable(costInput.value);
+    }
+
+    function getRetailPriceFromURL() {
+        const params = new URLSearchParams(window.location.search);
+        const retail = parseFloat(params.get("retail_price")) || 0;
+        console.log(retail);
+        return retail;
+    }
+
+      // Helper function to calculate and format margin. TODO: THIS IS DUPLICATED IN ANALYZE_TABLE!!!#
+    const costPrice = costInput.value;
+    function getMarginHTML(price) {
+        if (costPrice > 0) {
+            const margin = ((price - costPrice) / price) * 100;
+            return ` (<span>${margin.toFixed(1)}%</span> margin)`;
+        }
+        return ` (<span style="color:#888;">n/a</span>)`;
+    }
+
+
+    // RRP from Retail Price (URL)
+    const retailValue = getRetailPriceFromURL()
+    if (!isNaN(retailValue) && retailValue > 0) {
+
+        document.getElementById('current-retail-price').innerHTML =
+            `£${retailValue.toFixed(2)}${getMarginHTML(retailValue)}`;
+
+        hasAnyData = true;
     }
 });
 

@@ -408,13 +408,15 @@ function viewAnalysis(barcode) {
 
   // Build query params for the analyzer
   const params = new URLSearchParams({
-    name: product.name || '',
-    description: product.description || '',
-    barserial: product.barserial || '',
-    cost_price: product.cost_price || '',
-    barcode: product.barcode || '',
-    branch: product.branch || ''   
+      name: product.name || '',
+      description: product.description || '',
+      barserial: product.barserial || '',
+      cost_price: product.cost_price || '',
+      retail_price: product.retail_price || '',   
+      barcode: product.barcode || '',
+      branch: product.branch || ''
   });
+
 
   // Assuming your analyzer view is named 'individual_item_analyser'
   const baseUrl = "{% url 'individual_item_analyser' %}";
