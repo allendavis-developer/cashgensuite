@@ -142,7 +142,7 @@
       <div id="competitor-checkboxes" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px;">
         <label><input type="checkbox" name="competitors" value="CashConverters" checked> CashConverters</label>
         <label><input type="checkbox" name="competitors" value="CashGenerator" checked> CashGenerator</label>
-        <label><input type="checkbox" name="competitors" value="CEX" checked> CEX</label>
+        <label><input type="checkbox" name="competitors" value="CEX"> CEX</label>
         <label><input id="ebay-source-checkbox" type="checkbox" name="competitors" value="eBay" checked> eBay</label>
 
         <!-- After your existing eBay checkbox -->
@@ -150,6 +150,14 @@
         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
             <input type="checkbox" id="ebay-sold" style="cursor: pointer;" checked>
             <span class="input-label" style="margin: 0;">eBay - Filter for Completed & Sold?</span>
+        </label>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="checkbox" id="ebay-sold" style="cursor: pointer;" checked>
+            <span class="input-label" style="margin: 0;">eBay - Filter for UK Only?</span>
+        </label>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="checkbox" id="ebay-sold" style="cursor: pointer;" checked>
+            <span class="input-label" style="margin: 0;">eBay - Filter for Used?</span>
         </label>
         </div>
 
@@ -839,7 +847,7 @@ async function scrapePrices() {
             
             console.log("saved data successfully", formattedData);
 
-            updateCompetitorData(formattedData, formattedData.length);
+            updateCompetitorData(formattedData, selectedCompetitors);
             if (response.partial) {
                 alert("Scraping partially completed. Some sites may have timed out.");
             } 
@@ -939,8 +947,12 @@ async function analyzeTable() {
         if (mode === 'average') {
             return stats.average || NaN;
         }
+        
+        if (mode === 'median') {
+            return stats.median || NaN;
+        }
 
-        return stats.mode || NaN; // old system
+        return stats.mode || NaN; // default/old system
     }
 
     function getNearestMultipleOf2(value, modeType) {
@@ -1545,7 +1557,7 @@ async function fetchSellingAndBuyingPrice() {
         console.log("Fetched Prices:", result);
 
         // Clear competitor table
-        updateCompetitorData([], 0);
+        updateCompetitorData([], []);
 
         // Update with fetched prices
         cexModeEl.innerHTML = `<a href="${result.cex_url}" target="_blank" rel="noopener noreferrer">£${result.cex_selling_price}</a>`;
@@ -1704,7 +1716,7 @@ document.getElementById('category').addEventListener('change', async (e) => {
     const categoryId = e.target.value;
 
       // Clear competitor table
-    updateCompetitorData([], 0);
+    updateCompetitorData([], []);
 
     setPrimarySelectDisabled('subcategory', true);
     setPrimarySelectDisabled('model', true);
@@ -1753,7 +1765,7 @@ async function loadModelsAndPopulate() {
     const subcategoryId = getPrimarySelectValue('subcategory');
 
     // Clear competitor table
-    updateCompetitorData([], 0);
+    updateCompetitorData([], []);
 
     const modelSelect = document.getElementById('model');
     const modelAddBtn = modelSelect?.nextElementSibling;
@@ -1796,7 +1808,7 @@ async function loadListings() {
     const modelId = getPrimarySelectValue('model') || e.target.value;
     
     // Clear competitor table
-    updateCompetitorData([], 0);
+    updateCompetitorData([], []);
     
     // Send model selection to backend - this will return variants
     await sendFieldUpdate('model', modelId);

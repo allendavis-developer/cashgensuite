@@ -713,11 +713,21 @@
             <tr>
               <th>CEX Result</th>
               {% comment %} <th>Suggested RRP</th> {% endcomment %}
-              <th>Cash Converters Lowest</th>
-              <th>Cash Converters Mode</th>
-              <th>Cash Generator Lowest</th>
-              <th>Cash Generator Mode</th>
-              <th>eBay Mode</th>
+              <th>CC Min</th>
+              <th>CC AVG</th>
+              <th>CC Mode</th>
+              <th>CC Median</th>
+
+              <th>CG Min</th>
+              <th>CG AVG</th>
+              <th>CG Mode</th>
+              <th>CG Median</th>
+              
+              <th>eBay Min</th>
+              <th>ebay AVG</th>
+              <th>ebay Mode</th>
+              <th>ebay Median</th>
+              
             </tr>
           </thead>
           <tbody id="analysis-tbody">
@@ -725,10 +735,19 @@
               <td id="cex-mode">-</td>
               {% comment %} <td id="cex-discount-cell">-</td> {% endcomment %}
               <td id="cc-min">-</td>
+              <td id="cc-avg">-</td>
               <td id="cc-mode">-</td>
+              <td id="cc-median">-</td>
+
               <td id="cg-min">-</td>
+              <td id="cg-avg">-</td>
               <td id="cg-mode">-</td>
+              <td id="cg-median">-</td>
+
+              <td id="ebay-min">-</td>
+              <td id="ebay-avg">-</td>
               <td id="ebay-mode">-</td>
+              <td id="ebay-median">-</td>
             </tr>
           </tbody>
         </table>
@@ -760,6 +779,16 @@
               >
               <span style="font-size: 0.8125rem; color: #ffffff;">Use Average</span>
             </label>
+
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 0.75rem; background-color: #1a1a1a; border: 1px solid #333333; border-radius: 0.25rem; transition: all 0.2s;">
+              <input 
+                type="radio" 
+                name="rrp-mode" 
+                value="median"
+              >
+              <span style="font-size: 0.8125rem; color: #ffffff;">Use Median</span>
+            </label>
+
           </div>
         </div>
 
@@ -1040,55 +1069,43 @@ updateHighlight(); // initializes with eBay highlighted
 let allCompetitorRows = [];
 let currentCostPrice = null; // ✅ Store cost price globally
 
-function updateCompetitorData(competitorData, competitorCount) {
+function updateCompetitorData(competitorData, scrapedCompetitors) {
     const tbody = document.getElementById('competitor-tbody');
     const competitorNumber = document.getElementById('competitor-number');
     const marketStats = document.getElementById('market-stats');
     const dataWarning = document.getElementById('data-warning');
     const warningCount = document.getElementById('warning-count');
 
-    competitorNumber.textContent = competitorCount;
-    allCompetitorRows = [];
-
-    if (competitorCount === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #666666; font-style: italic;">No competitor data available</td></tr>';
-        marketStats.style.display = 'none';
-        dataWarning.style.display = 'none';
-        return;
-    }
+    // Remove only the rows for scraped competitors
+    allCompetitorRows = allCompetitorRows.filter(row => {
+        const competitorName = row.cells[0].textContent;
+        return !scrapedCompetitors.includes(competitorName);
+    });
 
     const lines = typeof competitorData === 'string' ? competitorData.trim().split('\n').filter(line => line.trim()) : competitorData;
-    const prices = [];
-    tbody.innerHTML = '';
-
+    
     lines.forEach(line => {
         if (typeof line !== 'string') return;
         
-        // Find the price by looking for £ symbol
         const parts = line.split(' | ');
         
         if (parts.length < 5) return;
         
-        // Find which part is a valid price, not just any '£'
         const priceIndex = parts.findIndex(part =>
             /^£\s*\d[\d,]*(\.\d{1,2})?$/.test(part.trim())
         );
         
-        if (priceIndex === -1) return; // No price found, skip this line
+        if (priceIndex === -1) return;
         
-        // Now we know the structure:
         const competitor = parts[0].trim();
-        const listingTitle = parts.slice(1, priceIndex).join(' | ').trim(); // Everything between source and price
+        const listingTitle = parts.slice(1, priceIndex).join(' | ').trim();
         const price = parts[priceIndex].trim();
         const storeName = parts[priceIndex + 1]?.trim() || 'N/A';
         const url = parts[priceIndex + 2]?.trim() || '';
 
-        // Validate price is purely numeric
         const numericPrice = parseFloat(price.replace(/[^0-9.-]+/g, ""));
         
         if (!isNaN(numericPrice) && numericPrice > 0) {
-            prices.push(numericPrice);
-
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${competitor}</td>
@@ -1102,29 +1119,77 @@ function updateCompetitorData(competitorData, competitorCount) {
             allCompetitorRows.push(row);
         }
     });
-    if (prices.length > 0) {
-        const minPrice = Math.min(...prices);
-        const maxPrice = Math.max(...prices);
-        const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
 
-        document.getElementById('price-range').textContent = `£${minPrice} - £${maxPrice}`;
-        document.getElementById('price-average').textContent = `£${avgPrice.toFixed(0)}`;
-        marketStats.style.display = 'block';
 
-        if (competitorCount <= 2) {
-            warningCount.textContent = competitorCount;
-            dataWarning.style.display = 'block';
-        } else {
-            dataWarning.style.display = 'none';
-        }
+    competitorNumber.textContent = allCompetitorRows.length;
+
+    if (allCompetitorRows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #666666; font-style: italic;">No competitor data available</td></tr>';
+        marketStats.style.display = 'none';
+        dataWarning.style.display = 'none';
+        return;
     }
 
     applySortAndFilter();
-    // Wait for the DOM to finish updating before computing
-    
     console.log("computing averages");
 }
 
+// Add this event listener in your DOMContentLoaded or script section
+document.getElementById('filter-source').addEventListener('change', function() {
+    computeFilteredStatistics();
+});
+
+function computeFilteredStatistics() {
+    // Get currently visible rows from the tbody
+    const tbody = document.getElementById('competitor-tbody');
+    const visibleRows = Array.from(tbody.querySelectorAll('tr')).filter(row => {
+        // Skip empty state rows
+        return row.cells.length >= 4 && !row.cells[0].hasAttribute('colspan');
+    });
+
+    if (visibleRows.length === 0) {
+        // No data to compute
+        document.getElementById('price-range').textContent = '-';
+        document.getElementById('price-average').textContent = '-';
+        return;
+    }
+
+    // Extract prices from visible rows
+    const prices = visibleRows.map(row => {
+        const priceText = row.cells[2].textContent;
+        return parseFloat(priceText.replace(/[^0-9.-]+/g, ""));
+    }).filter(price => !isNaN(price) && price > 0);
+
+    if (prices.length === 0) return;
+
+    // Compute statistics
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+
+    // Median
+    const sortedPrices = [...prices].sort((a, b) => a - b);
+    const medianPrice = sortedPrices.length % 2 === 0
+        ? (sortedPrices[sortedPrices.length / 2 - 1] + sortedPrices[sortedPrices.length / 2]) / 2
+        : sortedPrices[Math.floor(sortedPrices.length / 2)];
+
+    // Mode
+    const frequencyMap = {};
+    let modePrice = null;
+    let highestFrequency = 0;
+
+    prices.forEach(price => {
+        frequencyMap[price] = (frequencyMap[price] || 0) + 1;
+        if (frequencyMap[price] > highestFrequency) {
+            highestFrequency = frequencyMap[price];
+            modePrice = price;
+        }
+    });
+
+    // Update UI
+    document.getElementById('price-range').textContent = `£${minPrice} - £${maxPrice}`;
+    document.getElementById('price-average').textContent = `£${avgPrice.toFixed(0)}`;
+}
 
 // Keep a global or higher-scope object to track last clicked per source
 let lastCheckedIndexBySource = {};
@@ -1240,6 +1305,9 @@ function applySortAndFilter() {
         // Recompute averages/stats after re-render so summary matches current checkbox state
 
     requestAnimationFrame(() => computeSourceAverages());
+        // ✅ Compute statistics based on currently visible rows
+    computeFilteredStatistics();
+
 }
 
 document.getElementById('sort-price').addEventListener('change', applySortAndFilter);
@@ -1328,6 +1396,12 @@ function computeSourceAverages() {
         const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
         const min = Math.min(...prices);
         const max = Math.max(...prices);
+        // Add this median calculation
+      const sortedPrices = [...prices].sort((a, b) => a - b);
+      const median = sortedPrices.length % 2 === 0
+          ? (sortedPrices[sortedPrices.length / 2 - 1] + sortedPrices[sortedPrices.length / 2]) / 2
+          : sortedPrices[Math.floor(sortedPrices.length / 2)];
+
 
         let mode;
         let modeFrequency = 0;
@@ -1350,23 +1424,14 @@ function computeSourceAverages() {
 
         sourceModes[source] = mode; // Store mode for highlighting
         sourceAverages[source] = { 
-            average: avg, 
-            min, 
-            max, 
-            count: prices.length, 
-            mode, 
-            modeFrequency 
-        };
-
-        // Compute average of all values UNDER the mode
-        const valuesUnderMode = prices.filter(p => p < mode);
-        const underModeAverage = valuesUnderMode.length > 0 
-            ? valuesUnderMode.reduce((a, b) => a + b, 0) / valuesUnderMode.length 
-            : null;
-
-        if (source === 'CASHCONVERTERS' || source === 'CASHGENERATOR') {
-            console.log(`${source} - Mode: £${mode}, Average of Values Under Mode: £${underModeAverage?.toFixed(2) || '-'}`);
-        }
+          average: avg, 
+          min, 
+          max, 
+          median,  // Add this line
+          count: prices.length, 
+          mode, 
+          modeFrequency 
+      };
     });
 
     // Store in global variables for external access
@@ -1424,23 +1489,54 @@ function computeSourceAverages() {
     cexMinusDiscount = 0.8 * cex.mode;
 
     document.getElementById('cc-mode').textContent =
-        cc.mode ? `£${cc.mode.toFixed(0)} (${cc.modeFrequency || 0}/${cc.count || 0})` : '';
+        cc.mode ? `£${cc.mode.toFixed(0)} (${cc.modeFrequency || 0}/${cc.count || 0})` : '-';
 
     document.getElementById('cc-min').textContent =
-        cc.min ? `£${cc.min.toFixed(0)}` : '';
+        cc.min ? `£${cc.min.toFixed(0)}` : '-';
+
+    document.getElementById('cc-avg').textContent =
+          cc.average ? `£${cc.average.toFixed(0)}` : '-';
+
+      document.getElementById('cc-median').textContent =
+          cc.median ? `£${cc.median.toFixed(0)}` : '-';
         
     document.getElementById('ebay-mode').textContent =
-        ebay.mode ? `£${ebay.mode.toFixed(0)} (${ebay.modeFrequency || 0}/${ebay.count || 0})` : '';
+        ebay.mode ? `£${ebay.mode.toFixed(0)} (${ebay.modeFrequency || 0}/${ebay.count || 0})` : '-';
         
     document.getElementById('cg-mode').textContent =
-        cg.mode ? `£${cg.mode.toFixed(0)} (${cg.modeFrequency || 0}/${cg.count || 0})` : '';
+        cg.mode ? `£${cg.mode.toFixed(0)} (${cg.modeFrequency || 0}/${cg.count || 0})` : '-';
 
     document.getElementById('cg-min').textContent =
-        cg.min ? `£${cg.min.toFixed(0)}` : '';
+        cg.min ? `£${cg.min.toFixed(0)}` : '-';
 
-    document.getElementById('cex-mode').textContent =
-        cex.mode ? `£${cex.mode.toFixed(0)} (${cex.modeFrequency || 0}/${cex.count || 0})` : '';
+      {% comment %} document.getElementById('cex-mode').textContent =
+          cex.mode ? `£${cex.mode.toFixed(0)} (${cex.modeFrequency || 0}/${cex.count || 0})` : '-'; {% endcomment %}
     
+
+    
+          // --- CASH CONVERTERS ---
+
+
+
+      // --- CASH GENERATOR ---
+      document.getElementById('cg-avg').textContent =
+          cg.average ? `£${cg.average.toFixed(0)}` : '-';
+
+      document.getElementById('cg-median').textContent =
+          cg.median ? `£${cg.median.toFixed(0)}` : '-';
+
+
+      // --- EBAY ---
+      document.getElementById('ebay-min').textContent =
+          ebay.min ? `£${ebay.min.toFixed(0)}` : '-';
+
+      document.getElementById('ebay-avg').textContent =
+          ebay.average ? `£${ebay.average.toFixed(0)}` : '-';
+
+      document.getElementById('ebay-median').textContent =
+          ebay.median ? `£${ebay.median.toFixed(0)}` : '-';
+
+
     analyzeTable(); // this exists in individual_item_analyser
 }
 
