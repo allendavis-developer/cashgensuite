@@ -1598,22 +1598,13 @@ async function fetchSellingAndBuyingPrice() {
         console.log("Fetched Prices:", result);
 
         // Clear competitor table
-        updateCompetitorData([], []);
+        clearCompetitorData();
 
         // Update with fetched prices
         cexModeEl.innerHTML = `<a href="${result.cex_url}" target="_blank" rel="noopener noreferrer">£${result.cex_selling_price}</a>`;
         cexDiscountEl.textContent = `£${result.selling_price} (${result.cex_rrp_pct*100}% of CEX Result)`;
         cexDiscountPct = result.cex_rrp_pct;
-        document.getElementById('cc-min').textContent = "-"; // reset these
-        document.getElementById('cc-mode').textContent = "-"; // reset these
-        document.getElementById('cg-min').textContent = "-"; // reset these
-        document.getElementById('cg-mode').textContent = "-"; // reset these
-        document.getElementById('ebay-mode').textContent = "-"; // reset these
-
-        document.getElementById('cex-discount-cell').textContent = "-"; // reset these
-        document.getElementById('recommended-price-cashconverters').textContent = "-"; // reset these
-        document.getElementById('recommended-price-cashgenerator').textContent = "-"; // reset these
-        document.getElementById('recommended-price-ebay').textContent = "-"; // reset these
+        resetSummaryAndSuggestedTables();
 
     } catch (err) {
         console.error("Network error:", err);
@@ -1621,6 +1612,29 @@ async function fetchSellingAndBuyingPrice() {
         cexModeEl.textContent = originalCexMode || '-';
         cexDiscountEl.textContent = originalCexDiscount || '-';
     }
+}
+
+function resetSummaryAndSuggestedTables() {
+    console.log("resetting tables");
+    document.getElementById('cc-min').textContent = "-"; // reset these
+    document.getElementById('cc-mode').textContent = "-"; // reset these
+    document.getElementById('cc-avg').textContent = "-"; // reset these
+    document.getElementById('cc-median').textContent = "-"; // reset these
+
+    document.getElementById('cg-min').textContent = "-"; // reset these
+    document.getElementById('cg-mode').textContent = "-"; // reset these
+    document.getElementById('cg-median').textContent = "-"; // reset these
+    document.getElementById('cg-avg').textContent = "-"; // reset these
+
+    document.getElementById('ebay-min').textContent = "-"; // reset these
+    document.getElementById('ebay-mode').textContent = "-"; // reset these
+    document.getElementById('ebay-median').textContent = "-"; // reset these
+    document.getElementById('ebay-avg').textContent = "-"; // reset these
+
+    document.getElementById('cex-discount-cell').textContent = "-"; // reset these
+    document.getElementById('recommended-price-cashconverters').textContent = "-"; // reset these
+    document.getElementById('recommended-price-cashgenerator').textContent = "-"; // reset these
+    document.getElementById('recommended-price-ebay').textContent = "-"; // reset these
 }
 
 
@@ -1756,9 +1770,8 @@ function renderAttributes(attributes) {
 document.getElementById('category').addEventListener('change', async (e) => {
     const categoryId = e.target.value;
 
-      // Clear competitor table
-    updateCompetitorData([], []);
-
+    // Clear competitor table
+    clearCompetitorData();
     setPrimarySelectDisabled('subcategory', true);
     setPrimarySelectDisabled('model', true);
     setPrimarySelectValue('subcategory', '', { emitChange: false });
@@ -1806,7 +1819,7 @@ async function loadModelsAndPopulate() {
     const subcategoryId = getPrimarySelectValue('subcategory');
 
     // Clear competitor table
-    updateCompetitorData([], []);
+    clearCompetitorData();
 
     const modelSelect = document.getElementById('model');
     const modelAddBtn = modelSelect?.nextElementSibling;
@@ -1849,8 +1862,8 @@ async function loadListings() {
     const modelId = getPrimarySelectValue('model') || e.target.value;
     
     // Clear competitor table
-    updateCompetitorData([], []);
-    
+    clearCompetitorData();
+        
     // Send model selection to backend - this will return variants
     await sendFieldUpdate('model', modelId);
     

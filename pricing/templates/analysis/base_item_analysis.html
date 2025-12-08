@@ -1132,6 +1132,25 @@ function updateCompetitorData(competitorData, scrapedCompetitors) {
     console.log("computing averages");
 }
 
+function clearCompetitorData() {
+    const tbody = document.getElementById('competitor-tbody');
+    const competitorNumber = document.getElementById('competitor-number');
+    const marketStats = document.getElementById('market-stats');
+    const dataWarning = document.getElementById('data-warning');
+
+    // Wipe the DOM
+    tbody.innerHTML = '';
+
+    // Wipe your internal state
+    allCompetitorRows = [];
+
+    // Reset indicators
+    competitorNumber.textContent = '0';
+    marketStats.style.display = 'none';
+    dataWarning.style.display = 'none';
+}
+
+
 // Add this event listener in your DOMContentLoaded or script section
 document.getElementById('filter-source').addEventListener('change', function() {
     computeFilteredStatistics();
