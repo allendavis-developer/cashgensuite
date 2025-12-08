@@ -146,20 +146,25 @@
         <label><input id="ebay-source-checkbox" type="checkbox" name="competitors" value="eBay" checked> eBay</label>
 
         <!-- After your existing eBay checkbox -->
-        <div id="ebay-sold-container" style="display: block; margin-left: 1.5rem; margin-top: 0.5rem;">
-        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-            <input type="checkbox" id="ebay-sold" style="cursor: pointer;" checked>
-            <span class="input-label" style="margin: 0;">eBay - Filter for Completed & Sold?</span>
-        </label>
-        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-            <input type="checkbox" id="ebay-sold" style="cursor: pointer;" checked>
-            <span class="input-label" style="margin: 0;">eBay - Filter for UK Only?</span>
-        </label>
-        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-            <input type="checkbox" id="ebay-sold" style="cursor: pointer;" checked>
-            <span class="input-label" style="margin: 0;">eBay - Filter for Used?</span>
-        </label>
+        <div id="ebay-filter-container" style="display: block; margin-left: 1.5rem; margin-top: 0.5rem;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="checkbox" id="ebay-sold" style="cursor: pointer;" checked>
+                <span class="input-label" style="margin: 0;">eBay - Filter for Completed & Sold?</span>
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="checkbox" id="ebay-ukonly" style="cursor: pointer;" checked>
+                <span class="input-label" style="margin: 0;">eBay - Filter for UK Only?</span>
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="checkbox" id="ebay-used" style="cursor: pointer;" checked>
+                <span class="input-label" style="margin: 0;">eBay - Filter for Used?</span>
+            </label>
+
         </div>
+
+            
 
       </div>
     </div>
@@ -501,19 +506,18 @@
 const primaryTomSelects = {};
 
 
-// Add this to your existing script section
+// Add this to your existing script gsection
 document.addEventListener('DOMContentLoaded', () => {
   const ebayCheckbox = document.getElementById('ebay-source-checkbox'); // Your main eBay checkbox
-  const ebaySoldContainer = document.getElementById('ebay-sold-container');
+  const ebayFilterContainer = document.getElementById('ebay-filter-container');
   const ebaySoldCheckbox = document.getElementById('ebay-sold');
 
-  if (ebayCheckbox && ebaySoldContainer) {
+  if (ebayCheckbox && ebayFilterContainer) {
     ebayCheckbox.addEventListener('change', function() {
       if (this.checked) {
-        ebaySoldContainer.style.display = 'block';
+        ebayFilterContainer.style.display = 'block';
       } else {
-        ebaySoldContainer.style.display = 'none';
-        ebaySoldCheckbox.checked = false; // Uncheck when hiding
+        ebayFilterContainer.style.display = 'none';
       }
     });
   }
@@ -821,7 +825,14 @@ async function scrapePrices() {
     const ebayCheckbox = document.getElementById('ebay-source-checkbox');
     const ebaySoldCheckbox = document.getElementById('ebay-sold');
     const ebayFilterSold = ebayCheckbox?.checked && ebaySoldCheckbox?.checked;
-    console.log(ebayFilterSold);
+    
+    // Check if eBay used filter is enabled
+    const ebayUsedCheckbox = document.getElementById('ebay-used');
+    const ebayFilterUsed = ebayCheckbox?.checked && ebayUsedCheckbox?.checked;
+    
+    // Check if eBay completed & sold filter is enabled
+    const ebayUKOnlyCheckbox = document.getElementById('ebay-ukonly');
+    const ebayFilterUKOnly = ebayCheckbox?.checked && ebayUKOnlyCheckbox?.checked;
 
     nameInDB = await getSearchTermFromModelAndAttributes(true);
 
@@ -836,7 +847,10 @@ async function scrapePrices() {
                 subcategory: data.subcategoryName,
                 model: data.modelName,
                 attributes: data.attributes,
-                ebayFilterSold: ebayFilterSold  // Add this parameter
+                ebayFilterSold: ebayFilterSold, 
+                ebayFilterUsed: ebayFilterUsed, 
+                ebayFilterUKOnly: ebayFilterUKOnly  
+
             }
         });
 
