@@ -194,6 +194,8 @@ def fetch_cex_box_details(stable_id):
             "price": box.get("sellPrice"),
             "last_price_updated_date": box.get("lastPriceUpdatedDate"),
             "cash_trade_price": box.get("cashPrice"),
+            "box_name": box.get("boxName"),
+            "subcategory_name": box.get("categoryFriendlyName"),
             "url": f"https://uk.webuy.com/product-detail?id={stable_id}",
         }
 
@@ -367,6 +369,98 @@ def compute_prices_from_cex_rule(
             "category": movement_reason,
         },
     }
+
+
+@csrf_exempt
+@require_POST
+def get_prices_from_cex_url(request):
+    try:
+        data = json.loads(request.body)
+        cex_url = data.get("cex_url")
+        
+        if not cex_url:
+            return JsonResponse({"success": False, "error": "CEX URL is required."})
+        
+        # Extract the ID from the URL
+        # Example: https://uk.webuy.com/product-detail?id=SSAMS921B128GCVUNLC&...
+        from urllib.parse import urlparse, parse_qs
+        
+        parsed_url = urlparse(cex_url)
+        query_params = parse_qs(parsed_url.query)
+        
+        cex_id = query_params.get('id', [None])[0]
+        
+        if not cex_id:
+            return JsonResponse({"success": False, "error": "Could not extract ID from CEX URL."})
+        
+        # Fetch CEX box details using the ID
+        box_data = fetch_cex_box_details(cex_id)
+        
+        if not box_data:
+            return JsonResponse({"success": False, "error": "Failed to fetch CEX box details"})
+        
+        # Extract values to pass into compute function
+        out_of_stock = False
+        if box_data["out_of_stock"] == 1:
+            out_of_stock = True
+        
+        cex_price = box_data["price"]
+        cex_cash_trade_price = box_data.get("cash_trade_price", 0)  # Adjust key name if different
+        
+        # Pure compute (using None for category/subcategory/model since we don't have them)
+        prices = compute_prices_from_cex_rule(
+            cex_sale_price=cex_price,
+            cex_cash_trade_price=cex_cash_trade_price,
+            cex_url=cex_url,
+            out_of_stock=out_of_stock,
+            category=None,  # We don't have category info from URL
+            subcategory=None,
+            item_model=None
+        )
+        
+        # Format last price updated
+        last_price_updated_date = box_data.get("last_price_updated_date")
+        if last_price_updated_date:
+            datetime_parts = last_price_updated_date.split(" ")
+            date = datetime_parts[0]
+            yyyymmdd = date.split("-")
+            date_formatted = yyyymmdd[2] + "/" + yyyymmdd[1] + "/" + yyyymmdd[0]
+        else:
+            date_formatted = "N/A"
+        
+        # Extract model/subcategory from box_data if available
+        search_term = box_data.get("search_term", "Unknown Item")
+        model = box_data.get("box_name", "Unknown Item")
+        subcategory = box_data.get("subcategory_name", "—")
+        
+        # Send response
+        return JsonResponse({
+            "success": True,
+            "search_term": search_term,
+            "model": model,
+            "subcategory": subcategory,
+            "selling_price": prices["selling_price"],
+            "buying_start_price": prices["buying_start_price"],
+            "buying_mid_price": prices["buying_mid_price"],
+            "buying_end_price": prices["buying_end_price"],
+            "cex_buying_price": prices["cex_trade_cash_price"],
+            "cex_selling_price": cex_price,
+            "category": prices["category"],
+            "cex_url": prices["cex_url"],
+            "competitor_stats": {},  # Empty as requested
+            "reasons": prices["reasons"],
+            "cex_last_price_updated_date": date_formatted,
+            "cex_rrp_pct": prices["cex_rrp_pct"],
+            "out_of_stock": out_of_stock,
+        })
+        
+    except ValueError as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=404)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
 
 @csrf_exempt
 @require_POST

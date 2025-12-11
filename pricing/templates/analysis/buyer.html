@@ -397,6 +397,38 @@
   text-align: center;
 }
 
+
+/* URL input field styling */
+.cex-url-input {
+  flex: 1;
+  max-width: 500px;
+  height: 60px;
+  background-color: #1a1a1a;
+  border: 2px solid #333;
+  border-radius: 8px;
+  padding: 0 20px;
+  color: #fff;
+  font-size: 16px;
+  font-family: 'Arial', sans-serif;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.cex-url-input:focus {
+  outline: none;
+  border-color: #4da6ff;
+  background-color: #222;
+}
+
+.cex-url-input::placeholder {
+  color: #666;
+}
+
+/* CEX URL button - muted blue */
+.cex-url-btn {
+  color: #6ca0d4; /* muted blue */
+  white-space: nowrap;
+}
+
 /* "Click to reveal" overlay text */
 .max-offer-hidden::before {
   content: "Click to reveal";
@@ -479,8 +511,9 @@
 <div class="main-content">
   <div class="add-btn-container">
     <button id="addItemBtn" class="action-btn add-btn">Add</button>
+    <input type="text" id="cexUrlInput" class="cex-url-input" placeholder="Paste CEX URL here...">
+    <button id="addFromCexUrlBtn" class="action-btn cex-url-btn">Add from CEX URL</button>
   </div>
-
 <div id="summaryContainer">
   
   <!-- LEFT SIDE: Total Prices -->
@@ -651,16 +684,78 @@ let lastSelections = {
 };
 
 // Global Enter key listener to open modal if not already active
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !addItemModal.classList.contains('active')) {
-    e.preventDefault(); // prevent default Enter behavior
-    resetModal();
-    addItemModal.classList.add('active');
-    populateCategories();
-    categoryTomSelect.focus(); // focus first input
-  }
-});
 
+
+// Add this event listener after your existing code
+document.getElementById('addFromCexUrlBtn').addEventListener('click', async () => {
+  const urlInput = document.getElementById('cexUrlInput');
+  const cexUrl = urlInput.value.trim();
+  
+  if (!cexUrl) {
+    alert('Please paste a CEX URL first');
+    return;
+  }
+  
+  // Validate it's a CEX URL
+  if (!cexUrl.includes('cex.uk') && !cexUrl.includes('webuy.com')) {
+    alert('Please enter a valid CEX URL');
+    return;
+  }
+  
+  const tbody = createCategoryTable();
+  if (tbody.querySelector('.placeholder')) tbody.innerHTML = '';
+  
+  // Create a simplified row for CEX items
+  const row = document.createElement('tr');
+  row.innerHTML = `
+    <td><input type="number" class="qty-input" min="1" value="1"></td>
+    <td class="subcategory-cell">Loading...</td>
+    <td class="model-cell">Loading...</td>
+    <td class="cex-price">—</td>
+    <td class="cex-price-last-updated">—</td>
+    <td class="cex-rrp-pct">—</td>
+    <td class="suggested-rrp">—</td>
+    <td class="starting-offer">—</td>
+    <td class="mid-offer">—</td>
+    <td class="final-offer">—</td>
+    <td class="max-offer">—</td>
+    <td class="cc-mode">—</td>
+    <td class="cg-mode">—</td>
+    <td class="current-offer">
+      <div class="buying-range-cell">
+        <button class="qty-btn decrease-buying">−</button>
+        <span class="buying-value">—</span>
+        <button class="qty-btn increase-buying">+</button>
+      </div>
+    </td>
+    <td class="margin">—</td>
+  `;
+  
+  // KEY: Mark this as a CEX URL item
+  row.dataset.cexUrl = cexUrl;
+  row.dataset.fromCexUrl = 'true';
+  
+  // Add double-click delete
+  row.addEventListener('dblclick', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
+    if (confirm('Delete this item?')) {
+      row.remove();
+      const tb = row.parentElement;
+      if (!tb.children.length) {
+        const colCount = tb.parentElement.querySelectorAll('th').length;
+        tb.innerHTML = `<tr class="placeholder"><td colspan="${colCount}">No items added yet.</td></tr>`;
+      }
+      updateSummary();
+    }
+  });
+  
+  tbody.appendChild(row);
+  urlInput.value = ''; // Clear the input
+  attachQuantityListeners();
+  
+  // Analyse immediately
+  await handleAnalyseClick(row);
+});
 
 async function addItemToTable() {
   const catId = modalItemCategory.value;
@@ -797,6 +892,20 @@ async function addItemToTable() {
 async function handleAnalyseClick(row) {
   showRowSpinner(row);
 
+    // Check if this is a CEX URL item
+  if (row.dataset.fromCexUrl === 'true') {
+    // Different fetch logic for CEX URL items
+    try {
+      const priceResult = await fetchPriceDataFromCexUrl(row);
+      await updatePriceCells(row, priceResult);
+    } catch (error) {
+      console.error('CEX URL analysis error:', error);
+      alert('Error analysing CEX URL: ' + error.message);
+      hideRowSpinner(row);
+    }
+    return;
+  }
+
   const category = row.dataset.categoryName;
   const subcategory = row.dataset.subcategoryName;
 
@@ -817,7 +926,8 @@ async function handleAnalyseClick(row) {
     if (!checkResult.success) throw new Error(checkResult.error || 'Failed to check items');
 
     if (checkResult.competitor_count > 0) {
-      await updatePriceCells(row, category, model, attributes);
+      const priceResult = await fetchPriceData(row, category, model, attributes);
+      await updatePriceCells(row, priceResult);
     } else {
       // No competitor data available
       hideRowSpinner(row);
@@ -828,6 +938,29 @@ async function handleAnalyseClick(row) {
     alert('Error during analysis: ' + error.message);
     hideRowSpinner(row);
   }
+}
+
+async function fetchPriceDataFromCexUrl(row) {
+  const cexUrl = row.dataset.cexUrl;
+  
+  const response = await fetch('/api/get-prices-from-cex-url/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify({ cex_url: cexUrl })
+  });
+  
+  const result = await response.json();
+  if (!result.success) throw new Error(result.error || 'Failed to fetch CEX item');
+  
+  // Update the model/subcategory cells with fetched data
+  row.querySelector('.subcategory-cell').textContent = result.subcategory || '—';
+  row.querySelector('.model-cell').innerHTML = 
+    `<a href="${cexUrl}" target="_blank">${result.model || 'Unknown Item'}</a>`;
+
+  return result;
 }
 
 async function fetchPriceData(row, category, model, attributes) {
@@ -1000,8 +1133,7 @@ function updateMargin(row, sellingPrice, buyingStartPrice) {
   row.querySelector('.margin').textContent = `${margin.toFixed(1)}%`;
 }
 
-async function updatePriceCells(row, category, model, attributes) {
-  const priceResult = await fetchPriceData(row, category, model, attributes);
+async function updatePriceCells(row, priceResult) {
   hideRowSpinner(row);
 
   const sellingPrice = parseFloat(priceResult.selling_price);
