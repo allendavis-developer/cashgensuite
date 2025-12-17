@@ -163,9 +163,6 @@
             </label>
 
         </div>
-
-            
-
       </div>
     </div>
 
@@ -794,6 +791,7 @@ modalSubmitBtn.addEventListener('click', async function() {
 // 🧱 SCRAPING PHASE
 // -------------------------------
 async function scrapePrices() {
+    clearCompetitorData();  
     console.log("scraping");
     const itemName = document.getElementById('item-name').value.trim();
     if (!itemName) {
