@@ -44,66 +44,50 @@ function closeModal() {
 // Handle search - fetch filters
 ebaySearchBtn.addEventListener('click', async () => {
   const searchTerm = ebaySearchInput.value.trim();
-  
+
   if (!searchTerm) {
     alert('Please enter a search term');
     return;
   }
-  
-  // Show loading state
-  ebayFiltersContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Loading filters...</div>';
+
+  ebayFiltersContainer.innerHTML =
+    '<div style="text-align: center; padding: 20px; color: #666;">Loading filters...</div>';
   ebayFiltersContainer.style.display = 'block';
   ebayResultsContainer.style.display = 'none';
-  
-  try {
 
+  try {
     const response = await sendExtensionMessage({
-        action: "scrape",
-        data: {
-            query: searchTerm,
-            competitors: ["eBay"],
-            category: "N/A",
-            subcategory: "N/A",
-            model: searchTerm,
-            attributes: [],
-            ebayFilterSold: false,   // forced off
-            ebayFilterUsed: false,   // forced off
-            ebayFilterUKOnly: false  // forced off
-        }   
+      action: "scrape",
+      data: {
+        query: searchTerm,
+        competitors: ["eBay"],
+        category: "N/A",
+        subcategory: "N/A",
+        model: searchTerm,
+        attributes: [],
+        ebayFilterSold: false,
+        ebayFilterUsed: false,
+        ebayFilterUKOnly: false
+      }
     });
 
-    if (response.success) {
-        const formattedData = response.results.map(item => {
-            return `${item.competitor} | ${item.title || ""} | £${item.price} | ${item.store || ""} | ${item.url || ""}`;
-        });
-
-        console.log(response.filters);
-        // console.log("saved data successfully", formattedData);
-    } else {
-        alert("Scraping failed: " + (response.error || "Unknown error"));
+    if (!response.success) {
+      alert("Scraping failed: " + (response.error || "Unknown error"));
+      return;
     }
 
-    // TODO: Replace with actual API call
-    // const response = await fetch('/api/get-ebay-filters/', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'X-CSRFToken': getCookie('csrftoken')
-    //   },
-    //   body: JSON.stringify({ search_term: searchTerm })
-    // });
-    // const data = await response.json();
-    
-    // Mock data for now
-    await new Promise(resolve => setTimeout(resolve, 800));
-    const mockFilters = getMockFilters();
-    
-    renderFilters(mockFilters);
+    console.log(response.filters);
+
+    // ✅ Use real filters from the scraper
+    renderFilters(response.filters);
+
   } catch (error) {
     console.error('Error fetching filters:', error);
-    ebayFiltersContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #c00;">Error loading filters. Please try again.</div>';
+    ebayFiltersContainer.innerHTML =
+      '<div style="text-align: center; padding: 20px; color: #c00;">Error loading filters. Please try again.</div>';
   }
 });
+
 
 function getMockFilters() {
   return [
@@ -167,8 +151,11 @@ function renderFilters(filters) {
     if (filter.type === 'checkbox') {
       return `
         <div class="ebay-filter-section">
-          <h4 class="ebay-filter-title">${filter.name}</h4>
-          <div class="ebay-filter-options">
+        <h4 class="ebay-filter-title">
+            <span class="ebay-filter-arrow">▶</span>
+            ${filter.name}
+        </h4>          
+        <div class="ebay-filter-options">
             ${filter.options.map(option => `
               <label class="ebay-filter-option">
                 <input type="checkbox" 
@@ -185,7 +172,10 @@ function renderFilters(filters) {
     } else if (filter.type === 'range') {
       return `
         <div class="ebay-filter-section">
-          <h4 class="ebay-filter-title">${filter.name}</h4>
+        <h4 class="ebay-filter-title">
+            <span class="ebay-filter-arrow">▶</span>
+            ${filter.name}
+        </h4>
           <div class="ebay-filter-range">
             <input type="number" 
                    placeholder="Min" 
@@ -212,6 +202,15 @@ function renderFilters(filters) {
   ebayFiltersContainer.querySelectorAll('.ebay-range-input').forEach(input => {
     input.addEventListener('input', handleFilterChange);
   });
+
+  // Collapsible behavior
+    ebayFiltersContainer.querySelectorAll('.ebay-filter-title').forEach(title => {
+    title.addEventListener('click', () => {
+        const section = title.closest('.ebay-filter-section');
+        section.classList.toggle('expanded');
+    });
+    });
+
 }
 
 function handleFilterChange(e) {
@@ -239,6 +238,12 @@ function handleFilterChange(e) {
   }
   
   updateSelectedCount();
+
+  const section = e.target.closest('.ebay-filter-section');
+    if (section && !section.classList.contains('expanded')) {
+    section.classList.add('expanded');
+    }
+
 }
 
 function updateSelectedCount() {

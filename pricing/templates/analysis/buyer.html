@@ -598,6 +598,34 @@
   cursor: pointer;
 }
 
+.ebay-filter-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ebay-filter-arrow {
+  font-size: 11px;
+  transition: transform 0.2s ease;
+}
+
+.ebay-filter-options,
+.ebay-filter-range {
+  margin-top: 10px;
+  display: none;
+}
+
+.ebay-filter-section.expanded .ebay-filter-options,
+.ebay-filter-section.expanded .ebay-filter-range {
+  display: flex;
+}
+
+.ebay-filter-section.expanded .ebay-filter-arrow {
+  transform: rotate(90deg);
+}
+
 .ebay-filter-count {
   color: white;
   margin-left: auto;
@@ -793,7 +821,6 @@
   </div>
 </div>
 
-<!-- eBay Modal -->
 <!-- eBay Modal -->
 <div id="ebayModal" class="modal">
   <div class="modal-content ebay-modal-content">
