@@ -429,6 +429,11 @@
   white-space: nowrap;
 }
 
+.done-btn {
+  color: #ff4141ff; /* red */
+  white-space: nowrap;
+}
+
 /* "Click to reveal" overlay text */
 .max-offer-hidden::before {
   content: "Click to reveal";
@@ -505,6 +510,227 @@
   }
 }
 
+.ebay-modal-content {
+  max-width: 95vw;
+  width: 1400px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.ebay-search-section {
+  margin-bottom: 20px;
+}
+
+.ebay-modal-body {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+  overflow: hidden;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 20px;
+}
+
+.ebay-left-panel {
+  width: 280px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  padding-right: 20px;
+  border-right: 1px solid #e0e0e0;
+}
+
+.ebay-right-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding-left: 20px;
+}
+
+.ebay-filters-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ebay-results-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.ebay-results-header h3 {
+  margin: 0 0 15px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+}
+
+.ebay-filter-section {
+  padding: 15px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.ebay-filter-section:last-child {
+  border-bottom: none;
+}
+
+.ebay-filter-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: white;
+}
+
+.ebay-filter-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ebay-filter-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 0;
+  font-size: 14px;
+}
+
+.ebay-filter-checkbox {
+  cursor: pointer;
+}
+
+.ebay-filter-count {
+  color: white;
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.ebay-filter-range {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ebay-range-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.ebay-listings {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.ebay-listing-card {
+  display: flex;
+  gap: 15px;
+  padding: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: #fff;
+  transition: box-shadow 0.2s;
+}
+
+.ebay-listing-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ebay-listing-image {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.ebay-listing-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ebay-listing-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #0654ba;
+  text-decoration: none;
+  line-height: 1.4;
+}
+
+.ebay-listing-title:hover {
+  text-decoration: underline;
+}
+
+.ebay-listing-details {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.ebay-listing-price {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+}
+
+.ebay-listing-condition {
+  font-size: 13px;
+  color: #666;
+  padding: 3px 8px;
+  background: #f5f5f5;
+  border-radius: 3px;
+}
+
+.ebay-listing-seller {
+  font-size: 13px;
+  color: #666;
+}
+
+.ebay-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.modal-btn-secondary {
+  padding: 10px 24px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.modal-btn-secondary:hover {
+  background: #f5f5f5;
+}
+
+/* Competitor table styling for modal */
+#ebay-summary-table {
+  margin-bottom: 0;
+  font-size: 13px;
+}
+
+#ebay-summary-table th,
+#ebay-summary-table td {
+  padding: 12px 10px;
+}
+
+#ebay-summary-table th {
+  font-size: 11px;
+}
+
 {% endblock %}
 
 {% block content %}
@@ -512,7 +738,10 @@
   <div class="add-btn-container">
     <button id="addItemBtn" class="action-btn add-btn">Add</button>
     <input type="text" id="cexUrlInput" class="cex-url-input" placeholder="Paste CEX URL here...">
-    <button id="addFromCexUrlBtn" class="action-btn cex-url-btn">Add from CEX URL</button>
+    <button id="addFromCexUrlBtn" class="action-btn cex-url-btn">Add CEX URL</button>
+    <button id="scrapeEbayBtn" class="action-btn cex-url-btn">eBay Item</button>
+
+    <button id="doneButton" class="action-btn done-btn">Done</button>
   </div>
 <div id="summaryContainer">
   
@@ -561,6 +790,41 @@
 
     <div id="attributes-container"></div>
     <button class="modal-btn" id="saveItemBtn">Save Item</button>
+  </div>
+</div>
+
+<!-- eBay Modal -->
+<!-- eBay Modal -->
+<div id="ebayModal" class="modal">
+  <div class="modal-content ebay-modal-content">
+    <span class="modal-close" id="closeEbayModal">&times;</span>
+    
+    <div class="ebay-search-section">
+      <label>Search Term</label>
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="ebaySearchInput" class="input-field" placeholder="Enter product name or keywords..." style="flex: 1;">
+        <button class="modal-btn" id="ebaySearchBtn" style="width: auto; padding: 0 20px;">Get Filters</button>
+      </div>
+    </div>
+    
+    <div class="ebay-modal-body">
+      <!-- Left side: Filters -->
+      <div class="ebay-left-panel">
+        <div id="ebayFiltersContainer" class="ebay-filters-container" style="display: none;"></div>
+      </div>
+      
+      <!-- Right side: Results -->
+      <div class="ebay-right-panel">
+        <div id="ebayResultsContainer" class="ebay-results-container" style="display: none;"></div>
+      </div>
+    </div>
+    
+    <div class="ebay-modal-footer">
+      <button class="modal-btn-secondary" id="ebayCancelBtn">Cancel</button>
+      <button class="modal-btn" id="ebayApplyBtn">
+        Apply Filters & Scrape (<span id="ebaySelectedCount">0</span> selected)
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1503,4 +1767,7 @@ function updateSummary() {
 
 {% load static %}
 <script src="{% static 'analysis/add_item_modal.js' %}"></script>
+<script src="{% static 'analysis/ebay_modal.js' %}"></script>
+<script src="{% static 'extension_bridge.js' %}"></script>
+
 {% endblock %}

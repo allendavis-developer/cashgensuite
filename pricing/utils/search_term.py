@@ -11,7 +11,8 @@ CATEGORY_SEARCH_FORMAT = {
     "music tech": ["item_name",],
     "headphones": ["item_name",],
     "media player accessories": ["item_name",],
-    "console accessories": ["item_name",]
+    "console accessories": ["item_name",],
+    "drone": ["item_name", "condition"]
     # Add more categories here
 }
 
