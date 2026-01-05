@@ -56,30 +56,24 @@ ebaySearchBtn.addEventListener('click', async () => {
   ebayResultsContainer.style.display = 'none';
 
   try {
-    const response = await sendExtensionMessage({
-      action: "scrape",
-      data: {
-        query: searchTerm,
-        competitors: ["eBay"],
-        category: "N/A",
-        subcategory: "N/A",
-        model: searchTerm,
-        attributes: [],
-        ebayFilterSold: false,
-        ebayFilterUsed: false,
-        ebayFilterUKOnly: false
+    const response = await fetch(
+        `/api/ebay/filters/?q=${encodeURIComponent(searchTerm)}`,
+        {
+          method: "GET",
+          headers: {
+            "Accept": "application/json"
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch eBay filters");
       }
-    });
 
-    if (!response.success) {
-      alert("Scraping failed: " + (response.error || "Unknown error"));
-      return;
-    }
+      const data = await response.json();
 
-    console.log(response.filters);
-
-    // ✅ Use real filters from the scraper
-    renderFilters(response.filters);
+      // Expecting: { success: true, filters: [...] }
+      renderFilters(data.filters);
 
   } catch (error) {
     console.error('Error fetching filters:', error);
@@ -88,60 +82,6 @@ ebaySearchBtn.addEventListener('click', async () => {
   }
 });
 
-
-function getMockFilters() {
-  return [
-    {
-      name: 'Brand',
-      id: 'brand',
-      type: 'checkbox',
-      options: [
-        { value: 'apple', label: 'Apple', count: 1250 },
-        { value: 'samsung', label: 'Samsung', count: 890 },
-        { value: 'google', label: 'Google', count: 456 },
-        { value: 'oneplus', label: 'OnePlus', count: 234 }
-      ]
-    },
-    {
-      name: 'Condition',
-      id: 'condition',
-      type: 'checkbox',
-      options: [
-        { value: 'new', label: 'New', count: 523 },
-        { value: 'used', label: 'Used', count: 1876 },
-        { value: 'refurbished', label: 'Manufacturer refurbished', count: 345 },
-        { value: 'seller-refurbished', label: 'Seller refurbished', count: 234 }
-      ]
-    },
-    {
-      name: 'Price',
-      id: 'price',
-      type: 'range',
-      min: 0,
-      max: 1000
-    },
-    {
-      name: 'Buying format',
-      id: 'buying_format',
-      type: 'checkbox',
-      options: [
-        { value: 'all', label: 'All listings', count: 2543 },
-        { value: 'auction', label: 'Auction', count: 456 },
-        { value: 'buy_it_now', label: 'Buy it now', count: 2087 }
-      ]
-    },
-    {
-      name: 'Item location',
-      id: 'location',
-      type: 'checkbox',
-      options: [
-        { value: 'uk', label: 'UK Only', count: 1876 },
-        { value: 'europe', label: 'European Union', count: 456 },
-        { value: 'worldwide', label: 'Worldwide', count: 211 }
-      ]
-    }
-  ];
-}
 
 function renderFilters(filters) {
   selectedFilters = {};

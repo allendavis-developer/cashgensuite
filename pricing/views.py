@@ -24,7 +24,7 @@ from pricing.models import (
     CEXPricingRule
     )
 
-import json, traceback, re
+import json, requests, traceback, re
 from decimal import Decimal, InvalidOperation
 
 from pricing.utils.ai_utils import call_gemini_sync, generate_price_analysis, generate_bulk_price_analysis
@@ -157,7 +157,6 @@ def round_down_to_even(value):
     return (int(value) // 2) * 2
 
 
-import requests
 
 def fetch_cex_box_details(stable_id):
     """
@@ -1686,6 +1685,89 @@ def save_overnight_scraped_data(request):
         traceback.print_exc()
         connection.close()
         return JsonResponse({'success': False, 'error': str(e)})
+    
+    
+@require_GET
+def get_ebay_filters(request):
+    search_term = request.GET.get("q", "").strip()
+
+    if not search_term:
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "Missing search term"
+            },
+            status=400
+        )
+
+    # Mock filters (placeholder for real eBay backend call)
+    filters = [
+        {
+            "name": "Brand",
+            "id": "brand",
+            "type": "checkbox",
+            "options": [
+                {"value": "apple", "label": "Apple", "count": 1250},
+                {"value": "samsung", "label": "Samsung", "count": 890},
+                {"value": "google", "label": "Google", "count": 456},
+                {"value": "oneplus", "label": "OnePlus", "count": 234},
+            ],
+        },
+        {
+            "name": "Condition",
+            "id": "condition",
+            "type": "checkbox",
+            "options": [
+                {"value": "new", "label": "New", "count": 523},
+                {"value": "used", "label": "Used", "count": 1876},
+                {
+                    "value": "refurbished",
+                    "label": "Manufacturer refurbished",
+                    "count": 345,
+                },
+                {
+                    "value": "seller-refurbished",
+                    "label": "Seller refurbished",
+                    "count": 234,
+                },
+            ],
+        },
+        {
+            "name": "Price",
+            "id": "price",
+            "type": "range",
+            "min": 0,
+            "max": 1000,
+        },
+        {
+            "name": "Buying format",
+            "id": "buying_format",
+            "type": "checkbox",
+            "options": [
+                {"value": "all", "label": "All listings", "count": 2543},
+                {"value": "auction", "label": "Auction", "count": 456},
+                {"value": "buy_it_now", "label": "Buy it now", "count": 2087},
+            ],
+        },
+        {
+            "name": "Item location",
+            "id": "location",
+            "type": "checkbox",
+            "options": [
+                {"value": "uk", "label": "UK Only", "count": 1876},
+                {"value": "europe", "label": "European Union", "count": 456},
+                {"value": "worldwide", "label": "Worldwide", "count": 211},
+            ],
+        },
+    ]
+
+    return JsonResponse(
+        {
+            "success": True,
+            "query": search_term,
+            "filters": filters,
+        }
+    )
 
 
 def repricer_view(request):
