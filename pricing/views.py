@@ -32,7 +32,7 @@ from pricing.utils.competitor_utils import get_competitor_data
 from pricing.utils.analysis_utils import process_item_analysis, save_analysis_to_db
 from pricing.utils.search_term import build_search_term, get_model_variants
 from pricing.utils.pricing import get_effective_margin
-
+from pricing.utils.ebay_filters import extract_filters
 
 def get_prefilled_data(request):
     return {
@@ -1687,79 +1687,80 @@ def save_overnight_scraped_data(request):
         return JsonResponse({'success': False, 'error': str(e)})
     
     
+
 @require_GET
 def get_ebay_filters(request):
     search_term = request.GET.get("q", "").strip()
 
     if not search_term:
         return JsonResponse(
-            {
-                "success": False,
-                "error": "Missing search term"
-            },
+            {"success": False, "error": "Missing search term"},
             status=400
         )
 
-    # Mock filters (placeholder for real eBay backend call)
-    filters = [
-        {
-            "name": "Brand",
-            "id": "brand",
-            "type": "checkbox",
-            "options": [
-                {"value": "apple", "label": "Apple", "count": 1250},
-                {"value": "samsung", "label": "Samsung", "count": 890},
-                {"value": "google", "label": "Google", "count": 456},
-                {"value": "oneplus", "label": "OnePlus", "count": 234},
-            ],
-        },
-        {
-            "name": "Condition",
-            "id": "condition",
-            "type": "checkbox",
-            "options": [
-                {"value": "new", "label": "New", "count": 523},
-                {"value": "used", "label": "Used", "count": 1876},
-                {
-                    "value": "refurbished",
-                    "label": "Manufacturer refurbished",
-                    "count": 345,
-                },
-                {
-                    "value": "seller-refurbished",
-                    "label": "Seller refurbished",
-                    "count": 234,
-                },
-            ],
-        },
-        {
-            "name": "Price",
-            "id": "price",
-            "type": "range",
-            "min": 0,
-            "max": 1000,
-        },
-        {
-            "name": "Buying format",
-            "id": "buying_format",
-            "type": "checkbox",
-            "options": [
-                {"value": "all", "label": "All listings", "count": 2543},
-                {"value": "auction", "label": "Auction", "count": 456},
-                {"value": "buy_it_now", "label": "Buy it now", "count": 2087},
-            ],
-        },
-        {
-            "name": "Item location",
-            "id": "location",
-            "type": "checkbox",
-            "options": [
-                {"value": "uk", "label": "UK Only", "count": 1876},
-                {"value": "europe", "label": "European Union", "count": 456},
-                {"value": "worldwide", "label": "Worldwide", "count": 211},
-            ],
-        },
-    ]
+    ebay_url = "https://www.ebay.co.uk/sch/ajax/refine"
+
+    params = {
+        "_nkw": search_term,
+        "_sacat": 0,
+        "_fsrp": 1,
+        "rt": "nc",
+        "modules": "SEARCH_REFINEMENTS_MODEL_V2:fa",  # <-- full aspects
+        "no_encode_refine_params": 1,                 # <-- prevents aggregation/encoding
+    }
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0 Safari/537.36"
+        ),
+        "Accept": "application/json",
+        "Accept-Language": "en-GB,en;q=0.9",
+        "Referer": "https://www.ebay.co.uk/",
+    }
+
+    session = requests.Session()
+    session.headers.update(headers)
+
+    # warm cookies
+    session.get("https://www.ebay.co.uk/", timeout=10)
+
+    try:
+        response = session.get(
+            ebay_url,
+            params=params,
+            timeout=20,
+        )
+        response.raise_for_status()
+
+    except requests.RequestException as e:
+        return JsonResponse(
+            {"success": False, "error": str(e)},
+            status=502
+        )
+
+    data = response.json()
+
+    # Handle both wrapped and unwrapped responses
+    if data.get("_type") == "SearchRefinementsModule":
+        refinements_module = data
+    else:
+        refinements_module = None
+        for module in data.get("modules", []):
+            if module.get("_type") == "SearchRefinementsModule":
+                refinements_module = module
+                break
+
+
+    if not refinements_module:
+        return JsonResponse(
+            {"success": False, "error": "No refinements module found"},
+            status=502
+        )
+
+    # 🧠 extract filters
+    filters = extract_filters(refinements_module)
 
     return JsonResponse(
         {
@@ -1768,6 +1769,7 @@ def get_ebay_filters(request):
             "filters": filters,
         }
     )
+
 
 
 def repricer_view(request):
