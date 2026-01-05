@@ -12,7 +12,8 @@ CATEGORY_SEARCH_FORMAT = {
     "headphones": ["item_name",],
     "media player accessories": ["item_name",],
     "console accessories": ["item_name",],
-    "drone": ["item_name", "condition"]
+    "drone": ["item_name", "condition"],
+    "wearable tech": ["item_name", "condition"]
     # Add more categories here
 }
 
@@ -29,7 +30,7 @@ CATEGORY_SEARCH_FORMAT_ONLINE = {
     "music tech": ["item_name",],
     "headphones": ["item_name",],
     "media player accessories": ["item_name",],
-    "console accessories": ["item_name",]
+    "console accessories": ["item_name",], 
     # Add more categories here
 }
 

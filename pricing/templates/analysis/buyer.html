@@ -510,6 +510,43 @@
   }
 }
 
+.competitor-table thead th {
+  position: sticky;
+  top: 0;
+  background-color: #1a1a1a;  /* same as table header bg */
+  z-index: 1;                /* ensures header stays on top */
+}
+
+
+.competitor-table {
+  border: 1px solid #333333;
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.25rem;
+  font-size: 0.8125rem;
+}
+
+.competitor-table th,
+.competitor-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #333333;
+}
+
+.competitor-table th {
+  background-color: #1a1a1a;
+  color: #888888;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+  white-space: nowrap;
+}
+
+.competitor-table td {
+  word-wrap: break-word;
+}
+
+
 /* ================= MODAL LAYOUT ================= */
 
 .ebay-modal-content {
@@ -908,6 +945,28 @@
       
       <!-- Right side: Results -->
       <div class="ebay-right-panel">
+          <!-- Analysis / Summary Table -->
+        <div class="ebay-analysis-wrapper">
+          <table class="competitor-table" id="analysis-table">
+            <thead>
+              <tr>
+                <th>eBay Min</th>
+                <th>eBay AVG</th>
+                <th>eBay Mode</th>
+                <th>eBay Median</th>
+              </tr>
+            </thead>
+            <tbody id="analysis-tbody">
+              <tr>
+                <td id="ebay-min">-</td>
+                <td id="ebay-avg">-</td>
+                <td id="ebay-mode">-</td>
+                <td id="ebay-median">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <div id="ebayResultsContainer" class="ebay-results-container" style="display: none;"></div>
       </div>
     </div>

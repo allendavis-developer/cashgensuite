@@ -312,6 +312,21 @@ ebayApplyBtn.addEventListener('click', async () => {
     if (response.success) {
       console.log("Scraping success", response.results);
       renderResults(response.results);
+      // Extract numeric prices safely
+      const prices = response.results
+        .map(item => Number(item.price))
+        .filter(p => !isNaN(p) && p > 0);
+
+      const stats = calculateStats(prices);
+
+      // Populate analysis table
+      document.getElementById('ebay-min').textContent = stats.min;
+      document.getElementById('ebay-avg').textContent = stats.avg;
+      document.getElementById('ebay-median').textContent = stats.median;
+      document.getElementById('ebay-mode').textContent = stats.mode;
+
+      // Ensure table is visible
+      document.querySelector('.ebay-analysis-wrapper').style.display = 'block';
 
     } else {
       alert("Scraping failed: " + (response.error || "Unknown error"));
@@ -436,6 +451,54 @@ function renderResults(results) {
   `;
 }
 
+
+function calculateStats(prices) {
+  if (!prices.length) {
+    return {
+      min: '-',
+      avg: '-',
+      median: '-',
+      mode: '-'
+    };
+  }
+
+  // Sort prices numerically
+  const sorted = [...prices].sort((a, b) => a - b);
+
+  // MIN
+  const min = sorted[0];
+
+  // AVERAGE
+  const avg = sorted.reduce((sum, p) => sum + p, 0) / sorted.length;
+
+  // MEDIAN
+  const mid = Math.floor(sorted.length / 2);
+  const median =
+    sorted.length % 2 === 0
+      ? (sorted[mid - 1] + sorted[mid]) / 2
+      : sorted[mid];
+
+  // MODE
+  const frequency = {};
+  let mode = sorted[0];
+  let maxCount = 1;
+
+  for (const price of sorted) {
+    frequency[price] = (frequency[price] || 0) + 1;
+
+    if (frequency[price] > maxCount) {
+      maxCount = frequency[price];
+      mode = price;
+    }
+  }
+
+  return {
+    min: min.toFixed(2),
+    avg: avg.toFixed(2),
+    median: median.toFixed(2),
+    mode: mode.toFixed(2)
+  };
+}
 
 
 // Handle cancel button
