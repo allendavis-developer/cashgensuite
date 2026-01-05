@@ -11,6 +11,7 @@ const ebayCancelBtn = document.getElementById('ebayCancelBtn');
 const ebaySelectedCount = document.getElementById('ebaySelectedCount');
 
 let selectedFilters = {};
+let isEbayScraping = false;
 
 // Open modal
 scrapeEbayBtn.addEventListener('click', () => {
@@ -40,6 +41,18 @@ function closeModal() {
   selectedFilters = {};
   updateSelectedCount();
 }
+
+function setEbayScrapingState(isScraping) {
+  isEbayScraping = isScraping;
+
+  ebayApplyBtn.disabled = isScraping;
+  ebayApplyBtn.classList.toggle('disabled', isScraping);
+
+  ebayApplyBtn.textContent = isScraping
+    ? 'Scraping...'
+    : 'Apply';
+}
+
 
 // Handle search - fetch filters
 ebaySearchBtn.addEventListener('click', async () => {
@@ -247,6 +260,13 @@ function buildEbayUrl(searchTerm, filters) {
 
 // Handle apply button
 ebayApplyBtn.addEventListener('click', async () => {
+
+    //  HARD GUARD
+  if (isEbayScraping) return;
+
+  setEbayScrapingState(true);
+
+
   const searchTerm = ebaySearchInput.value.trim();
   
   if (!searchTerm) {
@@ -262,51 +282,37 @@ ebayApplyBtn.addEventListener('click', async () => {
   // Show loading in results area
   ebayResultsContainer.style.display = 'block';
   ebayResultsContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">Scraping eBay listings...</div>';
-  
+            
   try {
-    // TODO: Replace with actual API call
-    // const response = await fetch('/api/scrape-ebay/', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'X-CSRFToken': getCookie('csrftoken')
-    //   },
-    //   body: JSON.stringify({ 
-    //     search_term: searchTerm,
-    //     filters: selectedFilters
-    //   })
-    // });
-    // const data = await response.json();
-    
-    
-  // Inside ebayApplyBtn click handler
-  const ebayUrl = buildEbayUrl(searchTerm, selectedFilters);
-  console.log("eBay URL to scrape:", ebayUrl);
+    const ebayUrl = buildEbayUrl(searchTerm, selectedFilters);
+    console.log("eBay URL to scrape:", ebayUrl);
 
+    const response = await sendExtensionMessage({
+      action: "scrape",
+      data: {
+        directUrl: ebayUrl,
+        competitors: ["eBay"]
+      }
+    });
 
-    // Mock data for now
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const mockResults = getMockResults();
-    
-    renderResults(mockResults);
+    if (response.success) {
+      console.log("Scraping success", response.results);
+    } else {
+      alert("Scraping failed: " + (response.error || "Unknown error"));
+    }
+
   } catch (error) {
-    console.error('Error scraping eBay:', error);
-    ebayResultsContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: #c00;">Error scraping eBay. Please try again.</div>';
+    console.error("Scraping error:", error);
+    alert("Error running scraper: " + error.message);
+  } finally {
+    // ✅ GUARANTEED UNLOCK
+    setEbayScrapingState(false);
   }
 });
 
 function getMockResults() {
   return {
     summary: {
-      cex: '£450.00',
-      cc_min: '£320.00',
-      cc_avg: '£385.50',
-      cc_mode: '£380.00',
-      cc_median: '£390.00',
-      cg_min: '£310.00',
-      cg_avg: '£375.20',
-      cg_mode: '£370.00',
-      cg_median: '£380.00',
       ebay_min: '£295.00',
       ebay_avg: '£368.75',
       ebay_mode: '£365.00',
