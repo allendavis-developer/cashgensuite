@@ -510,12 +510,16 @@
   }
 }
 
+/* ================= MODAL LAYOUT ================= */
+
 .ebay-modal-content {
   max-width: 95vw;
   width: 1400px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
+  background-color: #000;
+  color: #fff;
 }
 
 .ebay-search-section {
@@ -527,8 +531,9 @@
   gap: 20px;
   flex: 1;
   overflow: hidden;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid #222;
   padding-top: 20px;
+  background-color: #000;
 }
 
 .ebay-left-panel {
@@ -536,66 +541,65 @@
   flex-shrink: 0;
   overflow-y: auto;
   padding-right: 20px;
-  border-right: 1px solid #e0e0e0;
+  border-right: 1px solid #222;
+  background-color: #000;
 }
 
 .ebay-right-panel {
   flex: 1;
   overflow-y: auto;
   padding-left: 20px;
+  background-color: #000;
 }
+
+/* ================= TOP RIGHT QUICK FILTERS ================= */
+
+.ebay-top-filters {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  margin-bottom: 10px;
+  padding-top: 5px;
+}
+
+.ebay-top-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #fff;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ebay-top-filter input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: #4da3ff;
+  cursor: pointer;
+}
+
+.ebay-top-filter span {
+  white-space: nowrap;
+}
+
+
+/* ================= FILTERS ================= */
 
 .ebay-filters-container {
   display: flex;
   flex-direction: column;
   gap: 5px;
-}
-
-.ebay-results-container {
-  display: flex;
-  flex-direction: column;
-}
-
-.ebay-results-header h3 {
-  margin: 0 0 15px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: white;
+  background-color: #000;
 }
 
 .ebay-filter-section {
   padding: 15px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #222;
 }
 
 .ebay-filter-section:last-child {
   border-bottom: none;
-}
-
-.ebay-filter-title {
-  font-size: 14px;
-  font-weight: 600;
-  margin: 0 0 12px 0;
-  color: white;
-}
-
-.ebay-filter-options {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.ebay-filter-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  padding: 4px 0;
-  font-size: 14px;
-}
-
-.ebay-filter-checkbox {
-  cursor: pointer;
 }
 
 .ebay-filter-title {
@@ -604,11 +608,20 @@
   gap: 6px;
   cursor: pointer;
   user-select: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
 }
 
 .ebay-filter-arrow {
   font-size: 11px;
   transition: transform 0.2s ease;
+}
+
+.ebay-filter-count {
+  margin-left: auto;
+  font-size: 12px;
+  color: #fff;
 }
 
 .ebay-filter-options,
@@ -626,14 +639,26 @@
   transform: rotate(90deg);
 }
 
-.ebay-filter-count {
-  color: white;
-  margin-left: auto;
-  font-size: 12px;
+.ebay-filter-options {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ebay-filter-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 0;
+  font-size: 14px;
+  color: #fff;
+}
+
+.ebay-filter-checkbox {
+  cursor: pointer;
 }
 
 .ebay-filter-range {
-  display: flex;
   align-items: center;
   gap: 10px;
 }
@@ -641,9 +666,30 @@
 .ebay-range-input {
   flex: 1;
   padding: 8px 12px;
-  border: 1px solid #ccc;
+  background: #111;
+  border: 1px solid #333;
   border-radius: 4px;
   font-size: 14px;
+  color: #fff;
+}
+
+.ebay-range-input::placeholder {
+  color: #888;
+}
+
+/* ================= RESULTS ================= */
+
+.ebay-results-container {
+  display: flex;
+  flex-direction: column;
+  background-color: #000;
+}
+
+.ebay-results-header h3 {
+  margin: 0 0 15px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
 }
 
 .ebay-listings {
@@ -654,25 +700,21 @@
 }
 
 .ebay-listing-card {
-  display: flex;
-  gap: 15px;
-  padding: 15px;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  background: #fff;
-  transition: box-shadow 0.2s;
+  background: #111;
+  color: #fff;
+  border: 1px solid #222;
 }
 
 .ebay-listing-card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.08);
 }
 
 .ebay-listing-image {
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
   object-fit: cover;
-  border-radius: 4px;
-  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  border: 1px solid #222;
   flex-shrink: 0;
 }
 
@@ -683,18 +725,9 @@
   gap: 8px;
 }
 
-#ebayApplyBtn.disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-
 .ebay-listing-title {
-  font-size: 15px;
-  font-weight: 500;
-  color: #0654ba;
+  color: #4da3ff;
   text-decoration: none;
-  line-height: 1.4;
 }
 
 .ebay-listing-title:hover {
@@ -710,21 +743,23 @@
 .ebay-listing-price {
   font-size: 18px;
   font-weight: 700;
-  color: #333;
+  color: #fff;
 }
 
 .ebay-listing-condition {
   font-size: 13px;
-  color: #666;
   padding: 3px 8px;
-  background: #f5f5f5;
+  background: #222;
   border-radius: 3px;
+  color: #ccc;
 }
 
 .ebay-listing-seller {
   font-size: 13px;
-  color: #666;
+  color: #ccc;
 }
+
+/* ================= FOOTER ================= */
 
 .ebay-modal-footer {
   display: flex;
@@ -732,7 +767,7 @@
   gap: 10px;
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid #222;
 }
 
 .modal-btn-secondary {
@@ -750,7 +785,13 @@
   background: #f5f5f5;
 }
 
-/* Competitor table styling for modal */
+#ebayApplyBtn.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ================= SUMMARY TABLE ================= */
+
 #ebay-summary-table {
   margin-bottom: 0;
   font-size: 13px;
@@ -764,6 +805,7 @@
 #ebay-summary-table th {
   font-size: 11px;
 }
+
 
 {% endblock %}
 
@@ -839,6 +881,24 @@
         <button class="modal-btn" id="ebaySearchBtn" style="width: auto; padding: 0 20px;">Get Filters</button>
       </div>
     </div>
+
+    <div class="ebay-top-filters">
+      <label class="ebay-top-filter">
+        <input type="checkbox" id="filterSold">
+        <span>Completed & Sold</span>
+      </label>
+
+      <label class="ebay-top-filter">
+        <input type="checkbox" id="filterUK">
+        <span>UK Only</span>
+      </label>
+
+      <label class="ebay-top-filter">
+        <input type="checkbox" id="filterUsed">
+        <span>Used</span>
+      </label>
+    </div>
+
     
     <div class="ebay-modal-body">
       <!-- Left side: Filters -->

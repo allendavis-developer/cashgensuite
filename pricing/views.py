@@ -294,7 +294,9 @@ def compute_prices_from_cex_rule(
         movement_class=movement_class
     )
 
-    print(cex_rule)
+    print("CEX RULE:", cex_rule)
+    print("cex sale price", cex_sale_price)
+    print("cex trade price", cex_cash_trade_price)
 
     # 3. If out of stock, bail early
     # if out_of_stock:
@@ -526,17 +528,14 @@ def get_selling_and_buying_price(request):
         if not box_data:
             return JsonResponse({"success": False, "error": "Failed to fetch CeX box details"})
         
-
         # Extract values to pass into compute function
         out_of_stock = False
         if box_data["out_of_stock"] == 1:
             out_of_stock = True
-        cex_sale_price = cex_listing.price or 0
-        cex_cash_trade_price = cex_listing.trade_cash_price
+
         cex_url = cex_listing.url
-
         cex_price = box_data["price"]
-
+        cex_cash_trade_price = box_data["cash_trade_price"]
 
         # Pure compute
         prices = compute_prices_from_cex_rule(

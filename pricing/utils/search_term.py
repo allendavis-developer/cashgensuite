@@ -7,7 +7,7 @@ CATEGORY_SEARCH_FORMAT = {
     "tablets": ["item_name", "storage",],
     "televisions": ["item_name", "size",],
     "smartwatches": ["item_name", "size",],
-    "cameras": ["item_name",],
+    "cameras": ["item_name", "condition"],
     "music tech": ["item_name",],
     "headphones": ["item_name",],
     "media player accessories": ["item_name",],

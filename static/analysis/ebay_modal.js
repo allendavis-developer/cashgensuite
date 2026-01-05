@@ -9,6 +9,10 @@ const ebayResultsContainer = document.getElementById('ebayResultsContainer');
 const ebayApplyBtn = document.getElementById('ebayApplyBtn');
 const ebayCancelBtn = document.getElementById('ebayCancelBtn');
 const ebaySelectedCount = document.getElementById('ebaySelectedCount');
+const filterSoldCheckbox = document.getElementById('filterSold');
+const filterUKCheckbox = document.getElementById('filterUK');
+const filterUsedCheckbox = document.getElementById('filterUsed');
+
 
 let selectedFilters = {};
 let isEbayScraping = false;
@@ -273,6 +277,12 @@ ebayApplyBtn.addEventListener('click', async () => {
     alert('Please enter a search term');
     return;
   }
+
+  // ✅ READ TOP FILTERS
+  const ebayFilterSold = filterSoldCheckbox.checked;
+  const ebayFilterUKOnly = filterUKCheckbox.checked;
+  const ebayFilterUsed = filterUsedCheckbox.checked;
+
   
   console.log('Applying eBay search with filters:', {
     searchTerm,
@@ -284,6 +294,7 @@ ebayApplyBtn.addEventListener('click', async () => {
   ebayResultsContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">Scraping eBay listings...</div>';
             
   try {
+    // TODO: THIS FUNCITON IS REALLY WEIRD BECAUSE IT BUILDS EVERYTHING EXCEPT THE TOP FILTERS
     const ebayUrl = buildEbayUrl(searchTerm, selectedFilters);
     console.log("eBay URL to scrape:", ebayUrl);
 
@@ -291,12 +302,17 @@ ebayApplyBtn.addEventListener('click', async () => {
       action: "scrape",
       data: {
         directUrl: ebayUrl,
-        competitors: ["eBay"]
+        competitors: ["eBay"],
+        ebayFilterSold: ebayFilterSold,
+        ebayFilterUsed: ebayFilterUKOnly,
+        ebayFilterUKOnly: ebayFilterUsed,
       }
     });
 
     if (response.success) {
       console.log("Scraping success", response.results);
+      renderResults(response.results);
+
     } else {
       alert("Scraping failed: " + (response.error || "Unknown error"));
     }
@@ -363,52 +379,64 @@ function getMockResults() {
   };
 }
 
-function renderResults(data) {
+function renderResults(results) {
+  if (!results || results.length === 0) {
+    ebayResultsContainer.innerHTML = `
+      <div style="text-align:center; padding:40px; color:#666;">
+        No eBay listings found.
+      </div>
+    `;
+    return;
+  }
+
   ebayResultsContainer.innerHTML = `
     <div class="ebay-results-header">
-      <h3>Market Summary</h3>
+      <h3>eBay Listings (${results.length} results)</h3>
     </div>
-    
-    <table class="competitor-table" id="ebay-summary-table">
-      <thead>
-        <tr>
-          <th>eBay Min</th>
-          <th>eBay AVG</th>
-          <th>eBay Mode</th>
-          <th>eBay Median</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>${data.summary.ebay_min}</td>
-          <td>${data.summary.ebay_avg}</td>
-          <td>${data.summary.ebay_mode}</td>
-          <td>${data.summary.ebay_median}</td>
-        </tr>
-      </tbody>
-    </table>
-    
-    <div class="ebay-results-header" style="margin-top: 30px;">
-      <h3>eBay Listings (${data.listings.length} results)</h3>
-    </div>
-    
+
     <div class="ebay-listings">
-      ${data.listings.map(listing => `
-        <div class="ebay-listing-card">
-          <img src="${listing.image}" alt="${listing.title}" class="ebay-listing-image">
+      ${results.map(item => `
+        <div class="ebay-listing-card" style="display:flex; gap:15px; padding:12px;">
+          
+          ${item.image ? `
+            <img
+              src="${item.image}"
+              alt="${item.title || "eBay listing"}"
+              class="ebay-listing-image"
+              loading="lazy"
+            />
+          ` : ""}
+
           <div class="ebay-listing-content">
-            <a href="${listing.url}" target="_blank" class="ebay-listing-title">${listing.title}</a>
+            <a
+              href="${item.url}"
+              target="_blank"
+              rel="noopener"
+              class="ebay-listing-title"
+            >
+              ${item.title || "Untitled listing"}
+            </a>
+
             <div class="ebay-listing-details">
-              <span class="ebay-listing-price">${listing.price}</span>
-              <span class="ebay-listing-condition">${listing.condition}</span>
+              <span class="ebay-listing-price">
+                £${Number(item.price).toFixed(2)}
+              </span>
             </div>
-            <div class="ebay-listing-seller">Seller: ${listing.seller}</div>
+
+            ${item.store ? `
+              <div class="ebay-listing-seller">
+                Seller: ${item.store}
+              </div>
+            ` : ""}
           </div>
+
         </div>
-      `).join('')}
+      `).join("")}
     </div>
   `;
 }
+
+
 
 // Handle cancel button
 ebayCancelBtn.addEventListener('click', () => {
