@@ -89,6 +89,15 @@ function renderFilters(filters) {
   
   ebayFiltersContainer.innerHTML = filters.map(filter => {
     if (filter.type === 'checkbox') {
+
+      // ✅ Sort options by count (descending)
+      const sortedOptions = [...filter.options].sort((a, b) => {
+        const countA = a.count ?? 0;
+        const countB = b.count ?? 0;
+        return countB - countA;
+      });
+
+
       return `
         <div class="ebay-filter-section">
         <h4 class="ebay-filter-title">
@@ -96,14 +105,14 @@ function renderFilters(filters) {
             ${filter.name}
         </h4>          
         <div class="ebay-filter-options">
-            ${filter.options.map(option => `
+            ${sortedOptions.map(option => `
               <label class="ebay-filter-option">
                 <input type="checkbox" 
                        data-filter="${filter.id}" 
                        data-value="${option.value}"
                        class="ebay-filter-checkbox">
                 <span>${option.label}</span>
-                ${option.count ? `<span class="ebay-filter-count">(${option.count})</span>` : ''}
+                ${option.count ? `<span class="ebay-filter-count">(${option.count.toLocaleString()})</span>` : ''}
               </label>
             `).join('')}
           </div>
@@ -199,6 +208,43 @@ function updateSelectedCount() {
   ebaySelectedCount.textContent = count;
 }
 
+
+// TODO: I guess this should be in the backend not the frontend
+// Build eBay search URL from selected filters
+function buildEbayUrl(searchTerm, filters) {
+  const baseUrl = "https://www.ebay.co.uk/sch/i.html";
+  const params = new URLSearchParams();
+
+  // Fixed params
+  params.set("_dcat", "9355");
+  params.set("_fsrp", "1");
+  params.set("rt", "nc");
+  params.set("_from", "R40");
+  
+  // Search term
+  params.set("_nkw", searchTerm);
+  params.set("_sacat", "0");
+
+  // Add filters - capitalize the first letter of each key
+  Object.entries(filters).forEach(([key, value]) => {
+    // Capitalize first letter: model -> Model, brand -> Brand
+    const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1);
+    
+    if (Array.isArray(value)) {
+      // Join multiple values with pipe
+      params.set(capitalizedKey, value.join("|"));
+    } else if (typeof value === 'object') {
+      // Handle range filters
+      if (value.min) params.set(`${capitalizedKey}_min`, value.min);
+      if (value.max) params.set(`${capitalizedKey}_max`, value.max);
+    } else {
+      params.set(capitalizedKey, value);
+    }
+  });
+
+  return `${baseUrl}?${params.toString()}`;
+}
+
 // Handle apply button
 ebayApplyBtn.addEventListener('click', async () => {
   const searchTerm = ebaySearchInput.value.trim();
@@ -232,6 +278,12 @@ ebayApplyBtn.addEventListener('click', async () => {
     // });
     // const data = await response.json();
     
+    
+  // Inside ebayApplyBtn click handler
+  const ebayUrl = buildEbayUrl(searchTerm, selectedFilters);
+  console.log("eBay URL to scrape:", ebayUrl);
+
+
     // Mock data for now
     await new Promise(resolve => setTimeout(resolve, 1000));
     const mockResults = getMockResults();
