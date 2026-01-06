@@ -12,6 +12,9 @@ const ebaySelectedCount = document.getElementById('ebaySelectedCount');
 const filterSoldCheckbox = document.getElementById('filterSold');
 const filterUKCheckbox = document.getElementById('filterUK');
 const filterUsedCheckbox = document.getElementById('filterUsed');
+const rrpInput = document.getElementById('ebaySuggestedRrp');
+const marginInput = document.getElementById('ebayMinMargin');
+const offerInput = document.getElementById('ebayOfferValue');
 
 
 let selectedFilters = {};
@@ -421,8 +424,14 @@ ebayApplyBtn.addEventListener('click', async () => {
 
       const rrpEl = document.getElementById('ebaySuggestedRrp');
       if (rrpEl && suggestedRrp !== null) {
-        rrpEl.textContent = suggestedRrp.toFixed(0);
+        rrpEl.value = suggestedRrp.toFixed(0);
       }
+
+      if (marginInput && !marginInput.value) {
+        marginInput.value = 50; // default 20% margin
+        recalculateOfferValue();
+      }
+
 
       // REFRESH FILTERS BASED ON REAL URL
       refreshFiltersFromUrl(ebayUrl);
@@ -440,24 +449,43 @@ ebayApplyBtn.addEventListener('click', async () => {
 });
 
 function resetEbayAnalysis() {
-  // Reset stats table
   document.getElementById('ebay-min').textContent = '-';
   document.getElementById('ebay-avg').textContent = '-';
   document.getElementById('ebay-median').textContent = '-';
   document.getElementById('ebay-mode').textContent = '-';
 
-  // Reset suggested RRP
+  // Reset pricing inputs
   const rrpEl = document.getElementById('ebaySuggestedRrp');
-  if (rrpEl) {
-    rrpEl.textContent = '--';
-  }
+  const marginEl = document.getElementById('ebayMinMargin');
+  const offerEl = document.getElementById('ebayOfferValue');
 
-  // Optional: hide analysis section until results exist
+  if (rrpEl) rrpEl.value = '';
+  if (marginEl) marginEl.value = '';
+  if (offerEl) offerEl.value = '';
+
   const analysisWrapper = document.querySelector('.ebay-analysis-wrapper');
   if (analysisWrapper) {
     analysisWrapper.style.display = 'none';
   }
 }
+
+rrpInput.addEventListener('input', recalculateOfferValue);
+marginInput.addEventListener('input', recalculateOfferValue);
+
+
+function recalculateOfferValue() {
+  const rrp = Number(rrpInput.value);
+  const margin = Number(marginInput.value);
+
+  if (isNaN(rrp) || isNaN(margin)) {
+    offerInput.value = '';
+    return;
+  }
+
+  const offer = rrp * (1 - margin / 100);
+  offerInput.value = offer.toFixed(0);
+}
+
 
 
 function getMockResults() {

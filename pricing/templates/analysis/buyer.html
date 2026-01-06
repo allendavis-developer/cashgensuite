@@ -843,23 +843,22 @@
   font-size: 11px;
 }
 
-/* ================= SUGGESTED RRP ================= */
+/* ================= PRICING CONTROLS ================= */
 
-.ebay-rrp-wrapper {
+.ebay-pricing-wrapper {
   border: 1px solid #222;
   background: #0b0b0b;
   padding: 16px 18px;
   margin-bottom: 20px;
 }
 
-.ebay-rrp-header {
+.ebay-pricing-header {
   display: flex;
-  align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 14px;
 }
 
-.ebay-rrp-title {
+.ebay-pricing-title {
   font-size: 13px;
   font-weight: 600;
   color: #fff;
@@ -867,40 +866,60 @@
   letter-spacing: 0.04em;
 }
 
-.ebay-rrp-subtitle {
+.ebay-pricing-subtitle {
   font-size: 12px;
   color: #888;
 }
 
-.ebay-rrp-content {
+.ebay-pricing-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.ebay-pricing-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ebay-pricing-item label {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.ebay-pricing-input {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 20px;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 6px 10px;
 }
 
-.ebay-rrp-value {
-  font-size: 28px;
-  font-weight: 700;
-  color: #4da3ff;
-  display: flex;
-  align-items: center;
+.ebay-pricing-input input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
 }
 
-.ebay-rrp-value .currency {
-  font-size: 18px;
-  margin-right: 4px;
-  opacity: 0.85;
+.ebay-pricing-input input::placeholder {
+  color: #666;
 }
 
-.ebay-rrp-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.ebay-rrp-btn {
-  padding: 8px 16px;
+.ebay-pricing-input .currency,
+.ebay-pricing-input .suffix {
   font-size: 13px;
+  color: #888;
+  margin: 0 4px;
+}
+
+.ebay-pricing-input:focus-within {
+  border-color: #4da3ff;
 }
 
 
@@ -1027,20 +1046,57 @@
           </table>
         </div>
 
-        <!-- Suggested RRP -->
-      <div class="ebay-rrp-wrapper">
-        <div class="ebay-rrp-header">
-          <span class="ebay-rrp-title">Suggested RRP</span>
-          <span class="ebay-rrp-subtitle">Based on selected eBay data</span>
+        <!-- Pricing Controls -->
+      <div class="ebay-pricing-wrapper">
+        <div class="ebay-pricing-header">
+          <span class="ebay-pricing-title">Pricing Suggestions</span>
+          <span class="ebay-pricing-subtitle">Editable values</span>
         </div>
 
-        <div class="ebay-rrp-content">
-          <div class="ebay-rrp-value">
-            <span class="currency">£</span>
-            <span id="ebaySuggestedRrp">--</span>
+        <div class="ebay-pricing-row">
+
+          <!-- Suggested RRP -->
+          <div class="ebay-pricing-item">
+            <label>Suggested RRP</label>
+            <div class="ebay-pricing-input">
+              <span class="currency">£</span>
+              <input
+                type="number"
+                id="ebaySuggestedRrp"
+                placeholder="--"
+                step="1"
+              />
+            </div>
           </div>
 
-         
+          <!-- Min Margin -->
+          <div class="ebay-pricing-item">
+            <label>Min Margin</label>
+            <div class="ebay-pricing-input">
+              <input
+                type="number"
+                id="ebayMinMargin"
+                placeholder="--"
+                step="1"
+              />
+              <span class="suffix">%</span>
+            </div>
+          </div>
+
+          <!-- Offer Value -->
+          <div class="ebay-pricing-item">
+            <label>Offer Value</label>
+            <div class="ebay-pricing-input">
+              <span class="currency">£</span>
+              <input
+                type="number"
+                id="ebayOfferValue"
+                placeholder="--"
+                step="1"
+              />
+            </div>
+          </div>
+
         </div>
       </div>
 
