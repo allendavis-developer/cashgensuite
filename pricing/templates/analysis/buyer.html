@@ -843,6 +843,66 @@
   font-size: 11px;
 }
 
+/* ================= SUGGESTED RRP ================= */
+
+.ebay-rrp-wrapper {
+  border: 1px solid #222;
+  background: #0b0b0b;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+
+.ebay-rrp-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.ebay-rrp-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ebay-rrp-subtitle {
+  font-size: 12px;
+  color: #888;
+}
+
+.ebay-rrp-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.ebay-rrp-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #4da3ff;
+  display: flex;
+  align-items: center;
+}
+
+.ebay-rrp-value .currency {
+  font-size: 18px;
+  margin-right: 4px;
+  opacity: 0.85;
+}
+
+.ebay-rrp-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.ebay-rrp-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
 
 {% endblock %}
 
@@ -966,6 +1026,24 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Suggested RRP -->
+      <div class="ebay-rrp-wrapper">
+        <div class="ebay-rrp-header">
+          <span class="ebay-rrp-title">Suggested RRP</span>
+          <span class="ebay-rrp-subtitle">Based on selected eBay data</span>
+        </div>
+
+        <div class="ebay-rrp-content">
+          <div class="ebay-rrp-value">
+            <span class="currency">£</span>
+            <span id="ebaySuggestedRrp">--</span>
+          </div>
+
+         
+        </div>
+      </div>
+
 
         <div id="ebayResultsContainer" class="ebay-results-container" style="display: none;"></div>
       </div>

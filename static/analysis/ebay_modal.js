@@ -16,6 +16,8 @@ const filterUsedCheckbox = document.getElementById('filterUsed');
 
 let selectedFilters = {};
 let isEbayScraping = false;
+let previousSelectedFilters = {};
+
 
 // Open modal
 scrapeEbayBtn.addEventListener('click', () => {
@@ -43,6 +45,7 @@ function closeModal() {
   ebayResultsContainer.style.display = 'none';
   ebayResultsContainer.innerHTML = '';
   selectedFilters = {};
+  previousSelectedFilters = {}; 
   updateSelectedCount();
 }
 
@@ -60,6 +63,7 @@ function setEbayScrapingState(isScraping) {
 
 // Handle search - fetch filters
 ebaySearchBtn.addEventListener('click', async () => {
+  resetEbayAnalysis();
   const searchTerm = ebaySearchInput.value.trim();
 
   if (!searchTerm) {
@@ -100,7 +104,7 @@ ebaySearchBtn.addEventListener('click', async () => {
 });
 
 
-function renderFilters(filters) {
+function renderFilters(filters, restoreFilters = null) {
   selectedFilters = {};
   updateSelectedCount();
   
@@ -160,24 +164,66 @@ function renderFilters(filters) {
     }
   }).join('');
   
-  // Attach change listeners
-  ebayFiltersContainer.querySelectorAll('.ebay-filter-checkbox').forEach(checkbox => {
-    checkbox.addEventListener('change', handleFilterChange);
-  });
-  
-  ebayFiltersContainer.querySelectorAll('.ebay-range-input').forEach(input => {
-    input.addEventListener('input', handleFilterChange);
-  });
+  attachFilterListeners();
 
-  // Collapsible behavior
-    ebayFiltersContainer.querySelectorAll('.ebay-filter-title').forEach(title => {
-    title.addEventListener('click', () => {
-        const section = title.closest('.ebay-filter-section');
-        section.classList.toggle('expanded');
-    });
-    });
+    // 🔁 Restore selections if provided
+  if (restoreFilters) {
+    restoreFilterSelections(restoreFilters);
+  }
 
 }
+
+function restoreFilterSelections(restoreFilters) {
+  Object.entries(restoreFilters).forEach(([filterName, value]) => {
+
+    // CHECKBOX FILTERS
+    if (Array.isArray(value)) {
+      value.forEach(v => {
+        const checkbox = ebayFiltersContainer.querySelector(
+          `.ebay-filter-checkbox[data-filter="${filterName}"][data-value="${CSS.escape(v)}"]`
+        );
+
+        if (checkbox) {
+          checkbox.checked = true;
+          checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      });
+    }
+
+    // RANGE FILTERS
+    if (typeof value === 'object' && !Array.isArray(value)) {
+      ['min', 'max'].forEach(rangeType => {
+        if (value[rangeType]) {
+          const input = ebayFiltersContainer.querySelector(
+            `.ebay-range-input[data-filter="${filterName}"][data-range="${rangeType}"]`
+          );
+
+          if (input) {
+            input.value = value[rangeType];
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        }
+      });
+    }
+  });
+}
+
+
+function attachFilterListeners() {
+  ebayFiltersContainer.querySelectorAll('.ebay-filter-checkbox')
+    .forEach(cb => cb.addEventListener('change', handleFilterChange));
+
+  ebayFiltersContainer.querySelectorAll('.ebay-range-input')
+    .forEach(input => input.addEventListener('input', handleFilterChange));
+
+  ebayFiltersContainer.querySelectorAll('.ebay-filter-title')
+    .forEach(title => {
+      title.addEventListener('click', () => {
+        title.closest('.ebay-filter-section').classList.toggle('expanded');
+      });
+    });
+}
+
 
 function handleFilterChange(e) {
   const filterName = e.target.dataset.filter; // This will now be the name
@@ -285,7 +331,7 @@ async function refreshFiltersFromUrl(ebayUrl) {
 
     const data = await response.json();
 
-    renderFilters(data.filters);
+    renderFilters(data.filters, previousSelectedFilters);
 
   } catch (err) {
     console.error("Filter refresh failed:", err);
@@ -298,9 +344,9 @@ ebayApplyBtn.addEventListener('click', async () => {
 
     //  HARD GUARD
   if (isEbayScraping) return;
+  resetEbayAnalysis(); 
 
   setEbayScrapingState(true);
-
 
   const searchTerm = ebaySearchInput.value.trim();
   
@@ -325,6 +371,9 @@ ebayApplyBtn.addEventListener('click', async () => {
   ebayResultsContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">Scraping eBay listings...</div>';
             
   try {
+    // 🔒 Snapshot selected filters BEFORE scraping
+    previousSelectedFilters = JSON.parse(JSON.stringify(selectedFilters));
+
     // TODO: THIS FUNCITON IS REALLY WEIRD BECAUSE IT BUILDS EVERYTHING EXCEPT THE TOP FILTERS
     const ebayUrl = buildEbayUrl(searchTerm, selectedFilters);
     console.log("eBay URL to scrape:", ebayUrl);
@@ -335,8 +384,8 @@ ebayApplyBtn.addEventListener('click', async () => {
         directUrl: ebayUrl,
         competitors: ["eBay"],
         ebayFilterSold: ebayFilterSold,
-        ebayFilterUsed: ebayFilterUKOnly,
-        ebayFilterUKOnly: ebayFilterUsed,
+        ebayFilterUsed: ebayFilterUsed,
+        ebayFilterUKOnly: ebayFilterUKOnly,
       }
     });
 
@@ -358,7 +407,23 @@ ebayApplyBtn.addEventListener('click', async () => {
 
       // Ensure table is visible
       document.querySelector('.ebay-analysis-wrapper').style.display = 'block';
-      
+
+      // ===== SUGGESTED RRP =====
+      let suggestedRrp = null;
+
+      const medianNum = Number(stats.median);
+
+      if (!isNaN(medianNum)) {
+        let rounded = Math.round(medianNum);
+        suggestedRrp = (rounded % 2 === 0) ? rounded - 2 : rounded - 1;
+        if (suggestedRrp < 0) suggestedRrp = 0;
+      }
+
+      const rrpEl = document.getElementById('ebaySuggestedRrp');
+      if (rrpEl && suggestedRrp !== null) {
+        rrpEl.textContent = suggestedRrp.toFixed(0);
+      }
+
       // REFRESH FILTERS BASED ON REAL URL
       refreshFiltersFromUrl(ebayUrl);
     } else {
@@ -373,6 +438,27 @@ ebayApplyBtn.addEventListener('click', async () => {
     setEbayScrapingState(false);
   }
 });
+
+function resetEbayAnalysis() {
+  // Reset stats table
+  document.getElementById('ebay-min').textContent = '-';
+  document.getElementById('ebay-avg').textContent = '-';
+  document.getElementById('ebay-median').textContent = '-';
+  document.getElementById('ebay-mode').textContent = '-';
+
+  // Reset suggested RRP
+  const rrpEl = document.getElementById('ebaySuggestedRrp');
+  if (rrpEl) {
+    rrpEl.textContent = '--';
+  }
+
+  // Optional: hide analysis section until results exist
+  const analysisWrapper = document.querySelector('.ebay-analysis-wrapper');
+  if (analysisWrapper) {
+    analysisWrapper.style.display = 'none';
+  }
+}
+
 
 function getMockResults() {
   return {
