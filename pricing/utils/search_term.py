@@ -1,17 +1,17 @@
 # this is the search that will be done on the database
 CATEGORY_SEARCH_FORMAT = {
-    "smartphones and mobile": ["item_name", "storage"],  
-    "games (discs/cartridges)": ["subcategory", "item_name"],
-    "gaming consoles": ["item_name", "storage", "condition"],
-    "laptops": ["item_name", "ram", "storage",],
-    "tablets": ["item_name", "storage",],
-    "televisions": ["item_name", "size",],
-    "smartwatches": ["item_name", "size",],
+    "smartphones and mobile": ["item_name", "condition"],  
+    "games (discs/cartridges)": ["item_name"],
+    "gaming consoles": ["item_name", "condition"],
+    "laptops": ["item_name", "condition"],
+    "tablets": ["item_name", "condition"],
+    "televisions": ["item_name", "condition"],
+    "smartwatches": ["item_name", "condition"],
     "cameras": ["item_name", "condition"],
-    "music tech": ["item_name",],
-    "headphones": ["item_name",],
-    "media player accessories": ["item_name",],
-    "console accessories": ["item_name",],
+    "music tech": ["item_name", "condition"],
+    "headphones": ["item_name", "condition"],
+    "media players": ["item_name", "condition"],
+    "console accessories": ["item_name", "condition"],
     "drone": ["item_name", "condition"],
     "wearable tech": ["item_name", "condition"]
     # Add more categories here

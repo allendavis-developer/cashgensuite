@@ -36,7 +36,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     currentAttributes = []; // clear old ones
     attributesContainer.innerHTML = '';
     fetchSubcategories(categoryTomSelect.getValue());
+
+        
+    // Always display Condition attribute immediately
+    const defaultConditionAttr = {
+      id: 'default_condition',
+      name: 'condition',
+      label: 'Condition',
+      field_type: 'select',
+      options: ['New', 'Used', 'Refurbished'] // or whatever your default options are
+    };
+    
+    currentAttributes = [defaultConditionAttr];
+    renderAttributes([defaultConditionAttr]);
     loadCategoryAttributes(categoryTomSelect.getValue());
+
 
   });
 
@@ -55,7 +69,7 @@ async function loadCategoryAttributes(categoryId) {
   }
   
   currentAttributes = data;
-  renderAttributes(data);
+  // renderAttributes(data);
 }
 
 // ========== Typeahead (Tom Select) ==========
@@ -102,121 +116,11 @@ function initTomSelects() {
   modelTomSelect.on('change', (value) => {
     if (value && value !== '__new__') sendFieldUpdate('model', value);
   });
-
-  // Setup navigation after TomSelect initialization
-  setupTomSelectNavigation();
 }
 
 let isInitializing = false;
 
-function setupTomSelectNavigation() {
-  // Category -> Subcategory
-  categoryTomSelect.on('item_add', () => {
-    setTimeout(() => {
-      if (isInitializing) return;
-      
-      subcategoryTomSelect.focus();
-      subcategoryTomSelect.open();
-    }, 50);
-  });
 
-  // Subcategory -> Model
-  subcategoryTomSelect.on('item_add', () => {
-    setTimeout(() => {
-      if (isInitializing) return;
-
-      modelTomSelect.focus();
-      modelTomSelect.open();
-    }, 50);
-  });
-
-  // Between attributes  
-  modelTomSelect.on('item_add', (value) => {
-    if (value === '__new__') return; // Don't navigate if adding new model
-    
-    setTimeout(() => {
-      if (currentAttributes.length > 0) {
-        const firstAttrTs = attributeTomSelects[currentAttributes[0].id];
-        if (firstAttrTs) {
-          firstAttrTs.focus();
-          firstAttrTs.open();
-        } else {
-          const firstAttrInput = document.getElementById(`attr_${currentAttributes[0].id}`);
-          if (firstAttrInput) {
-            firstAttrInput.focus();
-          }
-        }
-      } else {
-        saveItemBtn.focus();
-      }
-    }, 50);
-  });
-
-  // Handle Enter key in TomSelect dropdowns
-  [categoryTomSelect, subcategoryTomSelect, modelTomSelect].forEach((ts) => {
-    ts.on('dropdown_close', () => {
-      // When dropdown closes with a value selected, trigger item_add naturally
-    });
-  });
-
-  // Add keyboard handler for the control input
-  categoryTomSelect.control_input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && categoryTomSelect.getValue()) {
-      e.preventDefault();
-      categoryTomSelect.blur();
-    }
-  });
-
-  subcategoryTomSelect.control_input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && subcategoryTomSelect.getValue()) {
-      e.preventDefault();
-      subcategoryTomSelect.blur();
-    }
-  });
-
-  modelTomSelect.control_input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && modelTomSelect.getValue()) {
-      e.preventDefault();
-      modelTomSelect.blur();
-    }
-  });
-}
-
-function setupAttributeNavigation(attrId, attrIndex) {
-  const attrTs = attributeTomSelects[attrId];
-  if (!attrTs) return;
-
-  // Navigate to next attribute or save button
-  attrTs.on('item_add', () => {
-    setTimeout(() => {
-      if (attrIndex < currentAttributes.length - 1) {
-        // Move to next attribute
-        const nextAttr = currentAttributes[attrIndex + 1];
-        const nextTs = attributeTomSelects[nextAttr.id];
-        if (nextTs) {
-          nextTs.focus();
-          nextTs.open();
-        } else {
-          const nextInput = document.getElementById(`attr_${nextAttr.id}`);
-          if (nextInput) {
-            nextInput.focus();
-          }
-        }
-      } else {
-        // Last attribute, focus save button
-        saveItemBtn.focus();
-      }
-    }, 50);
-  });
-
-  // Handle Enter key
-  attrTs.control_input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && attrTs.getValue()) {
-      e.preventDefault();
-      attrTs.blur();
-    }
-  });
-}
 
 function validateModalInputs() {
   const category = categoryTomSelect.getValue();
@@ -553,7 +457,6 @@ function renderAttributes(attrs) {
 
 
       attributeTomSelects[attr.id] = ts;
-      setupAttributeNavigation(attr.id, index);
 
       // 🔹 Auto-select if only one option
       if (attr.options && attr.options.length === 1) {
@@ -569,61 +472,8 @@ function renderAttributes(attrs) {
     }
   });
 
-  // After all attributes are rendered and TomSelects initialized:
-  if (attrs.length > 0) {
-    setTimeout(() => {
-      const firstAttr = attrs[0];
-      const firstAttrTs = attributeTomSelects[firstAttr.id];
-      if (firstAttrTs) {
-        firstAttrTs.focus();
-        firstAttrTs.open();
-      } else {
-        const firstAttrInput = document.getElementById(`attr_${firstAttr.id}`);
-        if (firstAttrInput) {
-          firstAttrInput.focus();
-        }
-      }
-    }, 100);
-  }
-
-
-
-  // Setup Enter key navigation for text/number inputs
-  attrs.forEach((attr, index) => {
-    if (attr.field_type !== 'select') {
-      const input = document.getElementById(`attr_${attr.id}`);
-      if (input) {
-        input.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            
-            if (index < attrs.length - 1) {
-              // Move to next attribute
-              const nextAttr = attrs[index + 1];
-              const nextTs = attributeTomSelects[nextAttr.id];
-              if (nextTs) {
-                nextTs.focus();
-                nextTs.open();
-              } else {
-                const nextInput = document.getElementById(`attr_${nextAttr.id}`);
-                if (nextInput) {
-                  nextInput.focus();
-                }
-              }
-            } else {
-              // Last attribute, click save
-              saveItemBtn.click();
-            }
-          }
-        });
-      }
-    }
-  });
-
-  
-
-  
 }
+
 
 // ========== UI & Event Handlers ==========
 function resetModal() {
@@ -658,18 +508,9 @@ addItemBtn.addEventListener('click', async () => {
 
     if (lastSelections.subcategory) {
         subcategoryTomSelect.setValue(String(lastSelections.subcategory), true);
-
         await fetchModels();
     }
-
-    modelTomSelect.focus(); // Focus model if last selections exist
-    modelTomSelect.open();
-  } else {
-    // No last category, focus category
-    categoryTomSelect.focus(); 
   }
-
-    const selectedCategory = categoryTomSelect.getValue();
 
 
 });
