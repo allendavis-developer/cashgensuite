@@ -125,8 +125,8 @@ function renderFilters(filters) {
             ${sortedOptions.map(option => `
               <label class="ebay-filter-option">
                 <input type="checkbox" 
-                       data-filter="${filter.id}" 
-                       data-value="${option.value}"
+                       data-filter="${filter.name}" 
+                       data-value="${option.label}"
                        class="ebay-filter-checkbox">
                 <span>${option.label}</span>
                 ${option.count ? `<span class="ebay-filter-count">(${option.count.toLocaleString()})</span>` : ''}
@@ -145,13 +145,13 @@ function renderFilters(filters) {
           <div class="ebay-filter-range">
             <input type="number" 
                    placeholder="Min" 
-                   data-filter="${filter.id}" 
+                   data-filter="${filter.name}" 
                    data-range="min"
                    class="ebay-range-input">
             <span style="margin: 0 8px;">to</span>
             <input type="number" 
                    placeholder="Max" 
-                   data-filter="${filter.id}" 
+                   data-filter="${filter.name}" 
                    data-range="max"
                    class="ebay-range-input">
           </div>
@@ -180,37 +180,37 @@ function renderFilters(filters) {
 }
 
 function handleFilterChange(e) {
-  const filterId = e.target.dataset.filter;
+  const filterName = e.target.dataset.filter; // This will now be the name
   
   if (e.target.type === 'checkbox') {
-    if (!selectedFilters[filterId]) {
-      selectedFilters[filterId] = [];
+    if (!selectedFilters[filterName]) {
+      selectedFilters[filterName] = [];
     }
     
     if (e.target.checked) {
-      selectedFilters[filterId].push(e.target.dataset.value);
+      selectedFilters[filterName].push(e.target.dataset.value);
     } else {
-      selectedFilters[filterId] = selectedFilters[filterId].filter(v => v !== e.target.dataset.value);
-      if (selectedFilters[filterId].length === 0) {
-        delete selectedFilters[filterId];
+      selectedFilters[filterName] = selectedFilters[filterName].filter(v => v !== e.target.dataset.value);
+      if (selectedFilters[filterName].length === 0) {
+        delete selectedFilters[filterName];
       }
     }
   } else if (e.target.classList.contains('ebay-range-input')) {
     const rangeType = e.target.dataset.range;
-    if (!selectedFilters[filterId]) {
-      selectedFilters[filterId] = {};
+    if (!selectedFilters[filterName]) {
+      selectedFilters[filterName] = {};
     }
-    selectedFilters[filterId][rangeType] = e.target.value;
+    selectedFilters[filterName][rangeType] = e.target.value;
   }
   
   updateSelectedCount();
 
   const section = e.target.closest('.ebay-filter-section');
-    if (section && !section.classList.contains('expanded')) {
+  if (section && !section.classList.contains('expanded')) {
     section.classList.add('expanded');
-    }
-
+  }
 }
+
 
 function updateSelectedCount() {
   let count = 0;
@@ -230,37 +230,68 @@ function updateSelectedCount() {
 // Build eBay search URL from selected filters
 function buildEbayUrl(searchTerm, filters) {
   const baseUrl = "https://www.ebay.co.uk/sch/i.html";
-  const params = new URLSearchParams();
-
-  // Fixed params
-  params.set("_dcat", "9355");
-  params.set("_fsrp", "1");
-  params.set("rt", "nc");
-  params.set("_from", "R40");
   
-  // Search term
-  params.set("_nkw", searchTerm);
-  params.set("_sacat", "0");
+  const params = {
+    "_nkw": searchTerm.replace(/ /g, '+'),
+    "_sacat": "0",
+    "_from": "R40",
+    "_dcat": "9355"
+  };
 
-  // Add filters - capitalize the first letter of each key
-  Object.entries(filters).forEach(([key, value]) => {
-    // Capitalize first letter: model -> Model, brand -> Brand
-    const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1);
-    
+  // Add filters with double-encoding
+  Object.entries(filters).forEach(([filterName, value]) => {
     if (Array.isArray(value)) {
-      // Join multiple values with pipe
-      params.set(capitalizedKey, value.join("|"));
+      // Double-encode: first encode, then encode again
+      const doubleEncodedKey = encodeURIComponent(encodeURIComponent(filterName));
+      const doubleEncodedValue = value
+        .map(v => encodeURIComponent(encodeURIComponent(v)))
+        .join("|");
+      params[doubleEncodedKey] = doubleEncodedValue;
     } else if (typeof value === 'object') {
-      // Handle range filters
-      if (value.min) params.set(`${capitalizedKey}_min`, value.min);
-      if (value.max) params.set(`${capitalizedKey}_max`, value.max);
+      const doubleEncodedKey = encodeURIComponent(encodeURIComponent(filterName));
+      if (value.min) params[`${doubleEncodedKey}_min`] = encodeURIComponent(encodeURIComponent(value.min));
+      if (value.max) params[`${doubleEncodedKey}_max`] = encodeURIComponent(encodeURIComponent(value.max));
     } else {
-      params.set(capitalizedKey, value);
+      const doubleEncodedKey = encodeURIComponent(encodeURIComponent(filterName));
+      params[doubleEncodedKey] = encodeURIComponent(encodeURIComponent(value));
     }
   });
 
-  return `${baseUrl}?${params.toString()}`;
+  // Build query string without additional encoding
+  const queryString = Object.entries(params)
+    .map(([key, value]) => `${key}=${value}`)
+    .join('&');
+
+  return `${baseUrl}?${queryString}`;
 }
+
+async function refreshFiltersFromUrl(ebayUrl) {
+  ebayFiltersContainer.innerHTML =
+    '<div style="text-align:center; padding:20px; color:#666;">Updating filters...</div>';
+  ebayFiltersContainer.style.display = 'block';
+
+  try {
+    const response = await fetch(
+      `/api/ebay/filters/?url=${encodeURIComponent(ebayUrl)}`,
+      {
+        method: "GET",
+        headers: { "Accept": "application/json" }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to refresh filters");
+    }
+
+    const data = await response.json();
+
+    renderFilters(data.filters);
+
+  } catch (err) {
+    console.error("Filter refresh failed:", err);
+  }
+}
+
 
 // Handle apply button
 ebayApplyBtn.addEventListener('click', async () => {
@@ -327,7 +358,9 @@ ebayApplyBtn.addEventListener('click', async () => {
 
       // Ensure table is visible
       document.querySelector('.ebay-analysis-wrapper').style.display = 'block';
-
+      
+      // REFRESH FILTERS BASED ON REAL URL
+      refreshFiltersFromUrl(ebayUrl);
     } else {
       alert("Scraping failed: " + (response.error || "Unknown error"));
     }

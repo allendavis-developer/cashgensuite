@@ -32,7 +32,7 @@ from pricing.utils.competitor_utils import get_competitor_data
 from pricing.utils.analysis_utils import process_item_analysis, save_analysis_to_db
 from pricing.utils.search_term import build_search_term, get_model_variants
 from pricing.utils.pricing import get_effective_margin
-from pricing.utils.ebay_filters import extract_filters
+from pricing.utils.ebay_filters import extract_filters, extract_ebay_search_params
 
 def get_prefilled_data(request):
     return {
@@ -1690,23 +1690,37 @@ def save_overnight_scraped_data(request):
 @require_GET
 def get_ebay_filters(request):
     search_term = request.GET.get("q", "").strip()
+    ebay_search_url = request.GET.get("url", "").strip()
 
-    if not search_term:
+    if not search_term and not ebay_search_url:
         return JsonResponse(
-            {"success": False, "error": "Missing search term"},
+            {"success": False, "error": "Provide either q or url"},
             status=400
         )
 
     ebay_url = "https://www.ebay.co.uk/sch/ajax/refine"
 
-    params = {
-        "_nkw": search_term,
-        "_sacat": 0,
-        "_fsrp": 1,
-        "rt": "nc",
-        "modules": "SEARCH_REFINEMENTS_MODEL_V2:fa",  # <-- full aspects
-        "no_encode_refine_params": 1,                 # <-- prevents aggregation/encoding
-    }
+    if ebay_search_url:
+        try:
+            params = extract_ebay_search_params(ebay_search_url)
+        except Exception:
+            return JsonResponse(
+                {"success": False, "error": "Invalid eBay URL"},
+                status=400
+            )
+    else:
+        params = {
+            "_nkw": search_term,
+            "_sacat": 0,
+            "_fsrp": 1,
+            "rt": "nc",
+        }
+
+    # force refinement payload options
+    params.update({
+        "modules": "SEARCH_REFINEMENTS_MODEL_V2:fa",
+        "no_encode_refine_params": 1,
+    })
 
     headers = {
         "User-Agent": (
@@ -1731,8 +1745,10 @@ def get_ebay_filters(request):
             params=params,
             timeout=20,
         )
-        response.raise_for_status()
+        # Log the actual URL that was requested
+        print(f"Request sent to: {response.url}")
 
+        response.raise_for_status()
     except requests.RequestException as e:
         return JsonResponse(
             {"success": False, "error": str(e)},
@@ -1741,16 +1757,14 @@ def get_ebay_filters(request):
 
     data = response.json()
 
-    # Handle both wrapped and unwrapped responses
+    refinements_module = None
     if data.get("_type") == "SearchRefinementsModule":
         refinements_module = data
     else:
-        refinements_module = None
         for module in data.get("modules", []):
             if module.get("_type") == "SearchRefinementsModule":
                 refinements_module = module
                 break
-
 
     if not refinements_module:
         return JsonResponse(
@@ -1758,16 +1772,14 @@ def get_ebay_filters(request):
             status=502
         )
 
-    # 🧠 extract filters
     filters = extract_filters(refinements_module)
 
-    return JsonResponse(
-        {
-            "success": True,
-            "query": search_term,
-            "filters": filters,
-        }
-    )
+    return JsonResponse({
+        "success": True,
+        "source": "url" if ebay_search_url else "query",
+        "query": search_term or params.get("_nkw"),
+        "filters": filters,
+    })
 
 
 

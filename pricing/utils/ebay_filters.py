@@ -1,3 +1,17 @@
+from urllib.parse import urlparse, parse_qsl
+
+def extract_ebay_search_params(ebay_url: str) -> dict:
+    parsed = urlparse(ebay_url)
+    # Use parse_qsl to get raw values without automatic decoding
+    params = dict(parse_qsl(parsed.query, keep_blank_values=True))
+
+    # Ensure required defaults
+    params.setdefault("_sacat", "0")
+    params.setdefault("_fsrp", "1")
+    params.setdefault("rt", "nc")
+
+    return params
+
 def extract_checkbox_options(entries):
     options = []
 
