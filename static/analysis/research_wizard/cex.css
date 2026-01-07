@@ -1,0 +1,18 @@
+.rw-page-cex {
+  flex: 1;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.rw-page-cex.rw-active {
+  display: flex;
+}
+
+.cex-title {
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 700;
+  color: #444;
+  letter-spacing: 1px;
+}

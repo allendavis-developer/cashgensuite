@@ -57,3 +57,59 @@ body.rw-open {
 .rw-close:active {
   transform: scale(0.92);
 }
+
+.rw-page {
+  flex: 1;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 40px;
+  text-align: center;
+}
+
+.rw-page.rw-active {
+  display: flex;
+}
+
+.rw-title {
+  font-size: clamp(36px, 5vw, 56px);
+  font-weight: 800;
+  margin-bottom: 50px;
+  letter-spacing: 0.5px;
+  color: #fff;
+}
+
+.rw-options {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.rw-option {
+  min-width: 220px;
+  padding: 28px 40px;
+  font-size: 28px;
+  font-weight: 700;
+  border-radius: 16px;
+  border: 2px solid #333;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+  transition: 
+    transform 0.15s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.rw-option:hover {
+  background: #1a1a1a;
+  border-color: #555;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+
+.rw-option:active {
+  transform: scale(0.96);
+}

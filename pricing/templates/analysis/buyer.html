@@ -934,7 +934,7 @@
     <button id="scrapeEbayBtn" class="action-btn cex-url-btn">eBay Item</button>
 
     <button id="researchWizard" class="action-btn cex-url-btn">Deep Research</button>
-    {% include "analysis/research_wizard.html" %}
+    {% include "analysis/research_wizard/research_wizard.html" %}
 
   </div>
 <div id="summaryContainer">
@@ -2053,8 +2053,8 @@ function updateSummary() {
 
 </script>
 
-<link rel="stylesheet" href="{% static 'analysis/research_wizard.css' %}">
-<script defer src="{% static 'analysis/research_wizard.js' %}"></script>
+<link rel="stylesheet" href="{% static 'analysis/research_wizard/research_wizard.css' %}">
+<script defer src="{% static 'analysis/research_wizard/research_wizard.js' %}"></script>
 
 <script src="{% static 'analysis/add_item_modal.js' %}"></script>
 <script src="{% static 'analysis/ebay_modal.js' %}"></script>

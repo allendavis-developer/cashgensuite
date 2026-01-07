@@ -41,6 +41,24 @@
     }
   });
 
+    const pages = modal.querySelectorAll('.rw-page');
+
+    function showPage(selector) {
+      pages.forEach(p => p.classList.remove('rw-active'));
+      modal.querySelector(selector)?.classList.add('rw-active');
+    }
+
+    const optionButtons = modal.querySelectorAll('.rw-option');
+
+    optionButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const source = btn.dataset.source;
+
+        if (source === 'cex') {
+          showPage('.rw-page-cex');
+        }
+      });
+    });
 
   /* Expose close */
   window.ResearchWizard = window.ResearchWizard || {};
