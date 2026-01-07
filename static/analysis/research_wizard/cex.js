@@ -2,10 +2,14 @@
 const modalItemCategory = document.getElementById('modalItemCategory');
 const modalItemSubcategory = document.getElementById('modalItemSubcategory');
 const modalItemModel = document.getElementById('modalItemModel');
+const addItemButton = document.querySelector('.add-item-button');
+addItemButton.disabled = true; // safety
 
 let currentAttributes = [];
 let categoryTomSelect, subcategoryTomSelect, modelTomSelect;
 let attributeTomSelects = {}; // Store TomSelect instances for attributes
+let attributesResolved = false;
+
 
 // ========== Local Cache ==========
 const cache = {
@@ -71,6 +75,9 @@ function initTomSelects() {
   });
 
   modelTomSelect.on('change', value => {
+    addItemButton.disabled = true; // 🔒 lock immediately
+    attributesResolved = false;
+
     clearDynamicAttributes();
     Object.values(attributeTomSelects).forEach(ts => ts.destroy());
     attributeTomSelects = {};
@@ -81,6 +88,8 @@ function initTomSelects() {
 
     if (value) sendFieldUpdate('model', value);
   });
+
+
 
 }
 
@@ -195,6 +204,15 @@ async function sendFieldUpdate(fieldName, value) {
 
     // Handle model selection and variants
     if (fieldName === 'model' && data.variants) {
+
+      const hasAttributes = Object.keys(data.variants).length > 0;
+
+      if (!hasAttributes) {
+        attributesResolved = true;
+        updateAddItemButtonState();
+        return;
+      }
+
       console.log('Received variants from backend:', data.variants);
       console.log('Received combinations from backend:', data.combinations);
 
@@ -218,11 +236,33 @@ async function sendFieldUpdate(fieldName, value) {
       if (attrMatch) {
         selectedVariants[attrMatch.name] = value;
         filterRemainingAttributes();
+        updateAddItemButtonState();
+
       }
     }
   } catch (err) {
     console.error(`Failed to send ${fieldName}:`, err);
   }
+}
+
+function updateAddItemButtonState() {
+  if (!attributesResolved) {
+    addItemButton.disabled = true;
+    return;
+  }
+
+  const modelSelected = !!modelTomSelect.getValue();
+
+  if (modelSelected && currentAttributes.length === 0) {
+    addItemButton.disabled = false;
+    return;
+  }
+
+  const allAttrsSelected =
+    currentAttributes.length > 0 &&
+    currentAttributes.every(attr => selectedVariants[attr.name]);
+
+  addItemButton.disabled = !(modelSelected && allAttrsSelected);
 }
 
 
@@ -278,6 +318,10 @@ function filterRemainingAttributes() {
     if (!ts.getValue() && allowedOptions.length === 1) {
       ts.setValue(allowedOptions[0]);
       selectedVariants[attr.name] = allowedOptions[0];
+
+      requestAnimationFrame(() => {
+        updateAddItemButtonState();
+      });
     }
     
   });
@@ -322,8 +366,20 @@ function renderAttributes(attrs) {
     if (attr.options?.length === 1) {
       ts.setValue(attr.options[0]);
       sendFieldUpdate(attr.name, attr.options[0]);
+
+      requestAnimationFrame(() => {
+        updateAddItemButtonState();
+      });
     }
   });
+
+  attributesResolved = true;
+
+
+  requestAnimationFrame(() => {
+    updateAddItemButtonState();
+  });
+
 }
 
 // ========== Utility Functions ==========
