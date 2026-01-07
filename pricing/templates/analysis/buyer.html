@@ -104,54 +104,6 @@
 
 
 
-/* ===== Tom Select Dark Mode ===== */
-.ts-wrapper,
-.ts-dropdown {
-  background-color: #1e1e1e !important;
-  color: #f5f5f5 !important;
-  border-color: #333 !important;
-  font-size: 0.95rem;
-}
-
-/* Input field and selected item area */
-.ts-control {
-  background-color: #1e1e1e !important;
-  color: #f5f5f5 !important;
-  border: 1px solid #333 !important;
-  border-radius: 0.5rem;
-}
-
-/* Placeholder text */
-.ts-control input {
-  color: #ccc !important;
-}
-
-/* Dropdown options */
-.ts-dropdown .option {
-  background-color: #1e1e1e !important;
-  color: #e0e0e0 !important;
-}
-
-/* Hover / active item */
-.ts-dropdown .option:hover,
-.ts-dropdown .active {
-  background-color: #333 !important;
-  color: #fff !important;
-}
-
-/* Selected item chip */
-.ts-wrapper.multi .item {
-  background-color: #333 !important;
-  border: 1px solid #555 !important;
-  color: #fff !important;
-  border-radius: 0.4rem;
-}
-
-/* Focus ring */
-.ts-control.focus {
-  border-color: #666 !important;
-  box-shadow: 0 0 0 1px #666 !important;
-}
 
 .current-offer, .cex-offer {
   text-align: center;
@@ -2056,7 +2008,7 @@ function updateSummary() {
 <link rel="stylesheet" href="{% static 'analysis/research_wizard/research_wizard.css' %}">
 <script defer src="{% static 'analysis/research_wizard/research_wizard.js' %}"></script>
 
-<script src="{% static 'analysis/add_item_modal.js' %}"></script>
+{% comment %} <script src="{% static 'analysis/add_item_modal.js' %}"></script> {% endcomment %}
 <script src="{% static 'analysis/ebay_modal.js' %}"></script>
 <script src="{% static 'extension_bridge.js' %}"></script>
 

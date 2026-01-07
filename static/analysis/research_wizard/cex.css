@@ -1,18 +1,243 @@
+/* Page */
 .rw-page-cex {
   flex: 1;
   display: none;
   align-items: center;
   justify-content: center;
-  background: #000;
+  background: #000000;
+  padding: 32px;
+  overflow-y: auto;
+  color: #eaeaea;
 }
 
 .rw-page-cex.rw-active {
   display: flex;
 }
 
+/* Card */
+.cex-container {
+  width: 100%;
+  max-width: 900px;
+  background: #0b0b0b;
+  padding: 56px;
+  border-radius: 14px;
+  border: 1px solid #1f1f1f;
+}
+
+/* Title */
 .cex-title {
-  font-size: clamp(32px, 4vw, 48px);
-  font-weight: 700;
-  color: #444;
-  letter-spacing: 1px;
+  font-size: clamp(44px, 5vw, 64px);
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 1.5px;
+  margin-bottom: 48px;
+}
+
+/* Form */
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+/* Input Groups */
+.input-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-group label {
+  margin-bottom: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #bdbdbd;
+  letter-spacing: 0.4px;
+}
+
+/* Inputs */
+.input-field {
+  width: 100%;
+  padding: 18px 20px;
+  background: #000000;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  font-size: 18px;
+  color: #f5f5f5;
+  min-height: 64px;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: #444444;
+}
+
+/* ---------------- TomSelect (Large Black Theme) ---------------- */
+
+.ts-wrapper {
+  width: 100%;
+}
+
+.ts-control {
+  background: #000000;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 14px 20px;
+  min-height: 64px;
+  font-size: 18px;
+  color: #f5f5f5;
+}
+
+.ts-control input {
+  font-size: 18px;
+  color: #f5f5f5;
+}
+
+.ts-wrapper.focus .ts-control {
+  border-color: #444444;
+}
+
+/* Dropdown */
+.ts-dropdown {
+  background: #0b0b0b;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  margin-top: 10px;
+}
+
+.ts-dropdown .option {
+  padding: 18px 22px;
+  font-size: 18px;
+  color: #eaeaea;
+}
+
+.ts-dropdown .option:hover {
+  background: #141414;
+}
+
+.ts-dropdown .active {
+  background: #1f1f1f;
+  color: #ffffff;
+}
+
+.ts-dropdown .no-results {
+  padding: 18px 22px;
+  font-size: 16px;
+  color: #7a7a7a;
+}
+
+/* Selected value (single select) */
+.ts-control .item {
+  font-size: 18px;
+  line-height: 1.4;
+  color: #f5f5f5;
+}
+
+/* Placeholder text */
+.ts-control .placeholder {
+  font-size: 18px;
+  color: #8a8a8a;
+  opacity: 1; /* TomSelect lowers this by default */
+}
+
+/* When nothing selected, input text */
+.ts-control input {
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+/* Ensure height stays correct */
+.ts-control {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+}
+
+/* ===== Tom Select Dark Mode ===== */
+.ts-wrapper,
+.ts-dropdown {
+  background-color: #1e1e1e !important;
+  color: #f5f5f5 !important;
+  border-color: #333 !important;
+  font-size: 0.95rem;
+}
+
+/* Input field and selected item area */
+.ts-control {
+  background-color: #1e1e1e !important;
+  color: #f5f5f5 !important;
+  border: 1px solid #333 !important;
+  border-radius: 0.5rem;
+}
+
+/* Placeholder text */
+.ts-control input {
+  color: #ccc !important;
+}
+
+/* Dropdown options */
+.ts-dropdown .option {
+  background-color: #1e1e1e !important;
+  color: #e0e0e0 !important;
+}
+
+/* Hover / active item */
+.ts-dropdown .option:hover,
+.ts-dropdown .active {
+  background-color: #333 !important;
+  color: #fff !important;
+}
+
+/* Selected item chip */
+.ts-wrapper.multi .item {
+  background-color: #333 !important;
+  border: 1px solid #555 !important;
+  color: #fff !important;
+  border-radius: 0.4rem;
+}
+
+/* Focus ring */
+.ts-control.focus {
+  border-color: #666 !important;
+  box-shadow: 0 0 0 1px #666 !important;
+}
+
+
+/* ===== FORCE LARGE TOM SELECT TEXT ===== */
+
+/* Selected value + placeholder */
+.ts-control,
+.ts-control .item,
+.ts-control .placeholder,
+.ts-control input {
+  font-size: 18px !important;
+  line-height: 1.4 !important;
+}
+
+/* Dropdown options */
+.ts-dropdown,
+.ts-dropdown .option,
+.ts-dropdown .active {
+  font-size: 18px !important;
+  line-height: 1.4 !important;
+}
+
+/* Ensure the control height scales correctly */
+.ts-control {
+  min-height: 64px !important;
+  padding: 18px 20px !important;
+}
+
+/* Make sure text is vertically centered */
+.ts-control .item,
+.ts-control input {
+  display: flex;
+  align-items: center;
+}
+
+
+/* Attributes */
+#attributes-container {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
 }
