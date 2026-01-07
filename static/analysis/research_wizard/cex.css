@@ -137,3 +137,35 @@
   color: #000 !important;
   font-weight: 800;
 }
+
+/* ===================== Tom Select – Baseline Fix ===================== */
+
+/* Make control a flex baseline container */
+.ts-control {
+  display: flex !important;
+  align-items: flex-end !important;
+  padding-bottom: 10px !important; /* pushes text to the line */
+}
+
+/* Selected value */
+.ts-control .item {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1.2 !important;
+  font-size: 22px !important;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* Input (when typing) */
+.ts-control input {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1.2 !important;
+  font-size: 22px !important;
+}
+
+/* Prevent Tom Select from vertically centering */
+.ts-wrapper.single .ts-control {
+  align-items: flex-end !important;
+}
