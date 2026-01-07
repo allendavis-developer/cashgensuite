@@ -1,0 +1,59 @@
+.rw-hidden {
+  display: none !important;
+}
+
+.rw-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.rw-backdrop.rw-visible {
+  opacity: 1;
+}
+
+.rw-modal {
+  position: relative;
+  width: 85vw;
+  height: 85vh;
+  background: #000;
+  border-radius: 12px;
+  border: 1px solid #222;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+}
+
+body.rw-open {
+  overflow: hidden;
+}
+
+.rw-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: #aaa;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+}
+
+.rw-close:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.08);
+}
+
+.rw-close:active {
+  transform: scale(0.92);
+}

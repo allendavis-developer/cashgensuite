@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load static %}
 
 {% block title %}Buyer{% endblock %}
 {% block header_title %}BUYER DASHBOARD{% endblock %}
@@ -933,7 +933,9 @@
     <button id="addFromCexUrlBtn" class="action-btn cex-url-btn">Add CEX URL</button>
     <button id="scrapeEbayBtn" class="action-btn cex-url-btn">eBay Item</button>
 
-    <button id="doneButton" class="action-btn done-btn">Done</button>
+    <button id="researchWizard" class="action-btn cex-url-btn">Deep Research</button>
+    {% include "analysis/research_wizard.html" %}
+
   </div>
 <div id="summaryContainer">
   
@@ -2051,7 +2053,9 @@ function updateSummary() {
 
 </script>
 
-{% load static %}
+<link rel="stylesheet" href="{% static 'analysis/research_wizard.css' %}">
+<script defer src="{% static 'analysis/research_wizard.js' %}"></script>
+
 <script src="{% static 'analysis/add_item_modal.js' %}"></script>
 <script src="{% static 'analysis/ebay_modal.js' %}"></script>
 <script src="{% static 'extension_bridge.js' %}"></script>
