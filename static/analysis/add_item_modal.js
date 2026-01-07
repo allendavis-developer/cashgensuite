@@ -21,7 +21,6 @@ const cache = {
 
 
 
-
 // ========== Initialize ==========
 document.addEventListener('DOMContentLoaded', async () => {
   initTomSelects();

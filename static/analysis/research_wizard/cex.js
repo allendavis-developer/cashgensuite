@@ -2,7 +2,6 @@
 const modalItemCategory = document.getElementById('modalItemCategory');
 const modalItemSubcategory = document.getElementById('modalItemSubcategory');
 const modalItemModel = document.getElementById('modalItemModel');
-const attributesContainer = document.getElementById('attributes-container');
 
 let currentAttributes = [];
 let categoryTomSelect, subcategoryTomSelect, modelTomSelect;
@@ -30,38 +29,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!categoryId) return; // prevents empty requests
 
     currentAttributes = []; // clear old ones
-    attributesContainer.innerHTML = '';
     fetchSubcategories(categoryId);
 
-    // Always display Condition attribute immediately
-    const defaultConditionAttr = {
-      id: 'default_condition',
-      name: 'condition',
-      label: 'Condition',
-      field_type: 'select',
-      options: ['New', 'Used', 'Refurbished']
-    };
-    
-    currentAttributes = [defaultConditionAttr];
-    renderAttributes([defaultConditionAttr]);
-    loadCategoryAttributes(categoryId);
   });
 
   subcategoryTomSelect.on('change', fetchModels);
 });
 
-async function loadCategoryAttributes(categoryId) {
-  let data;
-  if (cache.attributes[categoryId]) {
-    data = cache.attributes[categoryId];
-  } else {
-    const res = await fetch(`/api/category_attributes/?category=${categoryId}`);
-    data = await res.json();
-    cache.attributes[categoryId] = data;
-  }
-  
-  currentAttributes = data;
-}
 
 // ========== Typeahead (Tom Select) ==========
 function initTomSelects() {
@@ -81,6 +55,7 @@ function initTomSelects() {
     searchField: ['text', 'cex_stable_id'],
   });
 
+
   [categoryTomSelect, subcategoryTomSelect, modelTomSelect].forEach(ts => {
     ts.on('item_add', () => {
       ts.control_input.value = ts.control_input.value.trim();
@@ -95,10 +70,21 @@ function initTomSelects() {
     if (value) sendFieldUpdate('subcategory', value);
   });
 
-  modelTomSelect.on('change', (value) => {
+  modelTomSelect.on('change', value => {
+    clearDynamicAttributes();
+    Object.values(attributeTomSelects).forEach(ts => ts.destroy());
+    attributeTomSelects = {};
+
+    allowedCombinations = [];
+    selectedVariants = {};
+    currentAttributes = [];
+
     if (value) sendFieldUpdate('model', value);
   });
+
 }
+
+
 
 // ========== Preload all categories ==========
 async function preloadData() {
@@ -215,18 +201,17 @@ async function sendFieldUpdate(fieldName, value) {
       allowedCombinations = data.combinations || [];
       selectedVariants = {};
 
-      // Build attribute objects like the old category attributes
-      const attrs = Object.keys(data.variants).map((attrName, idx) => ({
-        id: `model_${attrName}`,
-        name: attrName,
-        label: attrName.charAt(0).toUpperCase() + attrName.slice(1),
-        field_type: 'select',
-        options: data.variants[attrName],
-      }));
+      const attrs = Object.entries(data.variants).map(([name, options]) => ({
+          id: `model_${name}`,
+          name,
+          label: name.charAt(0).toUpperCase() + name.slice(1),
+          field_type: 'select',
+          options
+        }));
 
-      // Update currentAttributes and render
-      currentAttributes = attrs;
-      renderAttributes(attrs);
+        currentAttributes = attrs;
+        renderAttributes(attrs);
+
     } else {
       // Track variant selections
       const attrMatch = currentAttributes.find(a => a.name === fieldName || a.label === fieldName || `attr_${a.id}` === fieldName);
@@ -240,101 +225,103 @@ async function sendFieldUpdate(fieldName, value) {
   }
 }
 
+
+function clearDynamicAttributes() {
+  document
+    .querySelectorAll('.search-field[data-dynamic="true"], .divider[data-dynamic="true"]')
+    .forEach(el => el.remove());
+}
+
+
 function filterRemainingAttributes() {
   if (allowedCombinations.length === 0) return;
 
   // Filter combinations based on current selections
-  const validCombos = allowedCombinations.filter(combo => {
-    return Object.keys(selectedVariants).every(key => combo[key] === selectedVariants[key]);
-  });
+  const validCombos = allowedCombinations.filter(combo =>
+    Object.keys(selectedVariants).every(
+      key => combo[key] === selectedVariants[key]
+    )
+  );
 
-  // Update options for unselected attributes
   currentAttributes.forEach(attr => {
-    if (!selectedVariants[attr.name]) {
-      const ts = attributeTomSelects[attr.id];
-      if (ts) {
-        const allowedOptions = [...new Set(validCombos.map(c => c[attr.name]))]
-          .sort((a, b) => {
-            const numA = parseFloat(a);
-            const numB = parseFloat(b);
-            const isNumA = !isNaN(numA) && a.trim() !== "";
-            const isNumB = !isNaN(numB) && b.trim() !== "";
+    const ts = attributeTomSelects[attr.id];
+    if (!ts) return;
 
-            if (isNumA && isNumB) {
-              return numA - numB;
-            } else if (isNumA) {
-              return -1;
-            } else if (isNumB) {
-              return 1;
-            }
+    const allowedOptions = [...new Set(validCombos.map(c => c[attr.name]))]
+      .sort((a, b) => {
+        const numA = parseFloat(a);
+        const numB = parseFloat(b);
+        const isNumA = !isNaN(numA) && a.trim() !== "";
+        const isNumB = !isNaN(numB) && b.trim() !== "";
 
-            return a.localeCompare(b);
-          });
+        if (isNumA && isNumB) return numA - numB;
+        if (isNumA) return -1;
+        if (isNumB) return 1;
+        return a.localeCompare(b);
+      });
 
-        ts.clearOptions();
-        allowedOptions.forEach(opt => {
-          ts.addOption({ value: opt, text: opt });
-        });
-        ts.refreshOptions(false);
-      }
+    const currentValue = ts.getValue();
+
+    // 🔴 CRITICAL PART: clear invalid selection
+    if (currentValue && !allowedOptions.includes(currentValue)) {
+      ts.clear();
+      delete selectedVariants[attr.name];
     }
+
+    ts.clearOptions();
+    allowedOptions.forEach(opt =>
+      ts.addOption({ value: opt, text: opt })
+    );
+
+    ts.refreshOptions(false);
+      
+    if (!ts.getValue() && allowedOptions.length === 1) {
+      ts.setValue(allowedOptions[0]);
+      selectedVariants[attr.name] = allowedOptions[0];
+    }
+    
   });
 }
 
+
 function renderAttributes(attrs) {
-  // Destroy existing TomSelect instances
-  Object.values(attributeTomSelects).forEach(ts => {
-    if (ts && ts.destroy) {
-      ts.destroy();
-    }
-  });
-  attributeTomSelects = {};
+    const row = document.getElementById('searchBarRow');
+  clearDynamicAttributes();
 
-  attributesContainer.innerHTML = attrs.map((attr, index) => `
-    <div class="input-group">
+  attrs.forEach(attr => {
+    // Divider
+    const divider = document.createElement('div');
+    divider.className = 'divider';
+    divider.dataset.dynamic = 'true';
+
+    // Field
+    const field = document.createElement('div');
+    field.className = 'search-field';
+    field.dataset.dynamic = 'true';
+    field.innerHTML = `
       <label>${attr.label || attr.name}</label>
-      ${attr.field_type === 'select'
-        ? `<select id="attr_${attr.id}" class="input-field"></select>`
-        : `<input type="${attr.field_type === 'number' ? 'number' : 'text'}" id="attr_${attr.id}" class="input-field">`}
-    </div>
-  `).join('');
+      <select id="attr_${attr.id}"></select>
+    `;
 
-  // Initialize TomSelect for select attributes
-  attrs.forEach((attr, index) => {
-    if (attr.field_type === 'select') {
-      const selectElement = document.getElementById(`attr_${attr.id}`);
-      if (selectElement) {
-        const ts = new TomSelect(`#attr_${attr.id}`, {
-          placeholder: `Select ${attr.label || attr.name}...`,
-          create: false,
-          options: (attr.options || [])
-            .slice()
-            .sort((a, b) => {
-              // Natural sort: extract numbers and compare intelligently
-              const numA = parseFloat(a.match(/\d+(\.\d+)?/)?.[0]);
-              const numB = parseFloat(b.match(/\d+(\.\d+)?/)?.[0]);
-              
-              if (!isNaN(numA) && !isNaN(numB) && numA !== numB) {
-                return numA - numB;
-              }
-              return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
-            })
-            .map(opt => ({ value: opt, text: opt })),
-        });
+    row.appendChild(divider);
+    row.appendChild(field);
 
-        attributeTomSelects[attr.id] = ts;
+    const ts = new TomSelect(`#attr_${attr.id}`, {
+      placeholder: `${attr.label || attr.name}...`,
+      create: false,
+      options: (attr.options || []).map(o => ({ value: o, text: o }))
+    });
 
-        // Auto-select if only one option
-        if (attr.options && attr.options.length === 1) {
-          const onlyOption = attr.options[0];
-          ts.setValue(onlyOption);
-          sendFieldUpdate(attr.name || attr.label || `attr_${attr.id}`, onlyOption);
-        }
+    attributeTomSelects[attr.id] = ts;
 
-        ts.on('change', (value) => {
-          if (value) sendFieldUpdate(attr.name || attr.label || `attr_${attr.id}`, value);
-        });
-      }
+    ts.on('change', value => {
+      if (value) sendFieldUpdate(attr.name, value);
+    });
+
+    // Auto-select if only one option
+    if (attr.options?.length === 1) {
+      ts.setValue(attr.options[0]);
+      sendFieldUpdate(attr.name, attr.options[0]);
     }
   });
 }

@@ -2,6 +2,17 @@
   display: none !important;
 }
 
+/* ===================== Wizard Pages ===================== */
+.rw-page {
+  display: none;
+  flex-direction: column;
+}
+
+.rw-page.rw-active {
+  display: flex;
+}
+
+
 .rw-backdrop {
   position: fixed;
   inset: 0;
@@ -58,19 +69,7 @@ body.rw-open {
   transform: scale(0.92);
 }
 
-.rw-page {
-  flex: 1;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  padding: 40px;
-  text-align: center;
-}
 
-.rw-page.rw-active {
-  display: flex;
-}
 
 .rw-title {
   font-size: clamp(36px, 5vw, 56px);
