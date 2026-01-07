@@ -83,9 +83,11 @@ function initTomSelects() {
     create: false 
   });
   modelTomSelect = new TomSelect('#modalItemModel', { 
-    placeholder: 'Select model...', 
-    create: false 
+    placeholder: 'Select model...',
+    create: false,
+    searchField: ['text', 'cex_stable_id'], // 👈 searchable but hidden
   });
+
 
   [categoryTomSelect, subcategoryTomSelect, modelTomSelect].forEach(ts => {
   ts.on('item_add', () => {
@@ -267,7 +269,11 @@ function renderModels(data) {
 
 
   sorted.forEach(m => {
-    modelTomSelect.addOption({ value: m.id, text: m.name });
+    modelTomSelect.addOption({
+      value: m.id,
+      text: m.name,
+      cex_stable_id: m.cex_stable_id || ''
+    });
   });
 
   modelTomSelect.addOption({ value: '__new__', text: 'Add new model...' });

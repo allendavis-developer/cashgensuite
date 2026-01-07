@@ -1001,15 +1001,33 @@ def subcategorys(request):
     data = [{"id": s.id, "name": s.name} for s in subcategories]
     return JsonResponse(data, safe=False)
 
-
+from django.db.models import OuterRef, Subquery
 def models(request):
     category_id = request.GET.get('category')
     subcategory_id = request.GET.get('subcategory')
-    models = ItemModel.objects.filter(
-        subcategory__category_id=category_id,  # <-- traverse via subcategory
+
+    cex_stable_id_subquery = CompetitorListing.objects.filter(
+        market_item__item_model=OuterRef('pk'),
+        competitor__iexact="CEX",
+        is_active=True,
+    ).values('stable_id')[:1]
+
+    models_qs = ItemModel.objects.filter(
+        subcategory__category_id=category_id,
         subcategory_id=subcategory_id
+    ).annotate(
+        cex_stable_id=Subquery(cex_stable_id_subquery)
     )
-    data = [{"id": m.id, "name": m.name} for m in models]
+
+    data = [
+        {
+            "id": m.id,
+            "name": m.name,
+            "cex_stable_id": m.cex_stable_id,  # ← added, flat field
+        }
+        for m in models_qs
+    ]
+
     return JsonResponse(data, safe=False)
 
 def category_attributes(request):
