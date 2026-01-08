@@ -748,7 +748,10 @@ function restoreEbayWizardState() {
   filterUKCheckbox.checked = state.topFilters?.ukOnly || false;
   filterUsedCheckbox.checked = state.topFilters?.used || false;
 
-  if (state.searchTerm) {
+  // Only auto-run if we have no results yet
+  if (!state.listings || !state.listings.length) {
+    ebayWizardStep = 1;
+    ebayWizardBtn.textContent = 'Next';
     ebayWizardBtn.click();
   }
 
@@ -780,7 +783,6 @@ function restoreEbayWizardState() {
         .querySelectorAll('.ebay-listing-card[data-anomalous="true"]')
         .forEach(card => card.style.display = 'none');
     }
-
 
   }
 

@@ -97,8 +97,12 @@
 
     pages.forEach(p => p.classList.remove('rw-active'));
     newPage?.classList.add('rw-active');
-  }
 
+    // 🔁 Restore eBay state when entering eBay page
+    if (selector === '.rw-page-ebay') {
+      restoreEbayWizardState();
+    }
+  }
 
 
   const optionButtons = modal.querySelectorAll('.rw-option');
@@ -219,7 +223,7 @@
     });
   });
 
-  // NEW: wire inputs
+  // wire inputs
   const offerInput = container.querySelector('#finalOfferInput');
   const rrpInput = container.querySelector('#finalRrpInput');
 
@@ -232,6 +236,13 @@
     wizardState.final.rrp = Number(rrpInput.value) || null;
     console.log('Final RRP updated:', wizardState.final.rrp);
   });
+
+  const ebaySearchInput = container.querySelector('.ebay-search-term');
+
+  ebaySearchInput?.addEventListener('input', () => {
+    wizardState.ebay.searchTerm = ebaySearchInput.value.trim();
+  });
+
 }
 
 function renderEbayOverview(ebay) {
@@ -349,5 +360,38 @@ function renderCexOverview(cex) {
     console.log('Confirmed research:', wizardState);
     closeWizard();
   });
+
+  function resolveFinalPricing() {
+    const { final, ebay, cex } = wizardState;
+
+    const resolvedOffer =
+      final.offer ??
+      ebay.selectedOffer ??
+      cex.selectedOffer?.price ??
+      null;
+
+    const resolvedRrp =
+      final.rrp ??
+      ebay.rrp ??
+      cex.prices?.rrp ??
+      null;
+
+    return {
+      offer: resolvedOffer,
+      rrp: resolvedRrp
+    };
+  }
+
+  modal.querySelector('.rw-confirm')?.addEventListener('click', () => {
+    const aggregated = resolveFinalPricing();
+
+    wizardState.final.offer = aggregated.offer;
+    wizardState.final.rrp = aggregated.rrp;
+
+    console.log('Confirmed research (aggregated):', wizardState);
+
+    closeWizard();
+  });
+
 
 })();
