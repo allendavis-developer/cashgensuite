@@ -1,0 +1,128 @@
+<!-- eBay Modal -->
+<div id="ebayModal" class="modal">
+  <div class="modal-content ebay-modal-content">
+    <span class="modal-close" id="closeEbayModal">&times;</span>
+    
+    <div class="ebay-search-section">
+      <label>Search Term</label>
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="ebaySearchInput" class="input-field" placeholder="Enter product name or keywords..." style="flex: 1;">
+        <button class="modal-btn" id="ebaySearchBtn" style="width: auto; padding: 0 20px;">Get Filters</button>
+      </div>
+    </div>
+
+    <div class="ebay-top-filters">
+      <label class="ebay-top-filter">
+        <input type="checkbox" id="filterSold">
+        <span>Completed & Sold</span>
+      </label>
+
+      <label class="ebay-top-filter">
+        <input type="checkbox" id="filterUK">
+        <span>UK Only</span>
+      </label>
+
+      <label class="ebay-top-filter">
+        <input type="checkbox" id="filterUsed">
+        <span>Used</span>
+      </label>
+    </div>
+
+    
+    <div class="ebay-modal-body">
+      <!-- Left side: Filters -->
+      <div class="ebay-left-panel">
+        <div id="ebayFiltersContainer" class="ebay-filters-container" style="display: none;"></div>
+      </div>
+      
+      <!-- Right side: Results -->
+      <div class="ebay-right-panel">
+          <!-- Analysis / Summary Table -->
+        <div class="ebay-analysis-wrapper">
+          <table class="competitor-table" id="analysis-table">
+            <thead>
+              <tr>
+                <th>eBay Min</th>
+                <th>eBay AVG</th>
+                <th>eBay Mode</th>
+                <th>eBay Median</th>
+              </tr>
+            </thead>
+            <tbody id="analysis-tbody">
+              <tr>
+                <td id="ebay-min">-</td>
+                <td id="ebay-avg">-</td>
+                <td id="ebay-mode">-</td>
+                <td id="ebay-median">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pricing Controls -->
+      <div class="ebay-pricing-wrapper">
+        <div class="ebay-pricing-header">
+          <span class="ebay-pricing-title">Pricing Suggestions</span>
+          <span class="ebay-pricing-subtitle">Editable values</span>
+        </div>
+
+        <div class="ebay-pricing-row">
+
+          <!-- Suggested RRP -->
+          <div class="ebay-pricing-item">
+            <label>Suggested RRP</label>
+            <div class="ebay-pricing-input">
+              <span class="currency">£</span>
+              <input
+                type="number"
+                id="ebaySuggestedRrp"
+                placeholder="--"
+                step="1"
+              />
+            </div>
+          </div>
+
+          <!-- Min Margin -->
+          <div class="ebay-pricing-item">
+            <label>Min Margin</label>
+            <div class="ebay-pricing-input">
+              <input
+                type="number"
+                id="ebayMinMargin"
+                placeholder="--"
+                step="1"
+              />
+              <span class="suffix">%</span>
+            </div>
+          </div>
+
+          <!-- Offer Value -->
+          <div class="ebay-pricing-item">
+            <label>Offer Value</label>
+            <div class="ebay-pricing-input">
+              <span class="currency">£</span>
+              <input
+                type="number"
+                id="ebayOfferValue"
+                placeholder="--"
+                step="1"
+              />
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+
+        <div id="ebayResultsContainer" class="ebay-results-container" style="display: none;"></div>
+      </div>
+    </div>
+    
+    <div class="ebay-modal-footer">
+      <button class="modal-btn-secondary" id="ebayCancelBtn">Cancel</button>
+      <button class="modal-btn" id="ebayApplyBtn">
+        Apply Filters & Scrape (<span id="ebaySelectedCount">0</span> selected)
+      </button>
+    </div>
+    
+  </div>
