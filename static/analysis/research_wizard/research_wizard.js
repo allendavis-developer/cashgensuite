@@ -91,6 +91,7 @@
 
     const rows = [];
 
+    // CeX row
     if (wizardState.cex?.prices && wizardState.cex?.selectedOffer) {
       const { prices, selectedOffer } = wizardState.cex;
 
@@ -98,19 +99,63 @@
         <tr class="overview-row cex">
           <td class="source">CeX</td>
           <td class="price">£${prices.cexSellingPrice}</td>
-          <td class="rrp">£${prices.rrp}</td>
+          <td class="rrp">
+            ${wizardState.cex?.suggestedRrpMethod
+              ? `<div class="rrp-percentage">${wizardState.cex.suggestedRrpMethod}</div>`
+              : ''}
+            <div>£${prices.rrp}</div>
+          </td>
           <td class="offer ${selectedOffer.risk}">
             £${selectedOffer.price}
             <span class="offer-meta">${selectedOffer.type.replace('_', ' ')}</span>
+          </td>
+          <td class="status">
+            <button class="row-btn complete">Complete</button>
+          </td>
+        </tr>
+      `);
+    } else {
+      // Empty CeX row → two options: Quick Compute + Research
+      rows.push(`
+        <tr class="overview-row cex">
+          <td class="source">CeX</td>
+          <td class="price">-</td>
+          <td class="rrp">-</td>
+          <td class="offer">-</td>
+          <td class="status">
+            <button class="row-btn compute-quick">Quick Compute</button>
+            <button class="row-btn compute-research">Research</button>
           </td>
         </tr>
       `);
     }
 
-    if (!rows.length) {
-      container.innerHTML = `<p class="overview-empty">No research completed yet.</p>`;
-      return;
-    }
+    // eBay row
+    const ebayData = wizardState.ebay || {};
+    const ebayPrices = ebayData.prices || {};
+    const selectedOffer = ebayData.selectedOffer || {};
+
+    const hasEbayData = ebayPrices.marketPrice || ebayPrices.rrp || selectedOffer.price;
+
+    rows.push(`
+      <tr class="overview-row ebay">
+        <td class="source">eBay</td>
+        <td class="price">${ebayPrices.marketPrice ? `£${ebayPrices.marketPrice}` : '-'}</td>
+        <td class="rrp">${ebayPrices.rrp ? `£${ebayPrices.rrp}` : '-'}</td>
+        <td class="offer ${selectedOffer.risk || ''}">
+          ${selectedOffer.price ? `£${selectedOffer.price}` : '-'}
+          ${selectedOffer.type ? `<span class="offer-meta">${selectedOffer.type.replace('_', ' ')}</span>` : ''}
+        </td>
+        <td class="status">
+          ${
+            hasEbayData
+              ? `<button class="row-btn complete">Complete</button>`
+              : `<button class="row-btn compute-quick">Quick Compute</button>
+                <button class="row-btn compute-research">Research</button>`
+          }
+        </td>
+      </tr>
+    `);
 
     container.innerHTML = `
       <div class="overview-table-wrapper">
@@ -121,6 +166,7 @@
               <th>Market Price</th>
               <th>Suggested RRP</th>
               <th>Selected Offer</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -130,6 +176,7 @@
       </div>
     `;
   }
+
 
 
   modal.querySelector('.rw-back')?.addEventListener('click', () => {

@@ -216,3 +216,186 @@ body.rw-open {
   font-weight: 900;
   border-top: 1px solid #1f1f1f;
 }
+
+.rrp-percentage {
+  font-size: 0.6em;       /* smaller relative to td */
+  color: #999;            /* lighter grey for contrast */
+  margin-right: 6px;
+  white-space: nowrap;
+  font-weight: 600;       /* lighter than bold 900 RRP */
+}
+
+/* ===================== Overview Row Buttons ===================== */
+.overview-table .row-btn {
+  padding: 10px 20px;
+  font-size: 18px;
+  font-weight: 900;
+  border-radius: 12px;
+  border: 2px solid #333;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+}
+
+/* Compute button style */
+.overview-table .row-btn.compute {
+  background: #111;
+  color: #aaa;
+  border-color: #444;
+}
+
+.overview-table .row-btn.compute:hover {
+  background: #1a1a1a;
+  color: #fff;
+  border-color: #666;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+}
+
+.overview-table .row-btn.compute:active {
+  transform: scale(0.95);
+}
+
+/* Complete button style */
+.overview-table .row-btn.complete {
+  background: #22c55e;
+  color: #000;
+  border-color: #16a34a;
+}
+
+.overview-table .row-btn.complete:hover {
+  background: #16a34a;
+  color: #fff;
+  border-color: #15803d;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+}
+
+.overview-table .row-btn.complete:active {
+  transform: scale(0.95);
+}
+
+/* ===================== Wizard Footer Buttons ===================== */
+.rw-modal .rw-back,
+.rw-modal .rw-confirm,
+.rw-modal .rw-confirm,
+.rw-modal .rw-continue {
+  padding: 14px 28px;
+  font-size: 20px;
+  font-weight: 900;
+  border-radius: 14px;
+  border: 2px solid #333;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  min-width: 140px;
+  margin: 0 8px;
+}
+
+/* Back button style */
+.rw-modal .rw-back {
+  background: #111;
+  color: #aaa;
+  border-color: #444;
+}
+
+.rw-modal .rw-back:hover {
+  background: #1a1a1a;
+  color: #fff;
+  border-color: #666;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+}
+
+.rw-modal .rw-back:active {
+  transform: scale(0.95);
+}
+
+/* Continue button style */
+.rw-modal .rw-continue {
+  background: #0d6efd; /* blue */
+  color: #fff;
+  border-color: #0b5ed7;
+}
+
+.rw-modal .rw-continue:hover {
+  background: #0b5ed7;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+}
+
+.rw-modal .rw-continue:active {
+  transform: scale(0.95);
+}
+
+/* Confirm button style */
+.rw-modal .rw-confirm {
+  background: #22c55e; /* green */
+  color: #000;
+  border-color: #16a34a;
+}
+
+.rw-modal .rw-confirm:hover {
+  background: #16a34a;
+  color: #fff;
+  border-color: #15803d;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+}
+
+.rw-modal .rw-confirm:active {
+  transform: scale(0.95);
+}
+
+/* Footer container styling for spacing */
+.rw-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 24px 32px;
+  border-top: 1px solid #222;
+  background: #0b0b0b;
+  border-radius: 0 0 12px 12px;
+}
+
+/* Quick Compute button (subtle dark) */
+.overview-table .row-btn.compute-quick {
+  background: #111;
+  color: #aaa;
+  border-color: #444;
+}
+
+.overview-table .row-btn.compute-quick:hover {
+  background: #1a1a1a;
+  color: #fff;
+  border-color: #666;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+}
+
+.overview-table .row-btn.compute-quick:active {
+  transform: scale(0.95);
+}
+
+/* Research button (highlighted) */
+.overview-table .row-btn.compute-research {
+  background: #0d6efd;
+  color: #fff;
+  border-color: #0b5ed7;
+}
+
+.overview-table .row-btn.compute-research:hover {
+  background: #0b5ed7;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+}
+
+.overview-table .row-btn.compute-research:active {
+  transform: scale(0.95);
+}
+
+/* Shared styling */
+.overview-table .row-btn {
+  padding: 10px 16px;
+  font-size: 16px;
+  font-weight: 900;
+  border-radius: 12px;
+  border: 2px solid #333;
+  cursor: pointer;
+  text-transform: uppercase;
+  margin-right: 8px;
+  transition: all 0.2s ease;
+}

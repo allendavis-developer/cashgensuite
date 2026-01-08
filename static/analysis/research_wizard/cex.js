@@ -149,6 +149,7 @@ addItemButton.addEventListener('click', async () => {
         end: priceData.buying_end_price
       },
       rrp: priceData.selling_price,
+      rrp_pct: priceData.cex_rrp_pct,
       lastUpdated: priceData.cex_last_price_updated_date
     };
 
@@ -161,6 +162,12 @@ addItemButton.addEventListener('click', async () => {
   }
 });
 
+function updateSuggestedRrpMethod(rrp, baseCexPrice) {
+  if (!rrp || !baseCexPrice) return;
+  
+  const pct = Math.round((rrp / baseCexPrice) * 100);
+  wizardState.cex.suggestedRrpMethod = `Percentage of CEX Price (${pct}%)`;
+}
 
 
 function setMargin(el, rrp, offer) {
@@ -208,7 +215,9 @@ function recalcFromRrp(rrp) {
     ...data,
     selling_price: rrp
   });
-}  // ← THIS WAS MISSING!
+  updateSuggestedRrpMethod(rrp, data.base_cex_price);
+
+}  
 
 
 function recalcFromPct(pct) {
@@ -240,6 +249,8 @@ function recalcFromPct(pct) {
     ...data,
     selling_price: rrp
   });
+
+  updateSuggestedRrpMethod(rrp, data.base_cex_price);
 }
 
 
@@ -307,6 +318,11 @@ function renderCexResults(data) {
     selling_price: document.getElementById('suggestedRrp').value || data.selling_price
   });
 
+
+  // Add this line to always populate suggestedRrpMethod
+  const baseCex = data.cex_selling_price || 0;
+  const pct = baseCex ? Math.round((rrp / baseCex) * 100) : 0;
+  wizardState.cex.suggestedRrpMethod = `Percentage of CEX Price (${pct}%)`;
 }
 
 
