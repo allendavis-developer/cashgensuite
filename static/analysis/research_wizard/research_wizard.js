@@ -32,6 +32,9 @@
     }
   };
 
+  const pageHistory = [];
+
+
   const openBtn = document.getElementById('researchWizard');
   const backdrop = document.getElementById('researchWizardModal');
   const modal = backdrop?.querySelector('.rw-modal');
@@ -90,9 +93,15 @@
   const pages = modal.querySelectorAll('.rw-page');
 
   function showPage(selector) {
+    const current = modal.querySelector('.rw-page.rw-active');
+    const newPage = modal.querySelector(selector);
+    if (current && current !== newPage) pageHistory.push(current);
+
     pages.forEach(p => p.classList.remove('rw-active'));
-    modal.querySelector(selector)?.classList.add('rw-active');
+    newPage?.classList.add('rw-active');
   }
+
+
 
   const optionButtons = modal.querySelectorAll('.rw-option');
 
@@ -226,7 +235,14 @@
   }
 
   modal.querySelector('.rw-back')?.addEventListener('click', () => {
-    showPage('.rw-page-cex');
+    const previousPage = pageHistory.pop(); // get the last page
+    if (previousPage) {
+      pages.forEach(p => p.classList.remove('rw-active'));
+      previousPage.classList.add('rw-active');
+    } else {
+      // fallback if no history
+      showPage('.rw-page-source');
+    }
   });
 
   modal.querySelector('.rw-confirm')?.addEventListener('click', () => {

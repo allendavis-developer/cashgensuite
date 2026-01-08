@@ -5,7 +5,6 @@
 const scrapeEbayBtn = document.getElementById('scrapeEbayBtn');
 const ebayModal = document.getElementById('ebayModal');
 const ebaySearchInput = document.getElementById('ebaySearchInput');
-const ebaySearchBtn = document.getElementById('ebaySearchBtn');
 const ebayWizardBtn = document.getElementById('ebayWizardBtn');
 const ebayFiltersContainer = document.getElementById('ebayFiltersContainer');
 const ebayResultsContainer = document.getElementById('ebayResultsContainer');
@@ -46,7 +45,7 @@ ebayCancelBtn.addEventListener('click', () => {
 // Enter key to search
 ebaySearchInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') {
-    ebaySearchBtn.click();
+    ebayWizardBtn.click();
   }
 });
 
@@ -434,6 +433,10 @@ function buildEbayUrl(searchTerm, filters) {
 // ============================================
 // RESULTS RENDERING
 // ============================================
+// Disable the Complete button by default
+ebayApplyBtn.disabled = true;
+ebayApplyBtn.classList.add('disabled');
+
 
 function renderResults(results) {
   if (!results || results.length === 0) {
@@ -490,6 +493,10 @@ function renderResults(results) {
       `).join("")}
     </div>
   `;
+
+    // Enable the Complete button now that there are results
+  ebayApplyBtn.disabled = false;
+  ebayApplyBtn.classList.remove('disabled');
 }
 
 // ============================================
@@ -621,7 +628,7 @@ function restoreEbayWizardState() {
   filterUsedCheckbox.checked = state.topFilters?.used || false;
 
   if (state.searchTerm) {
-    ebaySearchBtn.click();
+    ebayWizardBtn.click();
   }
 
   // Restore stats and pricing
@@ -661,3 +668,17 @@ function setEbayScrapingState(isScraping) {
     ? 'Scraping...'
     : (ebayWizardStep === 1 ? 'Next' : 'Search');
 }
+
+// Wait until the DOM is fully loaded
+document.addEventListener('DOMContentLoaded', () => {
+  const completeBtn = document.getElementById('ebayApplyBtn');
+
+  completeBtn?.addEventListener('click', () => {
+    // Make sure your ResearchWizard exists
+    if (window.ResearchWizard && typeof window.ResearchWizard.showOverview === 'function') {
+      window.ResearchWizard.showOverview();
+    } else {
+      console.warn('ResearchWizard.showOverview is not defined.');
+    }
+  });
+});
