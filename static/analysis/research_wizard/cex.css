@@ -234,7 +234,7 @@
   position: relative;
 }
 
-.pricing-item.highlight .value::after {
+.pricing-item.highlight[data-offer="match_cex"] .value::after {
   content: 'MATCH';
   margin-left: 12px;
   font-size: 12px;
@@ -399,4 +399,52 @@
 /* Match emphasis styling */
 .pricing-item.emphasis .value.editable {
   color: #e5e5e5;
+}
+
+/* ===================== CeX Confirm Action (Inverted) ===================== */
+
+.cex-actions {
+  margin-top: 48px;
+  display: flex;
+  justify-content: center;
+}
+
+.cex-confirm-button {
+  min-width: 360px;
+  padding: 22px 36px;
+
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+
+  background: #fff;
+  color: #000;
+
+  border: 2px solid #fff;
+  border-radius: 16px;
+
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease;
+}
+
+/* Hover = confidence */
+.cex-confirm-button:hover {
+  background: #eaeaea;
+}
+
+/* Active = commitment */
+.cex-confirm-button:active {
+  transform: translateY(1px);
+}
+
+/* Disabled = unavailable */
+.cex-confirm-button:disabled {
+  background: #2a2a2a;
+  border-color: #2a2a2a;
+  color: #777;
+  cursor: not-allowed;
 }

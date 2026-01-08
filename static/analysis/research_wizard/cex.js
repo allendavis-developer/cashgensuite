@@ -57,18 +57,34 @@ function initTomSelects() {
   });
 
   categoryTomSelect.on('change', (value) => {
+
+
     const categoryId = categoryTomSelect.getValue();
     if (!categoryId) return;
 
     currentAttributes = [];
     fetchSubcategories(categoryId);
 
-    if (value) sendFieldUpdate('category', value);
+    if (value) { 
+      wizardState.source = 'cex';
+      wizardState.cex.category = {
+        id: value,
+        name: categoryTomSelect.options[value]?.text || null
+      };
+
+      sendFieldUpdate('category', value);
+    }
   });
 
   subcategoryTomSelect.on('change', (value) => {
     if (!value) return; 
     fetchModels();
+
+    wizardState.cex.subcategory = {
+      id: value,
+      name: subcategoryTomSelect.options[value]?.text || null
+    };
+
     sendFieldUpdate('subcategory', value);
   });
 
@@ -83,8 +99,20 @@ function initTomSelects() {
     allowedCombinations = [];
     selectedVariants = {};
     currentAttributes = [];
+    wizardState.cex.attributes = {};
+    wizardState.cex.prices = null;
 
-    if (value) sendFieldUpdate('model', value);
+
+    if (value)  { 
+      const opt = modelTomSelect.options[value];
+      wizardState.cex.model = {
+        id: value,
+        name: opt?.text || null,
+        cexStableId: opt?.cex_stable_id || null
+      };
+
+      sendFieldUpdate('model', value);
+    } 
   });
 
 }
@@ -112,6 +140,18 @@ addItemButton.addEventListener('click', async () => {
 
     const priceData = await fetchPriceDataCEX(payload);
     renderCexResults(priceData);
+
+    wizardState.cex.prices = {
+      cexSellingPrice: priceData.cex_selling_price,
+      buying: {
+        start: priceData.buying_start_price,
+        mid: priceData.buying_mid_price,
+        end: priceData.buying_end_price
+      },
+      rrp: priceData.selling_price,
+      lastUpdated: priceData.cex_last_price_updated_date
+    };
+
 
   } catch (err) {
     console.error('Failed to fetch price data:', err);
@@ -260,26 +300,30 @@ function renderCexResults(data) {
     ...data,
     base_cex_price: data.cex_selling_price
   };
+  
   activeOfferIndex = 0;
-  updateActiveOffer(data);
+  updateActiveOffer({
+    ...data,
+    selling_price: document.getElementById('suggestedRrp').value || data.selling_price
+  });
 
 }
 
 
-const offerOrder = ['start', 'mid', 'end'];
+const offerOrder = ['start', 'mid', 'match_cex'];
 let activeOfferIndex = 0;
 
 const offerRisk = {
   start: 'safe',
   mid: 'mid',
-  end: 'risky'
+  match_cex: 'risky'
 };
 
 function getOfferValue(type, data) {
   return {
     start: data.buying_start_price,
     mid: data.buying_mid_price,
-    end: data.buying_end_price,
+    match_cex: data.buying_end_price,
   }[type];
 }
 
@@ -304,6 +348,16 @@ function updateActiveOffer(data) {
 
   // Update final margin display
   document.getElementById('margin').textContent = `${pct}%`;
+
+  // =====================
+  //  Persist selection
+  // =====================
+  wizardState.cex.selectedOffer = {
+    type,               // 'start' | 'mid' | 'match_cex'
+    price: offer,       // numeric £ value
+    marginPct: pct,     // numeric %
+    risk: offerRisk[type]
+  };
 }
 
 
@@ -504,6 +558,10 @@ async function sendFieldUpdate(fieldName, value) {
       const attrMatch = currentAttributes.find(a => a.name === fieldName || a.label === fieldName || `attr_${a.id}` === fieldName);
       if (attrMatch) {
         selectedVariants[attrMatch.name] = value;
+        wizardState.cex.attributes = {
+          ...selectedVariants
+        };
+
         filterRemainingAttributes();
         updateAddItemButtonState();
 
@@ -650,6 +708,14 @@ function renderAttributes(attrs) {
   });
 
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const confirmBtn = document.querySelector('.cex-confirm-button');
+
+  confirmBtn?.addEventListener('click', () => {
+    window.ResearchWizard.showOverview();
+  });
+});
 
 // ========== Utility Functions ==========
 function getCookie(name) {
