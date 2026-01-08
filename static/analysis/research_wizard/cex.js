@@ -471,6 +471,63 @@ function renderSubcategories(data) {
   modelTomSelect.clearOptions();
 }
 
+const cexUrlInput = document.getElementById('cexUrlInputModal');
+const computeCexUrlButton = document.getElementById('computeCexUrlButton');
+
+computeCexUrlButton.addEventListener('click', async () => {
+  const url = cexUrlInput.value.trim();
+  console.log(cexUrlInput.value);
+  if (!url) return alert('Please enter a CeX URL.');
+
+  computeCexUrlButton.disabled = true;
+  computeCexUrlButton.classList.add('loading');
+
+  try {
+    const res = await fetch('/api/get-prices-from-cex-url/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+      },
+      body: JSON.stringify({ cex_url: url }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to fetch CeX prices');
+    }
+
+    // Reuse your existing render function
+    renderCexResults({
+      selling_price: data.selling_price,
+      buying_start_price: data.buying_start_price,
+      buying_mid_price: data.buying_mid_price,
+      buying_end_price: data.buying_end_price,
+      cex_trade_cash_price: data.cex_buying_price,
+      cex_selling_price: data.cex_selling_price,
+      cex_rrp_pct: data.cex_rrp_pct,
+      cex_last_price_updated_date: data.cex_last_price_updated_date,
+    });
+
+    // Optionally populate model/category if available
+    if (data.model) {
+      modelTomSelect.setValue(data.model);
+    }
+
+  } catch (err) {
+    console.error('Failed to fetch CeX prices:', err);
+    alert(err.message);
+  } finally {
+    computeCexUrlButton.disabled = false;
+    computeCexUrlButton.classList.remove('loading');
+  }
+});
+
+
 async function fetchPriceDataCEX({ 
   categoryId, 
   subcategoryId, 

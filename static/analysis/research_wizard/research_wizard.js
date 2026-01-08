@@ -392,6 +392,4 @@ function renderCexOverview(cex) {
 
     closeWizard();
   });
-
-
 })();

@@ -478,3 +478,75 @@
   text-decoration: underline;
 }
 
+
+/* ===================== CeX URL Input ===================== */
+/* Container for URL + button */
+.cex-url-row {
+  display: flex;
+  gap: 16px;           /* space between input and button */
+  align-items: flex-end; 
+  grid-column: span 3; /* make it span full width of 3 columns */
+  margin-top: 24px;
+}
+
+/* URL Input */
+#cexUrlInputModal {
+  flex: 1;             /* input grows to fill space */
+  min-height: 64px;
+  padding: 18px 20px;
+  font-size: 20px;
+  font-weight: 500;
+  color: #fff;
+  background: #0b0b0b;
+  border: 2px solid #2a2a2a;
+  border-radius: 14px;
+  outline: none;
+}
+
+#cexUrlInputModal::placeholder {
+  color: #777;
+}
+
+/* Compute Button */
+#computeCexUrlButton {
+  flex: 0 0 220px;       /* button fixed width but smaller */
+  padding: 18px 24px;    /* smaller padding */
+  font-size: 18px;       /* smaller font */
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  background: linear-gradient(135deg, #fff, #dcdcdc);
+  color: #000;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#computeCexUrlButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #f5f5f5, #cccccc);
+}
+
+#computeCexUrlButton:disabled {
+  background: #2a2a2a;
+  color: #777;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Loading spinner */
+#computeCexUrlButton.loading {
+  color: transparent !important;
+  position: relative;
+}
+
+#computeCexUrlButton.loading::after {
+  content: '';
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255,255,255,0.25);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
