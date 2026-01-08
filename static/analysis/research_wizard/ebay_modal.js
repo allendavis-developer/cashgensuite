@@ -1,7 +1,7 @@
 // eBay Modal Logic
 const scrapeEbayBtn = document.getElementById('scrapeEbayBtn');
 const ebayModal = document.getElementById('ebayModal');
-const closeEbayModal = document.getElementById('closeEbayModal');
+// const closeEbayModal = document.getElementById('closeEbayModal');
 const ebaySearchInput = document.getElementById('ebaySearchInput');
 const ebaySearchBtn = document.getElementById('ebaySearchBtn');
 const ebayFiltersContainer = document.getElementById('ebayFiltersContainer');
@@ -28,29 +28,7 @@ scrapeEbayBtn.addEventListener('click', () => {
   ebaySearchInput.focus();
 });
 
-// Close modal
-closeEbayModal.addEventListener('click', () => {
-  closeModal();
-});
 
-// Close on outside click
-ebayModal.addEventListener('click', (e) => {
-  if (e.target === ebayModal) {
-    closeModal();
-  }
-});
-
-function closeModal() {
-  ebayModal.classList.remove('active');
-  ebaySearchInput.value = '';
-  ebayFiltersContainer.innerHTML = '';
-  ebayFiltersContainer.style.display = 'none';
-  ebayResultsContainer.style.display = 'none';
-  ebayResultsContainer.innerHTML = '';
-  selectedFilters = {};
-  previousSelectedFilters = {}; 
-  updateSelectedCount();
-}
 
 function setEbayScrapingState(isScraping) {
   isEbayScraping = isScraping;
@@ -341,22 +319,27 @@ async function refreshFiltersFromUrl(ebayUrl) {
   }
 }
 
+// eBay back button
+document.querySelector('.rw-back-ebay')?.addEventListener('click', () => {
+  window.ResearchWizard.showSourcePage();
+});
+
 
 // Handle apply button
 ebayApplyBtn.addEventListener('click', async () => {
 
-    //  HARD GUARD
   if (isEbayScraping) return;
   resetEbayAnalysis(); 
-
-  setEbayScrapingState(true);
 
   const searchTerm = ebaySearchInput.value.trim();
   
   if (!searchTerm) {
     alert('Please enter a search term');
-    return;
+    return; // button never gets disabled
   }
+
+  setEbayScrapingState(true); // now safe to disable
+
 
   // ✅ READ TOP FILTERS
   const ebayFilterSold = filterSoldCheckbox.checked;

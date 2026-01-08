@@ -448,3 +448,32 @@
   color: #777;
   cursor: not-allowed;
 }
+
+/* CeX page header */
+.rw-page-header {
+  position: relative;
+  text-align: center;  /* centers the heading */
+  margin-bottom: 20px;
+}
+
+.rw-page-header h1.cex-title {
+  margin: 0;
+  font-size: 24px;
+}
+
+.rw-back-cex {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #007bff;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.rw-back-cex:hover {
+  text-decoration: underline;
+}

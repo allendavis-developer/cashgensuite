@@ -733,6 +733,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+// Handle the CeX back button
+document.querySelector('.rw-back-cex')?.addEventListener('click', () => {
+  window.ResearchWizard.showSourcePage();
+});
+
+
 // ========== Utility Functions ==========
 function getCookie(name) {
   let cookieValue = null;

@@ -84,8 +84,9 @@
 
       if (source === 'cex') {
         showPage('.rw-page-cex');
+      } else if (source === 'ebay') {
+        showPage('.rw-page-ebay');
       }
-      // Could add other sources here (like eBay) if you implement them
     });
   });
 
@@ -109,6 +110,11 @@
       });
       overviewActions.appendChild(restartBtn);
     }
+  };
+
+  // NEW: show the source selection page
+  window.ResearchWizard.showSourcePage = () => {
+    showPage('.rw-page-source');
   };
 
   function renderOverview() {
