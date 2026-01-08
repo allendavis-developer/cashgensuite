@@ -129,12 +129,39 @@
       restartBtn.classList.add('rw-restart');
       restartBtn.textContent = 'Restart';
       restartBtn.addEventListener('click', () => {
-        wizardState = { source: null, cex: { category: null, subcategory: null, model: null, attributes: {}, prices: null, selectedOffer: null, suggestedRrpMethod: null }, ebay: {} };
-        showPage('.rw-page-source');
+        // Clear the wizard state
+        wizardState = {
+          source: null,
+          cex: {
+            category: null,
+            subcategory: null,
+            model: null,
+            attributes: {},
+            prices: null,
+            selectedOffer: null,
+            suggestedRrpMethod: null
+          },
+          ebay: {
+            searchTerm: null,
+            filters: {},
+            topFilters: { sold: false, ukOnly: false, used: false },
+            prices: null,
+            selectedOffer: null,
+            suggestedPriceMethod: null,
+            rrp: null,
+            margin: null,
+            listings: [],
+            uiState: { expandedSections: [], filterScroll: 0, resultsScroll: 0 }
+          }
+        };
+
+        // Re-render the overview with empty state
+        renderOverview();
       });
       overviewActions.appendChild(restartBtn);
     }
   };
+
 
   // NEW: show the source selection page
   window.ResearchWizard.showSourcePage = () => {
