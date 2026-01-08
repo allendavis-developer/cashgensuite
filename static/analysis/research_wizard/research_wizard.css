@@ -339,3 +339,449 @@ body.rw-open {
   border-color: #7f1d1d;
   box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
 }
+
+/* Overview Container */
+#overviewContent {
+  padding: 40px 80px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Cards Grid */
+.overview-cards {
+  display: flex;
+  gap: 48px;
+  margin-bottom: 2rem;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 968px) {
+  .overview-cards {
+    flex-direction: column;
+  }
+}
+
+/* Market Card Base Styles */
+.market-card {
+  flex: 1;
+  min-width: 400px;
+  background: #0b0b0b;
+  border-radius: 18px;
+  padding: 50px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  border: 1px solid #1f1f1f;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.market-card:hover {
+  border-color: #333;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8);
+  transform: translateY(-4px);
+}
+
+/* Brand-specific card colors */
+.market-card.ebay {
+  border-left: 4px solid #333;
+}
+
+.market-card.ebay h3 {
+  color: #e5e5e5;
+}
+
+.market-card.cex {
+  border-left: 4px solid #333;
+}
+
+.market-card.cex h3 {
+  color: #e5e5e5;
+}
+
+/* Card Header */
+.market-card h3 {
+  font-size: 32px;
+  font-weight: 900;
+  margin: 0;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #1f1f1f;
+  letter-spacing: 1px;
+}
+
+/* Section Styles */
+.market-card section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.market-card h4 {
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #777;
+  margin: 0;
+}
+
+/* Row Layout for Stats */
+.market-card .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #1f1f1f;
+}
+
+.market-card .row:last-child {
+  border-bottom: none;
+}
+
+.market-card .row span:first-child {
+  color: #999;
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+}
+
+.market-card .row span:last-child {
+  color: #e5e5e5;
+  font-weight: 900;
+  font-size: 20px;
+}
+
+/* Big Value Display */
+.market-card .big {
+  font-size: 36px;
+  font-weight: 900;
+  color: #e5e5e5;
+  line-height: 1.2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.market-card .big small {
+  font-size: 12px;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Risk Indicators for CeX Offers */
+.market-card .big.safe,
+.market-card .big.low-risk,
+.market-card .big.mid,
+.market-card .big.medium-risk,
+.market-card .big.risky,
+.market-card .big.high-risk {
+  color: #e5e5e5;
+}
+
+/* Research Button */
+.research-btn {
+  width: 100%;
+  padding: 14px 28px;
+  font-size: 16px;
+  font-weight: 900;
+  border-radius: 12px;
+  border: 2px solid #333;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: auto;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: #111;
+  color: #fff;
+}
+
+.research-btn:hover {
+  background: #1a1a1a;
+  border-color: #555;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+}
+
+.research-btn:active {
+  transform: scale(0.95);
+}
+
+/* Empty State */
+.market-card .empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #666;
+  font-style: italic;
+  font-size: 16px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  #overviewContent {
+    padding: 20px;
+  }
+
+  .overview-cards {
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .market-card {
+    padding: 30px;
+    min-width: unset;
+  }
+
+  .market-card .big {
+    font-size: 28px;
+  }
+
+  .market-card h3 {
+    font-size: 24px;
+  }
+}
+
+/* Action Buttons Area (for Restart/Confirm) */
+.rw-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 24px 32px;
+  border-top: 1px solid #222;
+  margin-top: 0;
+  background: #0b0b0b;
+}
+
+.rw-restart {
+  background: #ef4444;
+  color: #fff;
+  border: 2px solid #b91c1c;
+  font-size: 18px;
+  font-weight: 900;
+  border-radius: 12px;
+  padding: 12px 24px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
+.rw-restart:hover {
+  background: #b91c1c;
+  border-color: #7f1d1d;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+}
+
+.rw-restart:active {
+  transform: scale(0.95);
+}
+
+.rw-confirm {
+  background: #22c55e;
+  color: #000;
+  border: 2px solid #16a34a;
+  font-size: 18px;
+  font-weight: 900;
+  border-radius: 12px;
+  padding: 12px 24px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
+.rw-confirm:hover {
+  background: #16a34a;
+  color: #fff;
+  border-color: #15803d;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+.rw-confirm:active {
+  transform: scale(0.95);
+}
+
+/* Loading State */
+.market-card.loading {
+  opacity: 0.6;
+  pointer-events: none;
+  position: relative;
+}
+
+.market-card.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border: 3px solid #1f1f1f;
+  border-top-color: #0d6efd;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* ===================== Read-only style input (until focus) ===================== */
+.market-card input.ebay-search-term {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #e5e5e5;
+  font-size: 18px;
+  font-weight: 700;
+  padding: 10px 12px;
+  border-radius: 10px;
+  outline: none;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    color 0.2s ease;
+  cursor: text;
+}
+
+/* Placeholder should feel muted and intentional */
+.market-card input.ebay-search-term::placeholder {
+  color: #666;
+  font-weight: 600;
+}
+
+/* Subtle affordance on hover */
+.market-card input.ebay-search-term:hover {
+  background: rgba(255,255,255,0.03);
+  border-color: #222;
+}
+
+/* Fully editable state */
+.market-card input.ebay-search-term:focus {
+  background: #111;
+  border-color: #555;
+  box-shadow: 0 0 0 2px rgba(13,110,253,0.25);
+  color: #fff;
+}
+
+/* Prevent browser autofill ruining the vibe */
+.market-card input.ebay-search-term:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0px 1000px #111 inset;
+  -webkit-text-fill-color: #fff;
+}
+
+/* ===================== Overview Final Pricing ===================== */
+.overview-final {
+  max-width: 600px;
+  margin: 0 auto 40px;
+  padding: 32px 40px;
+  background: #0b0b0b;
+  border: 1px solid #1f1f1f;
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.overview-final h3 {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  margin: 0;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #1f1f1f;
+  color: #e5e5e5;
+}
+
+
+.overview-final .row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.overview-final label {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #777;
+}
+
+
+.overview-final input {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #e5e5e5;
+  font-size: 26px;
+  font-weight: 900;
+  padding: 14px 16px;
+  border-radius: 14px;
+  outline: none;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    color 0.2s ease;
+}
+
+/* Placeholder = intentional silence */
+.overview-final input::placeholder {
+  color: #666;
+  font-weight: 700;
+}
+
+.cex-offer-row {
+  display: grid;
+  grid-template-columns: 1.4fr auto auto;
+  align-items: center;
+  gap: 24px;
+  padding: 20px 24px;
+  background: #0f0f0f;
+  border: 1px solid #1f1f1f;
+  border-radius: 16px;
+  transition: all 0.25s ease;
+}
+
+
+.cex-offer-row .label {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #d1d1d1;
+}
+
+.cex-offer-row .price {
+  font-size: 28px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.4px;
+}
+
+
+.cex-offer-row .margin {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 2px solid #2a2a2a;
+  color: #bdbdbd;
+}
+
+
+.cex-offer-row.safe .margin {
+  color: #22c55e;
+  border-color: #22c55e;
+}
+
+.cex-offer-row.mid .margin {
+  color: #eab308;
+  border-color: #eab308;
+}
+
+.cex-offer-row.risky .margin {
+  color: #ef4444;
+  border-color: #ef4444;
+}

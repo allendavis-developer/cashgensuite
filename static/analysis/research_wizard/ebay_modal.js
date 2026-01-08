@@ -724,7 +724,7 @@ function saveEbayWizardState() {
       mode: document.getElementById('ebay-mode')?.textContent
     },
     selectedOffer: offerInput.value,
-    suggestedPriceMethod: 'medianMinusAdjustment',
+    suggestedPriceMethod: 'Median Minus Adjustment',
     rrp: rrpInput.value,
     margin: marginInput.value,
     listings: window.currentEbayResults || [],

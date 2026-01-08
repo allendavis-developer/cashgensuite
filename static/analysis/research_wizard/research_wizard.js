@@ -1,6 +1,10 @@
 (function () {
   window.wizardState = window.wizardState || {
     source: null,
+    final: {
+      offer: null,
+      rrp: null
+    },
     cex: {
       category: null,
       subcategory: null,
@@ -27,6 +31,7 @@
       listings: [],                    // raw results from renderResults
     }
   };
+
 
   const pageHistory = [];
 
@@ -164,86 +169,180 @@
     showPage('.rw-page-source');
   };
 
-  function renderOverview() {
-    const container = document.getElementById('overviewContent');
-    if (!container) return;
+ function renderOverview() {
+  const container = document.getElementById('overviewContent');
+  if (!container) return;
 
-    const rows = [];
+  const { cex, ebay, final } = wizardState;
 
-    // CeX row
-    const cexData = wizardState.cex || {};
-    const hasCexData = cexData.prices || cexData.selectedOffer;
+  container.innerHTML = `
+    <div class="overview-cards">
+      ${renderEbayOverview(ebay)}
+      ${renderCexOverview(cex)}
+    </div>
 
-    rows.push(`
-      <tr class="overview-row cex">
-        <td class="source">CeX</td>
-        <td class="price">${cexData.prices?.cexSellingPrice ? `£${cexData.prices.cexSellingPrice}` : '-'}</td>
-        <td class="rrp">${cexData.prices?.rrp ? `£${cexData.prices.rrp}` : '-'}</td>
-        <td class="offer ${cexData.selectedOffer?.risk || ''}">
-          ${cexData.selectedOffer?.price ? `£${cexData.selectedOffer.price}` : '-'}
-          ${cexData.selectedOffer?.type ? `<span class="offer-meta">${cexData.selectedOffer.type.replace('_', ' ')}</span>` : ''}
-        </td>
-        <td class="status">
-          <button class="row-btn research-btn" data-source="cex">Research</button>
-        </td>
-      </tr>
-    `);
+    <div class="overview-final">
+      <h3>Final pricing</h3>
 
-    // eBay row
-    const ebayData = wizardState.ebay || {};
-    const prices = ebayData.prices || {};
-
-    rows.push(`
-      <tr class="overview-row ebay">
-        <td class="source">eBay</td>
-        <td class="price">
-          ${prices.avg ? `£${Number(prices.median).toFixed(2)}` : '-'}
-        </td>
-        <td class="rrp">
-          ${ebayData.rrp ? `£${Number(ebayData.rrp).toFixed(2)}` : '-'}
-        </td>
-        <td class="offer">
-          ${ebayData.selectedOffer ? `£${Number(ebayData.selectedOffer).toFixed(2)}` : '-'}
-        </td>
-        <td class="status">
-          <button class="row-btn research-btn" data-source="ebay">Research</button>
-        </td>
-      </tr>
-    `);
-
-
-    container.innerHTML = `
-      <div class="overview-table-wrapper">
-        <table class="overview-table">
-          <thead>
-            <tr>
-              <th>Source</th>
-              <th>Market Price</th>
-              <th>Suggested RRP</th>
-              <th>Selected Offer</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.join('')}
-          </tbody>
-        </table>
+      <div class="row">
+        <label>Offer</label>
+        <input
+          type="number"
+          step="0.01"
+          id="finalOfferInput"
+          placeholder="£"
+          value="${final?.offer ?? ''}"
+        />
       </div>
-    `;
 
-    // Add click handlers for research buttons
-    const researchButtons = container.querySelectorAll('.research-btn');
-    researchButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const source = btn.dataset.source;
-        if (source === 'cex') {
-          showPage('.rw-page-cex');
-        } else if (source === 'ebay') {
-          showPage('.rw-page-ebay');
-        }
-      });
+      <div class="row">
+        <label>Suggested RRP</label>
+        <input
+          type="number"
+          step="0.01"
+          id="finalRrpInput"
+          placeholder="£"
+          value="${final?.rrp ?? ''}"
+        />
+      </div>
+    </div>
+  `;
+
+  // navigation buttons
+  container.querySelectorAll('.research-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      showPage(
+        btn.dataset.source === 'ebay'
+          ? '.rw-page-ebay'
+          : '.rw-page-cex'
+      );
     });
-  }
+  });
+
+  // NEW: wire inputs
+  const offerInput = container.querySelector('#finalOfferInput');
+  const rrpInput = container.querySelector('#finalRrpInput');
+
+  offerInput?.addEventListener('input', () => {
+    wizardState.final.offer = Number(offerInput.value) || null;
+    console.log('Final offer updated:', wizardState.final.offer);
+  });
+
+  rrpInput?.addEventListener('input', () => {
+    wizardState.final.rrp = Number(rrpInput.value) || null;
+    console.log('Final RRP updated:', wizardState.final.rrp);
+  });
+}
+
+function renderEbayOverview(ebay) {
+  const p = ebay.prices || {};
+
+  return `
+    <div class="market-card ebay">
+      <h3>eBay</h3>
+
+      <section>
+        <h4>Search term</h4>
+        <input
+          type="text"
+          class="ebay-search-term"
+          placeholder="e.g. iPhone 13 Pro 128GB"
+          value="${ebay.searchTerm ?? ''}"
+        />
+      </section>
+
+      <section>
+        <h4>Market stats</h4>
+        <div class="row"><span>Avg</span><span>£${p.avg ? Number(p.avg).toFixed(2) : '-'}</span></div>
+        <div class="row"><span>Median</span><span>£${p.median ? Number(p.median).toFixed(2) : '-'}</span></div>
+        <div class="row"><span>Mode</span><span>£${p.mode ? Number(p.mode).toFixed(2) : '-'}</span></div>
+      </section>
+
+      <section>
+        <h4>Suggested RRP</h4>
+        <div class="big">
+          £${ebay.rrp ? Number(ebay.rrp).toFixed(2) : '-'}
+          ${ebay.suggestedPriceMethod ? `<small>${ebay.suggestedPriceMethod}</small>` : ''}
+        </div>
+      </section>
+
+      <section>
+        <h4>Selected offer</h4>
+        <div class="big">
+          £${ebay.selectedOffer ? Number(ebay.selectedOffer).toFixed(2) : '-'}
+        </div>
+      </section>
+
+      <button class="research-btn" data-source="ebay">
+        Research eBay
+      </button>
+    </div>
+  `;
+
+  
+}
+
+
+
+function renderCexOverview(cex) {
+  return `
+    <div class="market-card cex">
+      <h3>CeX</h3>
+
+      <section>
+        <h4>Sell price</h4>
+        <div class="big">
+          £${cex.prices?.cexSellingPrice ? Number(cex.prices.cexSellingPrice).toFixed(2) : '-'}
+        </div>
+      </section>
+
+      <section>
+        <h4>Suggested RRP</h4>
+        <div class="big">
+          £${cex.prices?.rrp ? Number(cex.prices.rrp).toFixed(2) : '-'}
+          ${cex.suggestedRrpMethod ? `<small>${cex.suggestedRrpMethod}</small>` : ''}
+        </div>
+      </section>
+
+      <section>
+        <h4>Offers</h4>
+
+        <div class="cex-offer-list">
+          ${
+            (cex.offers || []).map(offer => {
+              const isActive =
+                cex.selectedOffer &&
+                offer.type === cex.selectedOffer.type;
+
+              return `
+                <div class="cex-offer-row
+                            ${offer.risk}
+                            ${isActive ? 'active' : ''}">
+                  <span class="label">
+                    ${offer.type.replace('_', ' ')}
+                  </span>
+
+                  <span class="price">
+                    £${Number(offer.price).toFixed(2)}
+                  </span>
+
+                  <span class="margin">
+                    ${offer.marginPct}%
+                  </span>
+                </div>
+              `;
+            }).join('') || '<div>—</div>'
+          }
+        </div>
+      </section>
+
+
+      <button class="research-btn" data-source="cex">
+        Research CeX
+      </button>
+    </div>
+  `;
+}
 
 
   modal.querySelector('.rw-confirm')?.addEventListener('click', () => {

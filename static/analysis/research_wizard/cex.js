@@ -216,6 +216,8 @@ function recalcFromRrp(rrp) {
     selling_price: rrp
   });
   updateSuggestedRrpMethod(rrp, data.base_cex_price);
+  wizardState.cex.offers = buildCexOffers(data, rrp);
+
 
 }  
 
@@ -251,6 +253,8 @@ function recalcFromPct(pct) {
   });
 
   updateSuggestedRrpMethod(rrp, data.base_cex_price);
+  wizardState.cex.offers = buildCexOffers(data, rrp);
+
 }
 
 
@@ -265,6 +269,19 @@ document.getElementById('rrpPct').addEventListener('input', e => {
 });
 
 
+function buildCexOffers(data, rrp) {
+  return offerOrder.map(type => {
+    const price = getOfferValue(type, data);
+    const marginPct = Math.round(((rrp - price) / rrp) * 100);
+
+    return {
+      type,
+      price,
+      marginPct,
+      risk: offerRisk[type]
+    };
+  });
+}
 
 function renderCexResults(data) {
   const panel = document.getElementById('cexResults');
@@ -311,7 +328,9 @@ function renderCexResults(data) {
     ...data,
     base_cex_price: data.cex_selling_price
   };
-  
+
+  wizardState.cex.offers = buildCexOffers(data, rrp);
+
   activeOfferIndex = 0;
   updateActiveOffer({
     ...data,
@@ -344,6 +363,11 @@ function getOfferValue(type, data) {
 }
 
 function updateActiveOffer(data) {
+  activeOfferIndex = Math.min(
+  activeOfferIndex,
+  wizardState.cex.offers.length - 1
+);
+
   const offers = document.querySelectorAll('.pricing-item.offer');
   offers.forEach(el =>
     el.classList.remove('active', 'safe', 'mid', 'risky')
@@ -365,15 +389,9 @@ function updateActiveOffer(data) {
   // Update final margin display
   document.getElementById('margin').textContent = `${pct}%`;
 
-  // =====================
-  //  Persist selection
-  // =====================
-  wizardState.cex.selectedOffer = {
-    type,               // 'start' | 'mid' | 'match_cex'
-    price: offer,       // numeric £ value
-    marginPct: pct,     // numeric %
-    risk: offerRisk[type]
-  };
+
+  wizardState.cex.selectedOffer = wizardState.cex.offers[activeOfferIndex];
+
 }
 
 
