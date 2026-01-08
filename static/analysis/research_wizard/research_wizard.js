@@ -1,5 +1,4 @@
 (function () {
-
   window.wizardState = window.wizardState || {
     source: null,
     cex: {
@@ -11,7 +10,26 @@
       selectedOffer: null,
       suggestedRrpMethod: null
     },
-    ebay: {}
+    ebay: {
+      searchTerm: null,              // the text in the search box
+      filters: {},                    // selectedFilters object (checkboxes + ranges)
+      topFilters: {                   // top checkboxes like Sold, UK, Used
+        sold: false,
+        ukOnly: false,
+        used: false
+      },
+      prices: null,                   // { min, avg, median, mode }
+      selectedOffer: null,            // the value in offerInput
+      suggestedPriceMethod: null,     // e.g., "median minus 1" logic
+      rrp: null,                       // value in rrpInput
+      margin: null,                     // value in marginInput
+      listings: [],                    // raw results from renderResults
+      uiState: {                       // optional for UX continuity
+        expandedSections: [],          // array of expanded filter names
+        filterScroll: 0,
+        resultsScroll: 0
+      }
+    }
   };
 
   const openBtn = document.getElementById('researchWizard');
