@@ -53,18 +53,15 @@
   }
 
   function openWizard() {
-    if (isWizardStateEmpty()) {
-      showPage('.rw-page-source');
-    } else {
-      window.ResearchWizard.showOverview();
-    }
-
+    window.ResearchWizard.showOverview();
     backdrop.classList.remove('rw-hidden');
     requestAnimationFrame(() => {
       backdrop.classList.add('rw-visible');
       document.body.classList.add('rw-open');
     });
   }
+
+
 
   function closeWizard() {
     backdrop.classList.remove('rw-visible');
@@ -151,48 +148,28 @@
     const rows = [];
 
     // CeX row
-    if (wizardState.cex?.prices && wizardState.cex?.selectedOffer) {
-      const { prices, selectedOffer } = wizardState.cex;
+    const cexData = wizardState.cex || {};
+    const hasCexData = cexData.prices || cexData.selectedOffer;
 
-      rows.push(`
-        <tr class="overview-row cex">
-          <td class="source">CeX</td>
-          <td class="price">£${prices.cexSellingPrice}</td>
-          <td class="rrp">
-            ${wizardState.cex?.suggestedRrpMethod
-              ? `<div class="rrp-percentage">${wizardState.cex.suggestedRrpMethod}</div>`
-              : ''}
-            <div>£${prices.rrp}</div>
-          </td>
-          <td class="offer ${selectedOffer.risk}">£${selectedOffer.price}
-            <span class="offer-meta">${selectedOffer.type.replace('_', ' ')}</span>
-          </td>
-          <td class="status">
-            <button class="row-btn complete">Complete</button>
-          </td>
-        </tr>
-      `);
-    } else {
-      rows.push(`
-        <tr class="overview-row cex">
-          <td class="source">CeX</td>
-          <td class="price">-</td>
-          <td class="rrp">-</td>
-          <td class="offer">-</td>
-          <td class="status">
-            <button class="row-btn compute-quick">Quick Compute</button>
-            <button class="row-btn compute-research">Research</button>
-          </td>
-        </tr>
-      `);
-    }
+    rows.push(`
+      <tr class="overview-row cex">
+        <td class="source">CeX</td>
+        <td class="price">${cexData.prices?.cexSellingPrice ? `£${cexData.prices.cexSellingPrice}` : '-'}</td>
+        <td class="rrp">${cexData.prices?.rrp ? `£${cexData.prices.rrp}` : '-'}</td>
+        <td class="offer ${cexData.selectedOffer?.risk || ''}">
+          ${cexData.selectedOffer?.price ? `£${cexData.selectedOffer.price}` : '-'}
+          ${cexData.selectedOffer?.type ? `<span class="offer-meta">${cexData.selectedOffer.type.replace('_', ' ')}</span>` : ''}
+        </td>
+        <td class="status">
+          <button class="row-btn research-btn" data-source="cex">Research</button>
+        </td>
+      </tr>
+    `);
 
     // eBay row
     const ebayData = wizardState.ebay || {};
     const ebayPrices = ebayData.prices || {};
     const selectedOffer = ebayData.selectedOffer || {};
-
-    const hasEbayData = ebayPrices.marketPrice || ebayPrices.rrp || selectedOffer.price;
 
     rows.push(`
       <tr class="overview-row ebay">
@@ -204,12 +181,7 @@
           ${selectedOffer.type ? `<span class="offer-meta">${selectedOffer.type.replace('_', ' ')}</span>` : ''}
         </td>
         <td class="status">
-          ${
-            hasEbayData
-              ? `<button class="row-btn complete">Complete</button>`
-              : `<button class="row-btn compute-quick">Quick Compute</button>
-                <button class="row-btn compute-research">Research</button>`
-          }
+          <button class="row-btn research-btn" data-source="ebay">Research</button>
         </td>
       </tr>
     `);
@@ -232,18 +204,21 @@
         </table>
       </div>
     `;
+
+    // Add click handlers for research buttons
+    const researchButtons = container.querySelectorAll('.research-btn');
+    researchButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const source = btn.dataset.source;
+        if (source === 'cex') {
+          showPage('.rw-page-cex');
+        } else if (source === 'ebay') {
+          showPage('.rw-page-ebay');
+        }
+      });
+    });
   }
 
-  modal.querySelector('.rw-back')?.addEventListener('click', () => {
-    const previousPage = pageHistory.pop(); // get the last page
-    if (previousPage) {
-      pages.forEach(p => p.classList.remove('rw-active'));
-      previousPage.classList.add('rw-active');
-    } else {
-      // fallback if no history
-      showPage('.rw-page-source');
-    }
-  });
 
   modal.querySelector('.rw-confirm')?.addEventListener('click', () => {
     console.log('Confirmed research:', wizardState);

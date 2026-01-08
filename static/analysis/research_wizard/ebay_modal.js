@@ -201,7 +201,7 @@ marginInput.addEventListener('input', () => {
 
 // Back button
 document.querySelector('.rw-back-ebay')?.addEventListener('click', () => {
-  window.ResearchWizard.showSourcePage();
+  window.ResearchWizard.showOverview();
 });
 
 // ============================================
