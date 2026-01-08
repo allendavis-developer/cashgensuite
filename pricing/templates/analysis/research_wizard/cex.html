@@ -19,6 +19,64 @@
   </div>
 
   <div class="add-item-container">
-    <button class="add-item-button" disabled>ADD ITEM</button>
+    <button class="add-item-button" disabled>COMPUTE PRICES</button>
   </div>
+
+<div class="cex-pricing-panel" id="cexResults" hidden>
+  <div class="pricing-grid">
+
+    <div class="pricing-item primary">
+      <span class="label">CeX Price</span>
+      <span class="value" id="cexPrice">—</span>
+    </div>
+
+    <div class="pricing-item">
+      <span class="label">CeX Price Last Updated</span>
+      <span class="value" id="cexUpdated">—</span>
+    </div>
+
+    <div class="pricing-item">
+      <span class="label">% Used for Suggested RRP</span>
+      <input class="value editable" id="rrpPct" type="number" min="0" max="100" step="1" />
+    </div>
+
+    <div class="pricing-item emphasis">
+      <span class="label">Suggested RRP</span>
+      <input class="value editable" id="suggestedRrp" type="number" min="0" step="1" />
+    </div>
+
+    <div class="pricing-item highlight offer" data-offer="start">
+      <span class="label">Starting Offer</span>
+      <span class="value">
+        <span id="offerStart">—</span>
+        <span class="margin-inline" id="marginStart">—</span>
+      </span>
+    </div>
+
+    <div class="pricing-item highlight offer" data-offer="mid">
+      <span class="label">Second Offer</span>
+      <span class="value">
+        <span id="offerMid">—</span>
+        <span class="margin-inline" id="marginMid">—</span>
+      </span>
+    </div>
+
+    <div class="pricing-item highlight offer" data-offer="end">
+      <span class="label">Third Offer (Match CeX)</span>
+      <span class="value">
+        <span id="offerEnd">—</span>
+        <span class="margin-inline" id="marginEnd">—</span>
+      </span>
+    </div>
+
+
+    <div class="pricing-item margin">
+      <span class="label">Final Margin</span>
+      <span class="value" id="margin">—</span>
+    </div>
+
+  </div>
+</div>
+
+
 </div>

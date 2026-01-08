@@ -176,3 +176,227 @@
   cursor: not-allowed;
   opacity: 0.6;
 }
+/* ===================== CEX Pricing Panel ===================== */
+.cex-pricing-panel {
+  margin-top: 64px;
+  padding: 48px;
+  background: #0b0b0b;
+  border: 1px solid #1f1f1f;
+  border-radius: 18px;
+}
+
+/* ===================== Grid ===================== */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 36px 40px;
+}
+
+/* ===================== Pricing Item ===================== */
+.pricing-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #1f1f1f;
+}
+
+.pricing-item .label {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #777;
+}
+
+.pricing-item .value {
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #fff;
+}
+
+/* ===================== Emphasis ===================== */
+
+/* CeX Price */
+.pricing-item.primary .value {
+  font-size: 42px;
+}
+
+/* Suggested RRP */
+.pricing-item.emphasis .value {
+  color: #e5e5e5;
+}
+
+/* Match CeX */
+.pricing-item.highlight .value {
+  color: #fff;
+  position: relative;
+}
+
+.pricing-item.highlight .value::after {
+  content: 'MATCH';
+  margin-left: 12px;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #000;
+  background: #fff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  vertical-align: middle;
+}
+
+/* Margin */
+.pricing-item.margin .value {
+  font-size: 32px;
+}
+
+/* ===================== Responsive ===================== */
+@media (max-width: 1200px) {
+  .pricing-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+  }
+}
+
+@media (max-width: 640px) {
+  .cex-pricing-panel {
+    padding: 32px;
+  }
+
+  .pricing-item .value {
+    font-size: 28px;
+  }
+
+  .pricing-item.primary .value {
+    font-size: 34px;
+  }
+}
+
+
+/* ===================== Inline Margin ===================== */
+.margin-inline {
+  margin-left: 14px;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  border-radius: 8px;
+  border: 1px solid #2a2a2a;
+  color: #aaa;
+}
+
+/* Healthy */
+.margin-inline.good {
+  color: #fff;
+  border-color: #fff;
+}
+
+/* Tight */
+.margin-inline.warn {
+  color: #bbb;
+  border-color: #555;
+}
+
+/* Risky */
+.margin-inline.bad {
+  color: #777;
+  border-color: #333;
+}
+
+
+/* ===================== Offer Selection ===================== */
+.pricing-item.offer {
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+/* Active offer */
+.pricing-item.offer.active {
+  transform: translateY(-2px);
+}
+
+/* Green – safest */
+.pricing-item.offer.active.safe {
+  border-bottom-color: #22c55e;
+}
+
+/* Yellow – balanced */
+.pricing-item.offer.active.mid {
+  border-bottom-color: #eab308;
+}
+
+/* Red – aggressive */
+.pricing-item.offer.active.risky {
+  border-bottom-color: #ef4444;
+}
+
+/* ===================== Compute Button – Loading ===================== */
+
+.add-item-button.loading {
+  pointer-events: none;
+  position: relative;
+  color: transparent !important;
+}
+
+.add-item-button.loading::after {
+  content: '';
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+
+/* ===================== Editable Pricing (TRUE 1:1) ===================== */
+
+.pricing-item .value.editable {
+  all: unset; /* 🔑 remove browser defaults */
+
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  line-height: 1.2;
+
+  color: #fff;
+  background: transparent;
+
+  padding: 0;
+  border: none;
+  outline: none;
+
+  cursor: text;
+  -moz-appearance: textfield; /* remove spinner in Firefox */
+}
+
+/* Remove spinner in Chrome/Safari/Edge */
+.pricing-item .value.editable::-webkit-outer-spin-button,
+.pricing-item .value.editable::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.pricing-item .value.editable:focus {
+  opacity: 0.8;
+}
+
+/* Match emphasis styling */
+.pricing-item.emphasis .value.editable {
+  color: #e5e5e5;
+}

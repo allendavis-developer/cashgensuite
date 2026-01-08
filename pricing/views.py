@@ -471,15 +471,31 @@ def get_selling_and_buying_price(request):
         category_id = data.get("categoryId")
         subcategory_id = data.get("subcategoryId")
         model_id = data.get("modelId")
-        model = data.get("model")
-        category = data.get("category")
-        subcategory = data.get("subcategory")
+        cex_stable_id = data.get("cex_stable_id")
         attributes = data.get("attributes", {})
 
-        if not category or not model:
-            return JsonResponse({"success": False, "error": "Category and model are required."})
+        if not category_id or not model_id:
+            return JsonResponse({
+                "success": False,
+                "error": "categoryId and modelId are required."
+            })
+        
+        item_model = ItemModel.objects.select_related(
+            "subcategory__category"
+        ).get(pk=model_id)
 
-        search_term = build_search_term(model, category, subcategory, attributes)
+        category_name = item_model.subcategory.category.name
+        subcategory_name = item_model.subcategory.name
+        model_name = item_model.name
+
+        search_term = build_search_term(
+            model_name,
+            category_name,
+            subcategory_name,
+            attributes
+        )
+
+        search_term = build_search_term(model_name, category_name, subcategory_name, attributes)
         market_item = get_market_item(search_term)
         print("Searching for:", search_term, "Found:", market_item)
 

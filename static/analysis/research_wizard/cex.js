@@ -28,16 +28,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   await preloadData(); // Preload in background
   populateCategories();
 
-  categoryTomSelect.on('change', () => {
-    const categoryId = categoryTomSelect.getValue();
-    if (!categoryId) return; // prevents empty requests
-
-    currentAttributes = []; // clear old ones
-    fetchSubcategories(categoryId);
-
-  });
-
-  subcategoryTomSelect.on('change', fetchModels);
 });
 
 
@@ -67,11 +57,19 @@ function initTomSelects() {
   });
 
   categoryTomSelect.on('change', (value) => {
+    const categoryId = categoryTomSelect.getValue();
+    if (!categoryId) return;
+
+    currentAttributes = [];
+    fetchSubcategories(categoryId);
+
     if (value) sendFieldUpdate('category', value);
   });
 
   subcategoryTomSelect.on('change', (value) => {
-    if (value) sendFieldUpdate('subcategory', value);
+    if (!value) return; 
+    fetchModels();
+    sendFieldUpdate('subcategory', value);
   });
 
   modelTomSelect.on('change', value => {
@@ -89,11 +87,245 @@ function initTomSelects() {
     if (value) sendFieldUpdate('model', value);
   });
 
+}
 
+addItemButton.addEventListener('click', async () => {
+  if (addItemButton.disabled) return;
+
+  addItemButton.classList.add('loading');
+  addItemButton.disabled = true;
+
+  try {
+    const categoryId = categoryTomSelect.getValue();
+    const subcategoryId = subcategoryTomSelect.getValue();
+    const modelId = modelTomSelect.getValue();
+
+    const modelOption = modelTomSelect.options[modelId];
+
+    const payload = {
+      categoryId,
+      subcategoryId,
+      modelId,
+      cexStableId: modelOption?.cex_stable_id || null,
+      attributes: selectedVariants,
+    };
+
+    const priceData = await fetchPriceDataCEX(payload);
+    renderCexResults(priceData);
+
+  } catch (err) {
+    console.error('Failed to fetch price data:', err);
+  } finally {
+    addItemButton.classList.remove('loading');
+    updateAddItemButtonState(); // restore enabled state correctly
+  }
+});
+
+
+
+function setMargin(el, rrp, offer) {
+  if (!rrp || !offer) {
+    el.textContent = '—';
+    el.className = 'margin-inline';
+    return;
+  }
+
+  const pct = Math.round(((rrp - offer) / rrp) * 100);
+
+  el.textContent = `${pct}%`;
+
+  el.className = 'margin-inline ' +
+    (pct >= 40 ? 'good' : pct >= 25 ? 'warn' : 'bad');
+}
+
+function recalcFromRrp(rrp) {
+  const data = window.currentPriceData;
+  if (!data || !rrp) return;
+
+  // Keep CeX % in sync (without triggering pct input event)
+  const pct = (data.base_cex_price / rrp) * 100;
+  const rrpPctInput = document.getElementById('rrpPct');
+  
+  // Remove listener temporarily to avoid feedback loop
+  const oldHandler = rrpPctInput.oninput;
+  rrpPctInput.oninput = null;
+  rrpPctInput.value = Math.round(pct);
+  setTimeout(() => { rrpPctInput.oninput = oldHandler; }, 0);
+
+  // Recalculate offers
+  const offers = {
+    start: data.buying_start_price,
+    mid: data.buying_mid_price,
+    end: data.buying_end_price,
+  };
+
+  setMargin(document.getElementById('marginStart'), rrp, offers.start);
+  setMargin(document.getElementById('marginMid'), rrp, offers.mid);
+  setMargin(document.getElementById('marginEnd'), rrp, offers.end);
+
+  // Update final margin
+  updateActiveOffer({
+    ...data,
+    selling_price: rrp
+  });
+}  // ← THIS WAS MISSING!
+
+
+function recalcFromPct(pct) {
+  const data = window.currentPriceData;
+  if (!data || !pct) return;
+
+  const rrp = Math.round((data.base_cex_price * pct) / 100);
+  const rrpInput = document.getElementById('suggestedRrp');
+  
+  // Remove listener temporarily to avoid feedback loop
+  const oldHandler = rrpInput.oninput;
+  rrpInput.oninput = null;
+  rrpInput.value = rrp;
+  setTimeout(() => { rrpInput.oninput = oldHandler; }, 0);
+
+  // Recalculate margins
+  const offers = {
+    start: data.buying_start_price,
+    mid: data.buying_mid_price,
+    end: data.buying_end_price,
+  };
+
+  setMargin(document.getElementById('marginStart'), rrp, offers.start);
+  setMargin(document.getElementById('marginMid'), rrp, offers.mid);
+  setMargin(document.getElementById('marginEnd'), rrp, offers.end);
+
+  // Update final margin
+  updateActiveOffer({
+    ...data,
+    selling_price: rrp
+  });
+}
+
+
+document.getElementById('suggestedRrp').addEventListener('input', e => {
+  const rrp = Number(e.target.value);
+  recalcFromRrp(rrp);
+});
+
+document.getElementById('rrpPct').addEventListener('input', e => {
+  const pct = Number(e.target.value);
+  recalcFromPct(pct);
+});
+
+
+
+function renderCexResults(data) {
+  const panel = document.getElementById('cexResults');
+  panel.hidden = false;
+
+  const money = v => v != null ? `£${v}` : '—';
+
+  document.getElementById('cexPrice').textContent =
+    money(data.cex_selling_price);
+
+  document.getElementById('cexUpdated').textContent =
+    data.cex_last_price_updated_date || '—';
+
+  const rrp = data.selling_price;
+
+  // Set input values (not textContent)
+  document.getElementById('suggestedRrp').value = rrp || '';
+  document.getElementById('rrpPct').value =
+    data.cex_rrp_pct != null ? Math.round(data.cex_rrp_pct * 100) : '';
+
+  document.getElementById('offerStart').textContent = `£${data.buying_start_price}`;
+  document.getElementById('offerMid').textContent = `£${data.buying_mid_price}`;
+  document.getElementById('offerEnd').textContent = `£${data.buying_end_price}`;
+
+  setMargin(
+    document.getElementById('marginStart'),
+    rrp,
+    data.buying_start_price
+  );
+
+  setMargin(
+    document.getElementById('marginMid'),
+    rrp,
+    data.buying_mid_price
+  );
+
+  setMargin(
+    document.getElementById('marginEnd'),
+    rrp,
+    data.buying_end_price
+  );
+
+  window.currentPriceData = {
+    ...data,
+    base_cex_price: data.cex_selling_price
+  };
+  activeOfferIndex = 0;
+  updateActiveOffer(data);
 
 }
 
 
+const offerOrder = ['start', 'mid', 'end'];
+let activeOfferIndex = 0;
+
+const offerRisk = {
+  start: 'safe',
+  mid: 'mid',
+  end: 'risky'
+};
+
+function getOfferValue(type, data) {
+  return {
+    start: data.buying_start_price,
+    mid: data.buying_mid_price,
+    end: data.buying_end_price,
+  }[type];
+}
+
+function updateActiveOffer(data) {
+  const offers = document.querySelectorAll('.pricing-item.offer');
+  offers.forEach(el =>
+    el.classList.remove('active', 'safe', 'mid', 'risky')
+  );
+
+  const type = offerOrder[activeOfferIndex];
+  const el = document.querySelector(
+    `.pricing-item.offer[data-offer="${type}"]`
+  );
+  if (!el) return;
+
+  const rrp = data.selling_price;
+  const offer = getOfferValue(type, data);
+  const pct = Math.round(((rrp - offer) / rrp) * 100);
+
+  // 🔒 Forced risk by offer position
+  el.classList.add('active', offerRisk[type]);
+
+  // Update final margin display
+  document.getElementById('margin').textContent = `${pct}%`;
+}
+
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Tab') return;
+
+  const panelVisible = !document.getElementById('cexResults').hidden;
+  if (!panelVisible) return;
+
+  e.preventDefault(); // keep focus in pricing
+
+  activeOfferIndex = (activeOfferIndex + 1) % offerOrder.length;
+  updateActiveOffer(window.currentPriceData);
+});
+
+
+document.querySelectorAll('.pricing-item.offer').forEach(el => {
+  el.addEventListener('click', () => {
+    activeOfferIndex = offerOrder.indexOf(el.dataset.offer);
+    updateActiveOffer(window.currentPriceData);
+  });
+});
 
 // ========== Preload all categories ==========
 async function preloadData() {
@@ -151,6 +383,42 @@ function renderSubcategories(data) {
   modelTomSelect.clearOptions();
 }
 
+async function fetchPriceDataCEX({ 
+  categoryId, 
+  subcategoryId, 
+  modelId, 
+  cexStableId, 
+  attributes 
+}) {
+  const response = await fetch('/api/get-selling-and-buying-price/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken'),
+    },
+    body: JSON.stringify({
+      categoryId,
+      subcategoryId,
+      modelId,
+      cex_stable_id: cexStableId,
+      attributes,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+
+  const result = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.error || 'Failed to get price data');
+  }
+
+  return result;
+}
+
+
 // ========== Fetch & Cache Models ==========
 async function fetchModels() {
   const categoryId = categoryTomSelect.getValue();
@@ -181,7 +449,8 @@ function renderModels(data) {
     modelTomSelect.addOption({
       value: m.id,
       text: m.name,
-      cex_stable_id: m.cex_stable_id || ''
+      cex_stable_id: m.cex_stable_id || '',
+      _raw: m, 
     });
   });
 
