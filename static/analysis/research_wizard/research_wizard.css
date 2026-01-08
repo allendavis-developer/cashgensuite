@@ -12,7 +12,6 @@
   display: flex;
 }
 
-
 .rw-backdrop {
   position: fixed;
   inset: 0;
@@ -31,7 +30,7 @@
 
 .rw-modal {
   position: relative;
-  width: min(95vw, 1600px); /* increased from 85vw and 1200px */
+  width: min(95vw, 1600px);
   max-height: 85vh;
   background: #000;
   border-radius: 12px;
@@ -70,8 +69,6 @@ body.rw-open {
   transform: scale(0.92);
 }
 
-
-
 .rw-title {
   font-size: clamp(36px, 5vw, 56px);
   font-weight: 800;
@@ -97,11 +94,7 @@ body.rw-open {
   background: #111;
   color: #fff;
   cursor: pointer;
-  transition: 
-    transform 0.15s ease,
-    background 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .rw-option:hover {
@@ -113,7 +106,6 @@ body.rw-open {
 .rw-option:active {
   transform: scale(0.96);
 }
-
 
 .rw-page-overview {
   display: none;
@@ -134,8 +126,13 @@ body.rw-open {
   border-collapse: collapse;
 }
 
-.overview-table th {
+.overview-table th,
+.overview-table td {
+  padding: 22px 16px;
   text-align: left;
+}
+
+.overview-table th {
   font-size: 13px;
   font-weight: 900;
   letter-spacing: 1.5px;
@@ -145,12 +142,10 @@ body.rw-open {
 }
 
 .overview-table td {
-  padding: 22px 0;
   font-size: 28px;
   font-weight: 900;
   border-top: 1px solid #1f1f1f;
 }
-
 
 .overview-table .source {
   font-size: 24px;
@@ -161,7 +156,6 @@ body.rw-open {
 .overview-table .rrp {
   color: #e5e5e5;
 }
-
 
 .overview-table .offer {
   display: flex;
@@ -180,7 +174,6 @@ body.rw-open {
   color: #aaa;
 }
 
-
 .offer.safe .offer-meta {
   border-color: #22c55e;
   color: #22c55e;
@@ -196,66 +189,50 @@ body.rw-open {
   color: #ef4444;
 }
 
-.overview-table th,
-.overview-table td {
-  padding: 22px 16px; /* 22px vertical, 16px horizontal */
-  text-align: left;   /* ensure both header and data align */
-}
-
-.overview-table th {
-  font-size: 13px;
-  font-weight: 900;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: #777;
-  padding-bottom: 18px; /* you can keep extra bottom padding */
-}
-
-.overview-table td {
-  font-size: 28px;
-  font-weight: 900;
-  border-top: 1px solid #1f1f1f;
-}
-
 .rrp-percentage {
-  font-size: 0.6em;       /* smaller relative to td */
-  color: #999;            /* lighter grey for contrast */
+  font-size: 0.6em;
+  color: #999;
   margin-right: 6px;
   white-space: nowrap;
-  font-weight: 600;       /* lighter than bold 900 RRP */
+  font-weight: 600;
 }
 
-/* ===================== Overview Row Buttons ===================== */
+/* ===================== Buttons ===================== */
 .overview-table .row-btn {
-  padding: 10px 20px;
-  font-size: 18px;
+  padding: 10px 16px;
+  font-size: 16px;
   font-weight: 900;
   border-radius: 12px;
   border: 2px solid #333;
   cursor: pointer;
-  transition: all 0.2s ease;
   text-transform: uppercase;
+  margin-right: 8px;
+  transition: all 0.2s ease;
 }
 
-/* Compute button style */
-.overview-table .row-btn.compute {
+.overview-table .row-btn:active,
+.rw-modal .rw-back:active,
+.rw-modal .rw-continue:active,
+.rw-modal .rw-confirm:active,
+.rw-modal .rw-page-overview .rw-restart:active {
+  transform: scale(0.95);
+}
+
+.overview-table .row-btn.compute,
+.overview-table .row-btn.compute-quick {
   background: #111;
   color: #aaa;
   border-color: #444;
 }
 
-.overview-table .row-btn.compute:hover {
+.overview-table .row-btn.compute:hover,
+.overview-table .row-btn.compute-quick:hover {
   background: #1a1a1a;
   color: #fff;
   border-color: #666;
   box-shadow: 0 6px 20px rgba(0,0,0,0.6);
 }
 
-.overview-table .row-btn.compute:active {
-  transform: scale(0.95);
-}
-
-/* Complete button style */
 .overview-table .row-btn.complete {
   background: #22c55e;
   color: #000;
@@ -269,15 +246,21 @@ body.rw-open {
   box-shadow: 0 6px 20px rgba(0,0,0,0.5);
 }
 
-.overview-table .row-btn.complete:active {
-  transform: scale(0.95);
+.overview-table .row-btn.compute-research {
+  background: #0d6efd;
+  color: #fff;
+  border-color: #0b5ed7;
+}
+
+.overview-table .row-btn.compute-research:hover {
+  background: #0b5ed7;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
 }
 
 /* ===================== Wizard Footer Buttons ===================== */
 .rw-modal .rw-back,
-.rw-modal .rw-confirm,
-.rw-modal .rw-confirm,
-.rw-modal .rw-continue {
+.rw-modal .rw-continue,
+.rw-modal .rw-confirm {
   padding: 14px 28px;
   font-size: 20px;
   font-weight: 900;
@@ -290,7 +273,6 @@ body.rw-open {
   margin: 0 8px;
 }
 
-/* Back button style */
 .rw-modal .rw-back {
   background: #111;
   color: #aaa;
@@ -304,13 +286,8 @@ body.rw-open {
   box-shadow: 0 6px 20px rgba(0,0,0,0.6);
 }
 
-.rw-modal .rw-back:active {
-  transform: scale(0.95);
-}
-
-/* Continue button style */
 .rw-modal .rw-continue {
-  background: #0d6efd; /* blue */
+  background: #0d6efd;
   color: #fff;
   border-color: #0b5ed7;
 }
@@ -320,13 +297,8 @@ body.rw-open {
   box-shadow: 0 6px 20px rgba(0,0,0,0.5);
 }
 
-.rw-modal .rw-continue:active {
-  transform: scale(0.95);
-}
-
-/* Confirm button style */
 .rw-modal .rw-confirm {
-  background: #22c55e; /* green */
+  background: #22c55e;
   color: #000;
   border-color: #16a34a;
 }
@@ -338,11 +310,6 @@ body.rw-open {
   box-shadow: 0 6px 20px rgba(0,0,0,0.5);
 }
 
-.rw-modal .rw-confirm:active {
-  transform: scale(0.95);
-}
-
-/* Footer container styling for spacing */
 .rw-modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -353,49 +320,22 @@ body.rw-open {
   border-radius: 0 0 12px 12px;
 }
 
-/* Quick Compute button (subtle dark) */
-.overview-table .row-btn.compute-quick {
-  background: #111;
-  color: #aaa;
-  border-color: #444;
-}
-
-.overview-table .row-btn.compute-quick:hover {
-  background: #1a1a1a;
+.rw-modal .rw-page-overview .rw-restart {
+  background: #ef4444;
   color: #fff;
-  border-color: #666;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.6);
-}
-
-.overview-table .row-btn.compute-quick:active {
-  transform: scale(0.95);
-}
-
-/* Research button (highlighted) */
-.overview-table .row-btn.compute-research {
-  background: #0d6efd;
-  color: #fff;
-  border-color: #0b5ed7;
-}
-
-.overview-table .row-btn.compute-research:hover {
-  background: #0b5ed7;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
-}
-
-.overview-table .row-btn.compute-research:active {
-  transform: scale(0.95);
-}
-
-/* Shared styling */
-.overview-table .row-btn {
-  padding: 10px 16px;
-  font-size: 16px;
+  border: 2px solid #b91c1c;
+  font-size: 18px;
   font-weight: 900;
   border-radius: 12px;
-  border: 2px solid #333;
+  padding: 12px 24px;
   cursor: pointer;
   text-transform: uppercase;
-  margin-right: 8px;
   transition: all 0.2s ease;
+  margin-left: 16px;
+}
+
+.rw-modal .rw-page-overview .rw-restart:hover {
+  background: #b91c1c;
+  border-color: #7f1d1d;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
 }

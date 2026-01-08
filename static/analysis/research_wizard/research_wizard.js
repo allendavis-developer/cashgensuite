@@ -7,8 +7,11 @@
       subcategory: null,
       model: null,
       attributes: {},
-      prices: null
-    }
+      prices: null,
+      selectedOffer: null,
+      suggestedRrpMethod: null
+    },
+    ebay: {}
   };
 
   const openBtn = document.getElementById('researchWizard');
@@ -17,9 +20,23 @@
   const closeBtn = modal.querySelector('.rw-close');
 
   if (!openBtn || !backdrop || !modal) return;
-  
+
+  function isWizardStateEmpty() {
+    // Checks if both CEX and eBay have any useful data
+    const cexData = wizardState.cex || {};
+    const ebayData = wizardState.ebay || {};
+    return !(
+      (cexData.prices && cexData.selectedOffer) ||
+      (ebayData.prices && ebayData.selectedOffer)
+    );
+  }
+
   function openWizard() {
-    showPage('.rw-page-source');
+    if (isWizardStateEmpty()) {
+      showPage('.rw-page-source');
+    } else {
+      window.ResearchWizard.showOverview();
+    }
 
     backdrop.classList.remove('rw-hidden');
     requestAnimationFrame(() => {
@@ -27,7 +44,6 @@
       document.body.classList.add('rw-open');
     });
   }
-
 
   function closeWizard() {
     backdrop.classList.remove('rw-visible');
@@ -39,10 +55,7 @@
   }
 
   openBtn.addEventListener('click', openWizard);
-
-
-    closeBtn?.addEventListener('click', closeWizard);
-
+  closeBtn?.addEventListener('click', closeWizard);
 
   /* Backdrop click */
   backdrop.addEventListener('click', (e) => {
@@ -56,24 +69,25 @@
     }
   });
 
-    const pages = modal.querySelectorAll('.rw-page');
+  const pages = modal.querySelectorAll('.rw-page');
 
-    function showPage(selector) {
-      pages.forEach(p => p.classList.remove('rw-active'));
-      modal.querySelector(selector)?.classList.add('rw-active');
-    }
+  function showPage(selector) {
+    pages.forEach(p => p.classList.remove('rw-active'));
+    modal.querySelector(selector)?.classList.add('rw-active');
+  }
 
-    const optionButtons = modal.querySelectorAll('.rw-option');
+  const optionButtons = modal.querySelectorAll('.rw-option');
 
-    optionButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const source = btn.dataset.source;
+  optionButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const source = btn.dataset.source;
 
-        if (source === 'cex') {
-          showPage('.rw-page-cex');
-        }
-      });
+      if (source === 'cex') {
+        showPage('.rw-page-cex');
+      }
+      // Could add other sources here (like eBay) if you implement them
     });
+  });
 
   /* Expose close */
   window.ResearchWizard = window.ResearchWizard || {};
@@ -82,8 +96,20 @@
   window.ResearchWizard.showOverview = () => {
     renderOverview();
     showPage('.rw-page-overview');
-  };
 
+    // Add Restart button dynamically if it doesn't exist yet
+    let overviewActions = modal.querySelector('.rw-page-overview .rw-actions');
+    if (!overviewActions.querySelector('.rw-restart')) {
+      const restartBtn = document.createElement('button');
+      restartBtn.classList.add('rw-restart');
+      restartBtn.textContent = 'Restart';
+      restartBtn.addEventListener('click', () => {
+        wizardState = { source: null, cex: { category: null, subcategory: null, model: null, attributes: {}, prices: null, selectedOffer: null, suggestedRrpMethod: null }, ebay: {} };
+        showPage('.rw-page-source');
+      });
+      overviewActions.appendChild(restartBtn);
+    }
+  };
 
   function renderOverview() {
     const container = document.getElementById('overviewContent');
@@ -105,8 +131,7 @@
               : ''}
             <div>£${prices.rrp}</div>
           </td>
-          <td class="offer ${selectedOffer.risk}">
-            £${selectedOffer.price}
+          <td class="offer ${selectedOffer.risk}">£${selectedOffer.price}
             <span class="offer-meta">${selectedOffer.type.replace('_', ' ')}</span>
           </td>
           <td class="status">
@@ -115,7 +140,6 @@
         </tr>
       `);
     } else {
-      // Empty CeX row → two options: Quick Compute + Research
       rows.push(`
         <tr class="overview-row cex">
           <td class="source">CeX</td>
@@ -177,8 +201,6 @@
     `;
   }
 
-
-
   modal.querySelector('.rw-back')?.addEventListener('click', () => {
     showPage('.rw-page-cex');
   });
@@ -187,6 +209,5 @@
     console.log('Confirmed research:', wizardState);
     closeWizard();
   });
-
 
 })();
