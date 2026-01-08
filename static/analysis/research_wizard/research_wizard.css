@@ -31,14 +31,15 @@
 
 .rw-modal {
   position: relative;
-  width: 85vw;
-  height: 85vh;
+  width: min(95vw, 1600px); /* increased from 85vw and 1200px */
+  max-height: 85vh;
   background: #000;
   border-radius: 12px;
   border: 1px solid #222;
   display: flex;
   flex-direction: column;
   box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+  overflow-y: auto;
 }
 
 body.rw-open {
