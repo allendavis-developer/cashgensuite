@@ -150,7 +150,7 @@ addItemButton.addEventListener('click', async () => {
       },
       rrp: priceData.selling_price,
       rrp_pct: priceData.cex_rrp_pct,
-      lastUpdated: priceData.cex_last_price_updated_date
+      lastUpdated: priceData.cex_last_price_updated_date,
     };
 
 

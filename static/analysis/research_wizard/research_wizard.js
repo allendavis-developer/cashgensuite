@@ -8,7 +8,8 @@
       attributes: {},
       prices: null,
       selectedOffer: null,
-      suggestedRrpMethod: null
+      suggestedRrpMethod: null,
+      rrp: null,
     },
     ebay: {
       searchTerm: null,              // the text in the search box
@@ -24,11 +25,6 @@
       rrp: null,                       // value in rrpInput
       margin: null,                     // value in marginInput
       listings: [],                    // raw results from renderResults
-      uiState: {                       // optional for UX continuity
-        expandedSections: [],          // array of expanded filter names
-        filterScroll: 0,
-        resultsScroll: 0
-      }
     }
   };
 
@@ -195,23 +191,26 @@
 
     // eBay row
     const ebayData = wizardState.ebay || {};
-    const ebayPrices = ebayData.prices || {};
-    const selectedOffer = ebayData.selectedOffer || {};
+    const prices = ebayData.prices || {};
 
     rows.push(`
       <tr class="overview-row ebay">
         <td class="source">eBay</td>
-        <td class="price">${ebayPrices.marketPrice ? `£${ebayPrices.marketPrice}` : '-'}</td>
-        <td class="rrp">${ebayPrices.rrp ? `£${ebayPrices.rrp}` : '-'}</td>
-        <td class="offer ${selectedOffer.risk || ''}">
-          ${selectedOffer.price ? `£${selectedOffer.price}` : '-'}
-          ${selectedOffer.type ? `<span class="offer-meta">${selectedOffer.type.replace('_', ' ')}</span>` : ''}
+        <td class="price">
+          ${prices.avg ? `£${Number(prices.median).toFixed(2)}` : '-'}
+        </td>
+        <td class="rrp">
+          ${ebayData.rrp ? `£${Number(ebayData.rrp).toFixed(2)}` : '-'}
+        </td>
+        <td class="offer">
+          ${ebayData.selectedOffer ? `£${Number(ebayData.selectedOffer).toFixed(2)}` : '-'}
         </td>
         <td class="status">
           <button class="row-btn research-btn" data-source="ebay">Research</button>
         </td>
       </tr>
     `);
+
 
     container.innerHTML = `
       <div class="overview-table-wrapper">

@@ -137,12 +137,46 @@ async function runEbayScrape() {
         });
 
         if (response.success) {
-            renderResults(response.results);
-            const prices = response.results
-                .map(item => Number(item.price))
-                .filter(p => !isNaN(p) && p > 0);
+            const rawPrices = response.results
+              .map(item => Number(item.price))
+              .filter(p => !isNaN(p) && p > 0);
 
-            const stats = calculateStats(prices);
+            const cleanedPrices = removeOutliersIQR(rawPrices);
+            window._ebayPriceCache = { rawPrices, cleanedPrices };
+
+            const cleanedSet = new Set(
+              cleanedPrices.map(p => Number(p.toFixed(2)))
+            );
+
+            response.results.forEach(item => {
+              const price = Number(Number(item.price).toFixed(2));
+              item.isAnomalous = !cleanedSet.has(price);
+            });
+
+            window.currentEbayResults = response.results;
+
+
+            renderResults(response.results);
+
+            if (!document.getElementById('ebayShowAnomalies')?.checked) {
+              document
+                .querySelectorAll('.ebay-listing-card[data-anomalous="true"]')
+                .forEach(card => card.style.display = 'none');
+            }
+            updateVisibleEbayCount();
+
+
+
+            const showAnomalies =
+              document.getElementById('ebayShowAnomalies')?.checked;
+
+            const pricesForStats = showAnomalies
+              ? rawPrices
+              : cleanedPrices;
+
+
+            const stats = calculateStats(pricesForStats);
+
 
             document.getElementById('ebay-min').textContent = stats.min;
             document.getElementById('ebay-avg').textContent = stats.avg;
@@ -201,8 +235,64 @@ marginInput.addEventListener('input', () => {
 
 // Back button
 document.querySelector('.rw-back-ebay')?.addEventListener('click', () => {
+  saveEbayWizardState();
   window.ResearchWizard.showOverview();
 });
+
+document.getElementById('ebayShowAnomalies')?.addEventListener('change', e => {
+  const cache = window._ebayPriceCache;
+  if (!cache) return;
+
+  const prices = document.getElementById('ebayShowAnomalies').checked
+    ? cache.rawPrices
+    : cache.cleanedPrices;
+
+  const stats = calculateStats(prices);
+
+  document.getElementById('ebay-min').textContent = stats.min;
+  document.getElementById('ebay-avg').textContent = stats.avg;
+  document.getElementById('ebay-median').textContent = stats.median;
+  document.getElementById('ebay-mode').textContent = stats.mode;
+
+  // keep your existing RRP logic intact
+  const medianNum = Number(stats.median);
+  if (!isNaN(medianNum)) {
+    let rounded = Math.round(medianNum);
+    let suggestedRrp = (rounded % 2 === 0) ? rounded - 2 : rounded - 1;
+    if (suggestedRrp < 0) suggestedRrp = 0;
+    rrpInput.value = suggestedRrp.toFixed(0);
+    recalculateOfferValue();
+  }
+
+  const show = e.target.checked;
+
+  document
+    .querySelectorAll('.ebay-listing-card[data-anomalous="true"]')
+    .forEach(card => {
+      card.style.display = show ? 'flex' : 'none';
+    });
+
+  saveEbayWizardState();
+  updateVisibleEbayCount();
+
+});
+
+
+function updateVisibleEbayCount() {
+  const cards = Array.from(
+    document.querySelectorAll('.ebay-listing-card')
+  );
+
+  const visibleCount = cards.filter(card =>
+    card.style.display !== 'none'
+  ).length;
+
+  const counter = document.getElementById('ebay-visible-count');
+  if (counter) {
+    counter.textContent = visibleCount;
+  }
+}
+
 
 // ============================================
 // FILTER RENDERING & INTERACTION
@@ -450,12 +540,16 @@ function renderResults(results) {
 
   ebayResultsContainer.innerHTML = `
     <div class="ebay-results-header">
-      <h3>eBay Listings (${results.length} results)</h3>
+      <h3>eBay Listings (<span id="ebay-visible-count">0</span>  results)</h3>
     </div>
 
     <div class="ebay-listings">
       ${results.map(item => `
-        <div class="ebay-listing-card" style="display:flex; gap:15px; padding:12px;">
+          <div
+            class="ebay-listing-card"
+            data-anomalous="${item.isAnomalous}"
+            style="display:flex; gap:15px; padding:12px;"
+          >
           
           ${item.image ? `
             <img
@@ -497,11 +591,38 @@ function renderResults(results) {
     // Enable the Complete button now that there are results
   ebayApplyBtn.disabled = false;
   ebayApplyBtn.classList.remove('disabled');
+
+  updateVisibleEbayCount();
+
 }
 
 // ============================================
 // STATS & CALCULATIONS
 // ============================================
+
+function removeOutliersIQR(prices) {
+  if (prices.length < 4) return prices; // not enough data to judge
+
+  const sorted = [...prices].sort((a, b) => a - b);
+
+  const percentile = (arr, p) => {
+    const index = (arr.length - 1) * p;
+    const lower = Math.floor(index);
+    const upper = Math.ceil(index);
+    if (lower === upper) return arr[lower];
+    return arr[lower] + (arr[upper] - arr[lower]) * (index - lower);
+  };
+
+  const q1 = percentile(sorted, 0.25);
+  const q3 = percentile(sorted, 0.75);
+  const iqr = q3 - q1;
+
+  const lowerBound = q1 - 1.5 * iqr;
+  const upperBound = q3 + 1.5 * iqr;
+
+  return sorted.filter(p => p >= lowerBound && p <= upperBound);
+}
+
 
 function calculateStats(prices) {
   if (!prices.length) {
@@ -642,7 +763,25 @@ function restoreEbayWizardState() {
   offerInput.value = state.selectedOffer || '';
 
   if (state.listings?.length) {
+
+    window.currentEbayResults = state.listings;
+
+    const rawPrices = state.listings
+      .map(item => Number(item.price))
+      .filter(p => !isNaN(p) && p > 0);
+
+    const cleanedPrices = removeOutliersIQR(rawPrices);
+    window._ebayPriceCache = { rawPrices, cleanedPrices };
+
     renderResults(state.listings);
+
+    if (!document.getElementById('ebayShowAnomalies')?.checked) {
+      document
+        .querySelectorAll('.ebay-listing-card[data-anomalous="true"]')
+        .forEach(card => card.style.display = 'none');
+    }
+
+
   }
 
   // Restore UI state
