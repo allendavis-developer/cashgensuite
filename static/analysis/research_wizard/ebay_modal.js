@@ -117,13 +117,28 @@ async function runEbayScrape() {
     const ebayFilterUKOnly = filterUKCheckbox.checked;
     const ebayFilterUsed = filterUsedCheckbox.checked;
 
+    // Get selected category from TomSelect
+    const categoryInputValue = ebayCategoryTomSelect?.getValue() || '';
+    const categoryText = ebayCategoryTomSelect?.options[categoryInputValue]?.text || '';
+    
+    // Build the options object for buildEbayUrl
+    const options = {
+        category: categoryText.toLowerCase(), // lowercase for mapping
+        model: window.wizardState.ebay?.model || '', // if you store model in wizard state
+        attributes: window.wizardState.ebay?.attributes || {}, // e.g., { storage: "256GB" }
+        ebayFilterSold,
+        ebayFilterUsed,
+        ebayFilterUKOnly
+    };
+
+    // Build eBay URL
+    const ebayUrl = buildEbayUrl(searchTerm, selectedFilters, options);
+
     ebayResultsContainer.style.display = 'block';
     ebayResultsContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">Scraping eBay listings...</div>';
 
     try {
         previousSelectedFilters = JSON.parse(JSON.stringify(selectedFilters));
-
-        const ebayUrl = buildEbayUrl(searchTerm, selectedFilters);
 
         const response = await sendExtensionMessage({
             action: "scrape",
@@ -135,6 +150,7 @@ async function runEbayScrape() {
                 ebayFilterUKOnly
             }
         });
+
 
         if (response.success) {
             const rawPrices = response.results
@@ -481,41 +497,77 @@ async function refreshFiltersFromUrl(ebayUrl) {
 // URL BUILDING
 // ============================================
 
-// TODO: I guess this should be in the backend not the frontend
-function buildEbayUrl(searchTerm, filters) {
-  const baseUrl = "https://www.ebay.co.uk/sch/i.html";
-  
-  const params = {
-    "_nkw": searchTerm.replace(/ /g, '+'),
-    "_sacat": "0",
-    "_from": "R40",
-    "_dcat": "9355"
-  };
+function buildEbayUrl(searchTerm, filters, options = {}) {
+  const { category, model, attributes, ebayFilterSold, ebayFilterUsed, ebayFilterUKOnly } = options;
 
-  // Add filters with double-encoding
+  const baseUrl = "https://www.ebay.co.uk/sch/i.html";
+
+  // Map internal category to eBay category IDs
+  const categoryMap = {
+    "smartphones and mobile": "9355",
+    "games (discs & cartridges)": "139973",
+    "tablets": "58058",
+    "laptops": "175672",
+    "gaming consoles": "139971",
+    "cameras": "31388",
+    "headphones": "15052",
+    "smartwatches": "178893"
+  };
+  
+  const normalizedCategory = (category || "").toLowerCase();
+  const categoryId = categoryMap[normalizedCategory] || null;
+
+  const encoded = encodeURIComponent(searchTerm);
+
+  // Build base URL depending on category
+  let url;
+  if (!categoryId) {
+    url = `https://www.ebay.co.uk/sch/i.html?_nkw=${encoded}&_sacat=0&_sop=12&_oac=1&_ipg=240`;
+  } else {
+    url = `https://www.ebay.co.uk/sch/${categoryId}/i.html?_nkw=${encoded}&_sop=12&_oac=1&_ipg=240`;
+  }
+
+  // Handle model (smartphones only)
+  if (model && normalizedCategory === "smartphones and mobile") {
+    const normalizedModel = model.replace(/iphone/i, "iPhone");
+    const doubleEncoded = encodeURIComponent(normalizedModel).replace(/%/g, "%25");
+    url += `&Model=${doubleEncoded}`;
+  }
+
+  // Handle storage attribute
+  if (attributes?.storage) {
+    let storage = attributes.storage.toUpperCase().trim();
+    storage = storage.replace(/^(\d+)(GB)$/, "$1 $2");
+    const doubleEncodedStorage = encodeURIComponent(storage).replace(/%/g, "%25");
+    url += `&Storage%2520Capacity=${doubleEncodedStorage}`;
+  }
+
+  // Optional eBay filters
+  if (ebayFilterSold) url += "&LH_Sold=1&LH_Complete=1";
+  if (ebayFilterUsed) url += "&LH_ItemCondition=3000";
+  if (ebayFilterUKOnly) url += "&LH_PrefLoc=1";
+
+  // --- Filter block (keep untouched) ---
   Object.entries(filters).forEach(([filterName, value]) => {
     if (Array.isArray(value)) {
       const doubleEncodedKey = encodeURIComponent(encodeURIComponent(filterName));
       const doubleEncodedValue = value
         .map(v => encodeURIComponent(encodeURIComponent(v)))
         .join("|");
-      params[doubleEncodedKey] = doubleEncodedValue;
+      url += `&${doubleEncodedKey}=${doubleEncodedValue}`;
     } else if (typeof value === 'object') {
       const doubleEncodedKey = encodeURIComponent(encodeURIComponent(filterName));
-      if (value.min) params[`${doubleEncodedKey}_min`] = encodeURIComponent(encodeURIComponent(value.min));
-      if (value.max) params[`${doubleEncodedKey}_max`] = encodeURIComponent(encodeURIComponent(value.max));
+      if (value.min) url += `&${doubleEncodedKey}_min=${encodeURIComponent(encodeURIComponent(value.min))}`;
+      if (value.max) url += `&${doubleEncodedKey}_max=${encodeURIComponent(encodeURIComponent(value.max))}`;
     } else {
       const doubleEncodedKey = encodeURIComponent(encodeURIComponent(filterName));
-      params[doubleEncodedKey] = encodeURIComponent(encodeURIComponent(value));
+      url += `&${doubleEncodedKey}=${encodeURIComponent(encodeURIComponent(value))}`;
     }
   });
 
-  const queryString = Object.entries(params)
-    .map(([key, value]) => `${key}=${value}`)
-    .join('&');
-
-  return `${baseUrl}?${queryString}`;
+  return url;
 }
+
 
 // ============================================
 // RESULTS RENDERING
