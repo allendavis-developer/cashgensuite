@@ -889,8 +889,74 @@ async function addItemToTable() {
   attachQuantityListeners();
     // Immediately analyse the new row
   await handleAnalyseClick(row);
+}
 
-  
+function addSimpleItemToTable({ name, rrp, offer }) {
+  const tbody = createCategoryTable();
+  if (tbody.querySelector('.placeholder')) tbody.innerHTML = '';
+
+  const rrpNum = Number(rrp);
+  const offerNum = Number(offer);
+
+  const marginPct =
+    rrpNum > 0
+      ? (((rrpNum - offerNum) / rrpNum) * 100).toFixed(1) + '%'
+      : '—';
+
+  const cells = [
+    `<td><input type="number" class="qty-input" min="1" value="1"></td>`,
+    `<td>—</td>`,                     // subcategory
+    `<td class="model-cell">${name}</td>`,
+    `<td class="cex-price">—</td>`,
+    `<td class="cex-price-last-updated">—</td>`,
+    `<td class="cex-rrp-pct">—</td>`,
+    `<td class="suggested-rrp">£${rrpNum.toFixed(2)}</td>`,
+    `<td class="starting-offer">—</td>`,
+    `<td class="mid-offer">—</td>`,
+    `<td class="final-offer">—</td>`,
+    `<td class="max-offer">—</td>`,
+    `<td class="cc-mode">—</td>`,
+    `<td class="cg-mode">—</td>`,
+    `<td class="current-offer">
+        <div class="buying-range-cell">
+          <span class="buying-value">£${offerNum.toFixed(2)}</span>
+        </div>
+     </td>`,
+    `<td class="margin">${marginPct}</td>`
+  ];
+
+  const row = document.createElement('tr');
+  row.innerHTML = cells.join('');
+
+  Object.assign(row.dataset, {
+    itemName: name,
+    rrp: rrpNum,
+    offer: offerNum,
+    margin: marginPct
+  });
+
+  // Double-click to delete (same behavior as your main table)
+  row.addEventListener('dblclick', e => {
+    if (['INPUT', 'BUTTON', 'A'].includes(e.target.tagName)) return;
+
+    if (confirm('Delete this item?')) {
+      const tb = row.parentElement;
+      row.remove();
+      if (!tb.children.length) {
+        const colCount = tb.parentElement.querySelectorAll('th').length;
+        tb.innerHTML = `
+          <tr class="placeholder">
+            <td colspan="${colCount}" style="text-align:center; color:#777;">
+              No items added yet. Double-click any row to delete.
+            </td>
+          </tr>`;
+      }
+      updateSummary();
+    }
+  });
+
+  tbody.appendChild(row);
+  attachQuantityListeners();
 }
 
 
