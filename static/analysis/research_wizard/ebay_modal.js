@@ -151,74 +151,52 @@ async function runEbayScrape() {
             }
         });
 
+      // After you get the response
+      if (response.success) {
+          // Keep only the first 20 listings
+          const listings = response.results.slice(0, 20);
 
-        if (response.success) {
-            const rawPrices = response.results
+          const rawPrices = listings
               .map(item => Number(item.price))
               .filter(p => !isNaN(p) && p > 0);
 
-            const cleanedPrices = removeOutliers(rawPrices);
-            window._ebayPriceCache = { rawPrices, cleanedPrices };
+          const cleanedPrices = removeOutliers(rawPrices);
+          window._ebayPriceCache = { rawPrices, cleanedPrices };
 
-            const cleanedSet = new Set(
+          const cleanedSet = new Set(
               cleanedPrices.map(p => Number(p.toFixed(2)))
-            );
+          );
 
-            response.results.forEach(item => {
+          listings.forEach(item => {
               const price = Number(Number(item.price).toFixed(2));
               item.isAnomalous = !cleanedSet.has(price);
-            });
+          });
 
-            window.currentEbayResults = response.results;
+          window.currentEbayResults = listings;
 
+          renderResults(listings);
+          updateVisibleEbayCount();
 
-            renderResults(response.results);
-            console.log(response);
+          const stats = calculateStats(cleanedPrices);
+          document.getElementById('ebay-min').textContent = stats.min;
+          document.getElementById('ebay-avg').textContent = stats.avg;
+          document.getElementById('ebay-median').textContent = stats.median;
+          document.getElementById('ebay-mode').textContent = stats.mode;
 
-            if (!document.getElementById('ebayShowAnomalies')?.checked) {
-              document
-                .querySelectorAll('.ebay-listing-card[data-anomalous="true"]')
-                .forEach(card => card.style.display = 'none');
-            }
-            updateVisibleEbayCount();
+          // Suggested RRP
+          const avgNum = Number(stats.avg);
+          if (!isNaN(avgNum)) {
+              rrpInput.value = Math.round(avgNum);
+              offerInput.value = (Math.round(avgNum) * 0.4).toFixed(0);
+          }
 
+          if (marginInput && !marginInput.value) {
+              marginInput.value = 50;
+              recalculateOfferValue();
+          }
 
-
-            const showAnomalies =
-              document.getElementById('ebayShowAnomalies')?.checked;
-
-            const pricesForStats = showAnomalies
-              ? rawPrices
-              : cleanedPrices;
-
-
-            const stats = calculateStats(pricesForStats);
-
-            document.getElementById('ebay-min').textContent = stats.min;
-            document.getElementById('ebay-avg').textContent = stats.avg;
-            document.getElementById('ebay-median').textContent = stats.median;
-            document.getElementById('ebay-mode').textContent = stats.mode;
-
-            document.querySelector('.ebay-analysis-wrapper').style.display = 'block';
-           
-            // Suggested RRP = whole number of cleaned average
-            const avgNum = Number(stats.avg);
-            if (!isNaN(avgNum)) {
-                const rrpValue = Math.round(avgNum);
-                rrpInput.value = rrpValue;
-
-                // Offer = 0.4 * RRP
-                const offerValue = rrpValue * 0.4;
-                offerInput.value = offerValue.toFixed(0);
-            }
-
-            if (marginInput && !marginInput.value) {
-                marginInput.value = 50;
-                recalculateOfferValue();
-            }
-
-            refreshFiltersFromUrl(ebayUrl);
-        } else {
+          refreshFiltersFromUrl(ebayUrl);
+      } else {
             alert("Scraping failed: " + (response.error || "Unknown error"));
         }
     } catch (error) {
