@@ -516,6 +516,14 @@ computeCexUrlButton.addEventListener('click', async () => {
     // Optionally populate model/category if available
     if (data.model) {
       modelTomSelect.setValue(data.model);
+      const opt = modelTomSelect.options[data.model];
+      if (opt) {
+        wizardState.cex.model = {
+          id: 0,
+          name: data.model || null,
+          cexStableId: opt.cex_stable_id || null
+        };
+      }
     }
 
   } catch (err) {

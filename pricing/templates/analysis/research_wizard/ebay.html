@@ -6,11 +6,24 @@
   </div>
 
   <div class="ebay-search-section">
-    <div style="display: flex; gap: 10px;">
-      <input type="text" id="ebaySearchInput" class="input-field" placeholder="Enter product name or keywords..." style="flex: 1;">
-      <button class="modal-btn" id="ebayWizardBtn" style="width: auto; padding: 0 20px;">Next</button>
+    <div class="ebay-search-row">
+      <div class="ebay-category-field">
+        <select id="ebayCategorySelect"></select>
+      </div>
+
+      <input
+        type="text"
+        id="ebaySearchInput"
+        class="input-field"
+        placeholder="Enter product name or keywords..."
+      />
+
+      <button class="modal-btn" id="ebayWizardBtn">
+        Next
+      </button>
     </div>
   </div>
+
 
   <div class="ebay-top-filters">
     <label class="ebay-top-filter">

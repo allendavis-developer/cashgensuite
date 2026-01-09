@@ -296,6 +296,7 @@ function renderEbayOverview(ebay) {
 
 
 function renderCexOverview(cex) {
+  console.log(cex);
   return `
     <div class="market-card cex">
       <h3>CeX</h3>

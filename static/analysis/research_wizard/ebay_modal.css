@@ -443,3 +443,47 @@
 .rw-back-ebay:hover {
   text-decoration: underline;
 }
+
+/* ================= SEARCH ROW ================= */
+.ebay-search-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Category select – fixed, reasonable width */
+.ebay-category-field {
+  flex: 0 0 220px;
+}
+
+.ebay-category-field select {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+}
+
+/* Search input – THIS should stretch */
+#ebaySearchInput {
+  flex: 1 1 auto;
+  min-width: 0; /* critical for flex layouts */
+  height: 40px;
+  padding: 0 14px;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+}
+
+/* Next button – fixed width, no flex-grow */
+#ebayWizardBtn {
+  flex: 0 0 110px;
+  height: 40px;
+  padding: 0;
+  white-space: nowrap;
+}

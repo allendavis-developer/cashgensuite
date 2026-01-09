@@ -141,7 +141,7 @@ async function runEbayScrape() {
               .map(item => Number(item.price))
               .filter(p => !isNaN(p) && p > 0);
 
-            const cleanedPrices = removeOutliersIQR(rawPrices);
+            const cleanedPrices = removeOutliers(rawPrices);
             window._ebayPriceCache = { rawPrices, cleanedPrices };
 
             const cleanedSet = new Set(
@@ -157,6 +157,7 @@ async function runEbayScrape() {
 
 
             renderResults(response.results);
+            console.log(response);
 
             if (!document.getElementById('ebayShowAnomalies')?.checked) {
               document
@@ -177,26 +178,22 @@ async function runEbayScrape() {
 
             const stats = calculateStats(pricesForStats);
 
-
             document.getElementById('ebay-min').textContent = stats.min;
             document.getElementById('ebay-avg').textContent = stats.avg;
             document.getElementById('ebay-median').textContent = stats.median;
             document.getElementById('ebay-mode').textContent = stats.mode;
 
             document.querySelector('.ebay-analysis-wrapper').style.display = 'block';
+           
+            // Suggested RRP = whole number of cleaned average
+            const avgNum = Number(stats.avg);
+            if (!isNaN(avgNum)) {
+                const rrpValue = Math.round(avgNum);
+                rrpInput.value = rrpValue;
 
-            // Suggested RRP calculation
-            let suggestedRrp = null;
-            const medianNum = Number(stats.median);
-            if (!isNaN(medianNum)) {
-                let rounded = Math.round(medianNum);
-                suggestedRrp = (rounded % 2 === 0) ? rounded - 2 : rounded - 1;
-                if (suggestedRrp < 0) suggestedRrp = 0;
-            }
-
-            const rrpEl = document.getElementById('ebaySuggestedRrp');
-            if (rrpEl && suggestedRrp !== null) {
-                rrpEl.value = suggestedRrp.toFixed(0);
+                // Offer = 0.4 * RRP
+                const offerValue = rrpValue * 0.4;
+                offerInput.value = offerValue.toFixed(0);
             }
 
             if (marginInput && !marginInput.value) {
@@ -600,27 +597,137 @@ function renderResults(results) {
 // STATS & CALCULATIONS
 // ============================================
 
-function removeOutliersIQR(prices) {
-  if (prices.length < 4) return prices; // not enough data to judge
+function removeOutliers(prices) {
+  if (prices.length < 4) return prices;
 
-  const sorted = [...prices].sort((a, b) => a - b);
+  // --- Step 0: keep only valid positive prices
+  const valid = prices.filter(p => p > 0);
+  if (valid.length < 4) return prices;
+
+  // --- Step 1: semantic floor (meaning before statistics)
+  const sortedLinear = [...valid].sort((a, b) => a - b);
+
+  const median = (() => {
+    const mid = Math.floor(sortedLinear.length / 2);
+    return sortedLinear.length % 2 === 0
+      ? (sortedLinear[mid - 1] + sortedLinear[mid]) / 2
+      : sortedLinear[mid];
+  })();
+
+  // Anything below X% of median is probably accessories / junk
+  const FLOOR_RATIO = 0.25;
+  const semanticFiltered = valid.filter(p => p >= median * FLOOR_RATIO);
+
+  // If semantic filtering nukes too much data, fall back
+  if (semanticFiltered.length < 4) {
+    return semanticFiltered;
+  }
+
+  // --- Step 2: log-space IQR
+  const pairs = semanticFiltered.map(p => ({
+    price: p,
+    log: Math.log(p)
+  }));
+
+  pairs.sort((a, b) => a.log - b.log);
 
   const percentile = (arr, p) => {
     const index = (arr.length - 1) * p;
     const lower = Math.floor(index);
     const upper = Math.ceil(index);
-    if (lower === upper) return arr[lower];
-    return arr[lower] + (arr[upper] - arr[lower]) * (index - lower);
+    if (lower === upper) return arr[lower].log;
+    return (
+      arr[lower].log +
+      (arr[upper].log - arr[lower].log) * (index - lower)
+    );
   };
 
-  const q1 = percentile(sorted, 0.25);
-  const q3 = percentile(sorted, 0.75);
+  const q1 = percentile(pairs, 0.25);
+  const q3 = percentile(pairs, 0.75);
   const iqr = q3 - q1;
 
+  // --- Step 3: asymmetric tolerance (cheap strict, expensive forgiving)
   const lowerBound = q1 - 1.5 * iqr;
-  const upperBound = q3 + 1.5 * iqr;
+  const upperBound = q3 + 3.0 * iqr;
 
-  return sorted.filter(p => p >= lowerBound && p <= upperBound);
+  return pairs
+    .filter(p => p.log >= lowerBound && p.log <= upperBound)
+    .map(p => p.price);
+}
+
+// ============================================
+// CATEGORY SELECTOR (eBay)
+// ============================================
+
+const ebayCategorySelectEl = document.getElementById('ebayCategorySelect');
+let ebayCategoryTomSelect;
+
+// Local cache
+const ebayCategoryCache = {
+  categories: []
+};
+
+// Init on load
+document.addEventListener('DOMContentLoaded', async () => {
+  initEbayCategorySelect();
+  await preloadEbayCategories();
+  populateEbayCategories();
+});
+
+// --------------------------------------------
+// TomSelect init
+// --------------------------------------------
+function initEbayCategorySelect() {
+  ebayCategoryTomSelect = new TomSelect('#ebayCategorySelect', {
+    placeholder: 'Select category…',
+    create: false,
+    allowEmptyOption: true
+  });
+
+  ebayCategoryTomSelect.on('change', value => {
+    if (!value) return;
+
+    const option = ebayCategoryTomSelect.options[value];
+
+    // Persist to wizard state
+    window.wizardState.ebay = window.wizardState.ebay || {};
+    window.wizardState.ebay.category = {
+      id: value,
+      name: option?.text || null
+    };
+
+    console.log('eBay category selected:', window.wizardState.ebay.category);
+  });
+}
+
+// --------------------------------------------
+// Fetch + cache
+// --------------------------------------------
+async function preloadEbayCategories() {
+  try {
+    const res = await fetch('/api/categories/');
+    const data = await res.json();
+    ebayCategoryCache.categories = data.categories || [];
+  } catch (err) {
+    console.error('Failed to load eBay categories:', err);
+  }
+}
+
+// --------------------------------------------
+// Populate dropdown
+// --------------------------------------------
+function populateEbayCategories() {
+  ebayCategoryTomSelect.clear();
+  ebayCategoryTomSelect.clearOptions();
+
+  ebayCategoryCache.categories.forEach(cat => {
+    ebayCategoryTomSelect.addOption({
+      value: cat.id,
+      text: cat.name
+    });
+  });
+
+  ebayCategoryTomSelect.refreshOptions(false);
 }
 
 
@@ -724,7 +831,7 @@ function saveEbayWizardState() {
       mode: document.getElementById('ebay-mode')?.textContent
     },
     selectedOffer: offerInput.value,
-    suggestedPriceMethod: 'Median Minus Adjustment',
+    suggestedPriceMethod: 'Average Price',
     rrp: rrpInput.value,
     margin: marginInput.value,
     listings: window.currentEbayResults || [],
@@ -749,10 +856,11 @@ function restoreEbayWizardState() {
   filterUsedCheckbox.checked = state.topFilters?.used || false;
 
   // Only auto-run if we have no results yet
-  if (!state.listings || !state.listings.length) {
+  if (!state.listings || !state.listings.length && window.wizardState.ebay?.searchTerm) {
     ebayWizardStep = 1;
     ebayWizardBtn.textContent = 'Next';
     ebayWizardBtn.click();
+    console.log("clicking search");
   }
 
   // Restore stats and pricing
@@ -773,7 +881,7 @@ function restoreEbayWizardState() {
       .map(item => Number(item.price))
       .filter(p => !isNaN(p) && p > 0);
 
-    const cleanedPrices = removeOutliersIQR(rawPrices);
+    const cleanedPrices = removeOutliers(rawPrices);
     window._ebayPriceCache = { rawPrices, cleanedPrices };
 
     renderResults(state.listings);
