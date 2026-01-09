@@ -275,17 +275,56 @@ function updateSelectedCount() {
 }
 
 
-// TODO: I guess this should be in the backend not the frontend
+/// TODO: I guess this should be in the backend not the frontend
 // Build eBay search URL from selected filters
-function buildEbayUrl(searchTerm, filters) {
-  const baseUrl = "https://www.ebay.co.uk/sch/i.html";
+function buildEbayUrl(searchTerm, filters, category) {
+  // Map your internal categories to eBay categories
+  let categoryId = null;
+
+  switch ((category || "").toLowerCase()) {
+    case "smartphones and mobile":
+      categoryId = "9355";
+      break;
+    case "games (discs & cartridges)":
+      categoryId = "139973";
+      break;  
+    case "tablets":
+      categoryId = "58058";
+      break;
+    case "laptops":
+      categoryId = "175672";
+      break;
+    case "gaming consoles":
+      categoryId = "139971";
+      break;
+    case "cameras":
+      categoryId = "31388";
+      break;
+    case "headphones":
+      categoryId = "15052";
+      break;
+    case "smartwatches":
+      categoryId = "178893";
+      break;
+    default:
+      categoryId = null;      // This forces the "no category" URL shape
+  }
+
+  // Build the base URL based on whether category exists
+  let baseUrl;
+  const params = {};
   
-  const params = {
-    "_nkw": searchTerm.replace(/ /g, '+'),
-    "_sacat": "0",
-    "_from": "R40",
-    "_dcat": "9355"
-  };
+  if (!categoryId) {
+    baseUrl = "https://www.ebay.co.uk/sch/i.html";
+    params["_nkw"] = searchTerm.replace(/ /g, '+');
+    params["_sacat"] = "0";
+    params["_from"] = "R40";
+  } else {
+    baseUrl = `https://www.ebay.co.uk/sch/${categoryId}/i.html`;
+    params["_nkw"] = searchTerm.replace(/ /g, '+');
+    params["_from"] = "R40";
+    // Don't add _sacat or _dcat when we have a category in the URL path
+  }
 
   // Add filters with double-encoding
   Object.entries(filters).forEach(([filterName, value]) => {
@@ -345,7 +384,7 @@ async function refreshFiltersFromUrl(ebayUrl) {
 // Handle apply button
 ebayApplyBtn.addEventListener('click', async () => {
 
-    //  HARD GUARD
+  //  HARD GUARD
   if (isEbayScraping) return;
   resetEbayAnalysis(); 
 
@@ -358,7 +397,7 @@ ebayApplyBtn.addEventListener('click', async () => {
     return;
   }
 
-  // ✅ READ TOP FILTERS
+  // READ TOP FILTERS
   const ebayFilterSold = filterSoldCheckbox.checked;
   const ebayFilterUKOnly = filterUKCheckbox.checked;
   const ebayFilterUsed = filterUsedCheckbox.checked;
@@ -378,7 +417,8 @@ ebayApplyBtn.addEventListener('click', async () => {
     previousSelectedFilters = JSON.parse(JSON.stringify(selectedFilters));
 
     // TODO: THIS FUNCITON IS REALLY WEIRD BECAUSE IT BUILDS EVERYTHING EXCEPT THE TOP FILTERS
-    const ebayUrl = buildEbayUrl(searchTerm, selectedFilters);
+    const category = document.getElementById('ebayCategorySelect').tomselect.getValue();
+    const ebayUrl = buildEbayUrl(searchTerm, selectedFilters, category);
     console.log("eBay URL to scrape:", ebayUrl);
 
     const response = await sendExtensionMessage({
