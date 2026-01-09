@@ -358,30 +358,33 @@ function renderCexOverview(cex) {
 
 
   modal.querySelector('.rw-confirm')?.addEventListener('click', () => {
-  const { offer, rrp } = resolveFinalPricing();
+    const { offer, rrp } = resolveFinalPricing();
 
-  if (offer == null || rrp == null) {
-    alert('Offer and RRP are required.');
-    return;
-  }
+    if (offer == null || rrp == null) {
+      alert('Offer and RRP are required.');
+      return;
+    }
 
-  wizardState.final.offer = offer;
-  wizardState.final.rrp = rrp;
+    wizardState.final.offer = offer;
+    wizardState.final.rrp = rrp;
 
-  // 🔽 ADD TO TABLE (name empty for now)
-  addSimpleItemToTable({
-    name: '',
-    rrp,
-    offer
+    // Use CEX model first, then eBay search term
+    const itemName = wizardState.cex.model || wizardState.ebay.searchTerm || '';
+
+    addSimpleItemToTable({
+      name: itemName,
+      rrp,
+      offer
+    });
+
+    console.log('Confirmed research → added to table:', {
+      name: itemName,
+      offer,
+      rrp
+    });
+
+    closeWizard();
   });
-
-  console.log('Confirmed research → added to table:', {
-    offer,
-    rrp
-  });
-
-  closeWizard();
-});
 
 
   function resolveFinalPricing() {

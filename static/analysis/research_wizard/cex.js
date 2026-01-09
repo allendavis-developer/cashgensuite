@@ -289,8 +289,20 @@ function renderCexResults(data) {
 
   const money = v => v != null ? `£${v}` : '—';
 
-  document.getElementById('cexPrice').textContent =
-    money(data.cex_selling_price);
+  // 🔗 Make CeX price a hyperlink
+  const cexPriceEl = document.getElementById('cexPrice');
+  cexPriceEl.innerHTML = ''; // clear previous content
+
+  if (data.cex_selling_price != null && data.cex_url) {
+    const link = document.createElement('a');
+    link.href = data.cex_url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = `£${data.cex_selling_price}`;
+    cexPriceEl.appendChild(link);
+  } else {
+    cexPriceEl.textContent = money(data.cex_selling_price);
+  }
 
   document.getElementById('cexUpdated').textContent =
     data.cex_last_price_updated_date || '—';
@@ -337,12 +349,12 @@ function renderCexResults(data) {
     selling_price: document.getElementById('suggestedRrp').value || data.selling_price
   });
 
-
-  // Add this line to always populate suggestedRrpMethod
+  // Always populate suggestedRrpMethod
   const baseCex = data.cex_selling_price || 0;
   const pct = baseCex ? Math.round((rrp / baseCex) * 100) : 0;
   wizardState.cex.suggestedRrpMethod = `Percentage of CEX Price (${pct}%)`;
 }
+
 
 
 const offerOrder = ['start', 'mid', 'match_cex'];

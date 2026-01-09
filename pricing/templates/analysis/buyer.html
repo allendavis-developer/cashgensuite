@@ -891,16 +891,20 @@ async function addItemToTable() {
   await handleAnalyseClick(row);
 }
 
-function addSimpleItemToTable({ name, rrp, offer }) {
+function addSimpleItemToTable({ name, rrp, startingOffer, midOffer, finalOffer }) {
   const tbody = createCategoryTable();
   if (tbody.querySelector('.placeholder')) tbody.innerHTML = '';
 
   const rrpNum = Number(rrp);
-  const offerNum = Number(offer);
+  const startingNum = Number(startingOffer || 0);
+  const midNum = Number(midOffer || 0);
+  const finalNum = Number(finalOffer || 0);
 
+  // Compute margin based on final offer if available, otherwise starting offer
+  const offerForMargin = finalNum || startingNum;
   const marginPct =
     rrpNum > 0
-      ? (((rrpNum - offerNum) / rrpNum) * 100).toFixed(1) + '%'
+      ? (((rrpNum - offerForMargin) / rrpNum) * 100).toFixed(1) + '%'
       : '—';
 
   const cells = [
@@ -911,15 +915,15 @@ function addSimpleItemToTable({ name, rrp, offer }) {
     `<td class="cex-price-last-updated">—</td>`,
     `<td class="cex-rrp-pct">—</td>`,
     `<td class="suggested-rrp">£${rrpNum.toFixed(2)}</td>`,
-    `<td class="starting-offer">—</td>`,
-    `<td class="mid-offer">—</td>`,
-    `<td class="final-offer">—</td>`,
+    `<td class="starting-offer">£${startingNum.toFixed(2)}</td>`,
+    `<td class="mid-offer">£${midNum.toFixed(2)}</td>`,
+    `<td class="final-offer">£${finalNum.toFixed(2)}</td>`,
     `<td class="max-offer">—</td>`,
     `<td class="cc-mode">—</td>`,
     `<td class="cg-mode">—</td>`,
     `<td class="current-offer">
         <div class="buying-range-cell">
-          <span class="buying-value">£${offerNum.toFixed(2)}</span>
+          <span class="buying-value">£${offerForMargin.toFixed(2)}</span>
         </div>
      </td>`,
     `<td class="margin">${marginPct}</td>`
@@ -931,11 +935,12 @@ function addSimpleItemToTable({ name, rrp, offer }) {
   Object.assign(row.dataset, {
     itemName: name,
     rrp: rrpNum,
-    offer: offerNum,
+    startingOffer: startingNum,
+    midOffer: midNum,
+    finalOffer: finalNum,
     margin: marginPct
   });
 
-  // Double-click to delete (same behavior as your main table)
   row.addEventListener('dblclick', e => {
     if (['INPUT', 'BUTTON', 'A'].includes(e.target.tagName)) return;
 
@@ -958,6 +963,7 @@ function addSimpleItemToTable({ name, rrp, offer }) {
   tbody.appendChild(row);
   attachQuantityListeners();
 }
+
 
 
 async function handleAnalyseClick(row) {
