@@ -179,6 +179,12 @@ async function runEbayScrape() {
           document.getElementById('ebay-median').textContent = stats.median;
           document.getElementById('ebay-mode').textContent = stats.mode;
 
+          // Show the analysis wrapper after successful scraping
+          const analysisWrapper = document.querySelector('.ebay-analysis-wrapper');
+          if (analysisWrapper) {
+            analysisWrapper.style.display = 'block';
+          }
+
           // Suggested RRP
           const avgNum = Number(stats.avg);
           if (!isNaN(avgNum)) {
@@ -549,8 +555,7 @@ function buildEbayUrl(searchTerm, filters, options = {}) {
 // ============================================
 // RESULTS RENDERING
 // ============================================
-// Hide the Complete button by default - will show when results exist
-ebayApplyBtn.style.display = 'none';
+// Button is always visible, but disabled until results exist
 ebayApplyBtn.disabled = true;
 ebayApplyBtn.classList.add('disabled');
 
@@ -562,8 +567,7 @@ function renderResults(results) {
         No eBay listings found.
       </div>
     `;
-    // Hide the Complete button when there are no results
-    ebayApplyBtn.style.display = 'none';
+    // Disable the Complete button when there are no results
     ebayApplyBtn.disabled = true;
     ebayApplyBtn.classList.add('disabled');
     return;
@@ -579,7 +583,6 @@ function renderResults(results) {
           <div
             class="ebay-listing-card"
             data-anomalous="${item.isAnomalous}"
-            style="display:flex; gap:15px; padding:12px;"
           >
           
           ${item.image ? `
@@ -601,11 +604,15 @@ function renderResults(results) {
               ${item.title || "Untitled listing"}
             </a>
 
-            <div class="ebay-listing-details">
-              <span class="ebay-listing-price">
-                £${Number(item.price).toFixed(2)}
-              </span>
+            <div class="ebay-listing-price">
+              £${Number(item.price).toFixed(2)}
             </div>
+
+            ${item.sold ? `
+              <div class="ebay-listing-sold">
+                ${item.sold}
+              </div>
+            ` : ""}
 
             ${item.store ? `
               <div class="ebay-listing-seller">
@@ -619,8 +626,7 @@ function renderResults(results) {
     </div>
   `;
 
-    // Show and enable the Complete button now that there are results
-  ebayApplyBtn.style.display = 'block';
+    // Enable the Complete button now that there are results
   ebayApplyBtn.disabled = false;
   ebayApplyBtn.classList.remove('disabled');
 
@@ -868,8 +874,7 @@ function resetEbayAnalysis() {
     analysisWrapper.style.display = 'none';
   }
 
-  // Hide the Complete button when resetting
-  ebayApplyBtn.style.display = 'none';
+  // Disable the Complete button when resetting
   ebayApplyBtn.disabled = true;
   ebayApplyBtn.classList.add('disabled');
 }
@@ -900,6 +905,7 @@ function saveEbayWizardState() {
     rrp: rrpInput.value,
     margin: marginInput.value,
     listings: window.currentEbayResults || [],
+    showAnomalies: document.getElementById('ebayShowAnomalies')?.checked ?? true,
     uiState: {
       expandedSections: Array.from(
         ebayFiltersContainer.querySelectorAll('.ebay-filter-section.expanded h4')
@@ -920,6 +926,12 @@ window.restoreEbayWizardState = function restoreEbayWizardState() {
   filterSoldCheckbox.checked = state.topFilters?.sold || false;
   filterUKCheckbox.checked = state.topFilters?.ukOnly || false;
   filterUsedCheckbox.checked = state.topFilters?.used || false;
+  
+  // Restore anomalies checkbox (default to checked if not saved)
+  const anomaliesCheckbox = document.getElementById('ebayShowAnomalies');
+  if (anomaliesCheckbox) {
+    anomaliesCheckbox.checked = state.showAnomalies !== undefined ? state.showAnomalies : true;
+  }
 
   // Restore category from either ebay.category or cex.category (they should be synced)
   const category = state.category || window.wizardState.cex?.category;
@@ -964,6 +976,11 @@ window.restoreEbayWizardState = function restoreEbayWizardState() {
   offerInput.value = state.selectedOffer || '';
 
   if (state.listings?.length) {
+    // Show the analysis wrapper when restoring state with results
+    const analysisWrapper = document.querySelector('.ebay-analysis-wrapper');
+    if (analysisWrapper) {
+      analysisWrapper.style.display = 'block';
+    }
 
     window.currentEbayResults = state.listings;
 
@@ -982,8 +999,7 @@ window.restoreEbayWizardState = function restoreEbayWizardState() {
         .forEach(card => card.style.display = 'none');
     }
 
-    // Show the Complete button when restoring state with results
-    ebayApplyBtn.style.display = 'block';
+    // Enable the Complete button when restoring state with results
     ebayApplyBtn.disabled = false;
     ebayApplyBtn.classList.remove('disabled');
   }
