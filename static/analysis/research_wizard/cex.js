@@ -2,13 +2,14 @@
 const modalItemCategory = document.getElementById('modalItemCategory');
 const modalItemSubcategory = document.getElementById('modalItemSubcategory');
 const modalItemModel = document.getElementById('modalItemModel');
-const addItemButton = document.querySelector('.add-item-button');
-addItemButton.disabled = true; // safety
+const cexComputeSpinner = document.getElementById('cexComputeSpinner');
 
 let currentAttributes = [];
 let categoryTomSelect, subcategoryTomSelect, modelTomSelect;
 let attributeTomSelects = {}; // Store TomSelect instances for attributes
 let attributesResolved = false;
+let cexComputeInProgress = false;
+let cexPricesComputedForCurrentSelection = false;
 
 
 // ========== Local Cache ==========
@@ -21,6 +22,10 @@ const cache = {
 
 let allowedCombinations = [];
 let selectedVariants = {};
+
+// Persist last selected category/subcategory for quick add
+let lastQuickAddCategory = null;
+let lastQuickAddSubcategory = null;
 
 // ========== Initialize ==========
 document.addEventListener('DOMContentLoaded', async () => {
@@ -72,6 +77,12 @@ function initTomSelects() {
         name: categoryTomSelect.options[value]?.text || null
       };
 
+      // Persist for quick add
+      lastQuickAddCategory = {
+        id: value,
+        name: categoryTomSelect.options[value]?.text || null
+      };
+
       sendFieldUpdate('category', value);
     }
   });
@@ -85,12 +96,18 @@ function initTomSelects() {
       name: subcategoryTomSelect.options[value]?.text || null
     };
 
+    // Persist for quick add
+    lastQuickAddSubcategory = {
+      id: value,
+      name: subcategoryTomSelect.options[value]?.text || null
+    };
+
     sendFieldUpdate('subcategory', value);
   });
 
   modelTomSelect.on('change', value => {
-    addItemButton.disabled = true; // 🔒 lock immediately
     attributesResolved = false;
+    cexPricesComputedForCurrentSelection = false;
 
     clearDynamicAttributes();
     Object.values(attributeTomSelects).forEach(ts => ts.destroy());
@@ -117,17 +134,22 @@ function initTomSelects() {
 
 }
 
-addItemButton.addEventListener('click', async () => {
-  if (addItemButton.disabled) return;
+async function computeCexPrices() {
+  if (cexComputeInProgress) return;
 
-  addItemButton.classList.add('loading');
-  addItemButton.disabled = true;
+  const categoryId = categoryTomSelect.getValue();
+  const subcategoryId = subcategoryTomSelect.getValue();
+  const modelId = modelTomSelect.getValue();
+  if (!categoryId || !subcategoryId || !modelId) return;
+
+  cexComputeInProgress = true;
+  cexPricesComputedForCurrentSelection = false;
+
+  if (cexComputeSpinner) {
+    cexComputeSpinner.style.display = 'block';
+  }
 
   try {
-    const categoryId = categoryTomSelect.getValue();
-    const subcategoryId = subcategoryTomSelect.getValue();
-    const modelId = modelTomSelect.getValue();
-
     const modelOption = modelTomSelect.options[modelId];
 
     const payload = {
@@ -153,14 +175,16 @@ addItemButton.addEventListener('click', async () => {
       lastUpdated: priceData.cex_last_price_updated_date,
     };
 
-
+    cexPricesComputedForCurrentSelection = true;
   } catch (err) {
     console.error('Failed to fetch price data:', err);
   } finally {
-    addItemButton.classList.remove('loading');
-    updateAddItemButtonState(); // restore enabled state correctly
+    cexComputeInProgress = false;
+    if (cexComputeSpinner) {
+      cexComputeSpinner.style.display = 'none';
+    }
   }
-});
+}
 
 function updateSuggestedRrpMethod(rrp, baseCexPrice) {
   if (!rrp || !baseCexPrice) return;
@@ -283,9 +307,72 @@ function buildCexOffers(data, rrp) {
   });
 }
 
+function resetCexPrices(clearState = true) {
+  // Hide the results panel
+  const panel = document.getElementById('cexResults');
+  if (panel) {
+    panel.hidden = true;
+  }
+
+  // Clear price inputs
+  const suggestedRrp = document.getElementById('suggestedRrp');
+  const rrpPct = document.getElementById('rrpPct');
+  if (suggestedRrp) suggestedRrp.value = '';
+  if (rrpPct) rrpPct.value = '';
+
+  // Clear price displays
+  const cexPrice = document.getElementById('cexPrice');
+  const cexUpdated = document.getElementById('cexUpdated');
+  const offerStart = document.getElementById('offerStart');
+  const offerMid = document.getElementById('offerMid');
+  const offerEnd = document.getElementById('offerEnd');
+  const margin = document.getElementById('margin');
+  const marginStart = document.getElementById('marginStart');
+  const marginMid = document.getElementById('marginMid');
+  const marginEnd = document.getElementById('marginEnd');
+
+  if (cexPrice) cexPrice.textContent = '—';
+  if (cexUpdated) cexUpdated.textContent = '—';
+  if (offerStart) offerStart.textContent = '—';
+  if (offerMid) offerMid.textContent = '—';
+  if (offerEnd) offerEnd.textContent = '—';
+  if (margin) margin.textContent = '—';
+  if (marginStart) {
+    marginStart.textContent = '—';
+    marginStart.className = 'margin-inline';
+  }
+  if (marginMid) {
+    marginMid.textContent = '—';
+    marginMid.className = 'margin-inline';
+  }
+  if (marginEnd) {
+    marginEnd.textContent = '—';
+    marginEnd.className = 'margin-inline';
+  }
+
+  // Clear wizard state prices only if clearState is true
+  if (clearState && window.wizardState && window.wizardState.cex) {
+    window.wizardState.cex.prices = null;
+    window.wizardState.cex.offers = null;
+    window.wizardState.cex.selectedOffer = null;
+  }
+
+  // Clear current price data
+  window.currentPriceData = null;
+  activeOfferIndex = 0;
+}
+
+// Expose globally for use in research_wizard.js
+window.resetCexPrices = resetCexPrices;
+
 function renderCexResults(data) {
   const panel = document.getElementById('cexResults');
   panel.hidden = false;
+  
+  // Update button visibility when results are shown
+  if (window.ResearchWizard && typeof window.ResearchWizard.updateCexButtonVisibility === 'function') {
+    window.ResearchWizard.updateCexButtonVisibility();
+  }
 
   const money = v => v != null ? `£${v}` : '—';
 
@@ -426,6 +513,55 @@ document.querySelectorAll('.pricing-item.offer').forEach(el => {
     updateActiveOffer(window.currentPriceData);
   });
 });
+
+// Quick Add from CeX: send current CeX data straight into buyer table
+const cexQuickAddButton = document.getElementById('cexQuickAddButton');
+if (cexQuickAddButton) {
+  cexQuickAddButton.addEventListener('click', () => {
+    try {
+      if (!window.wizardState || !wizardState.cex || !wizardState.cex.prices) {
+        alert('Please compute CeX prices first.');
+        return;
+      }
+
+      const cexState = wizardState.cex;
+      const prices = cexState.prices;
+
+      const categoryName = cexState.category?.name || '';
+      const itemName = cexState.model?.name || '';
+
+      const rrp = prices.rrp || prices.cexSellingPrice || prices.selling_price || 0;
+      const startingOffer = prices.buying?.start || 0;
+      const midOffer = prices.buying?.mid || 0;
+      const finalOffer = prices.buying?.end || 0;
+
+      if (typeof addSimpleItemToTable !== 'function') {
+        console.error('addSimpleItemToTable is not available on window');
+        alert('Unable to add item to table (internal function missing).');
+        return;
+      }
+
+      addSimpleItemToTable({
+        category: categoryName,
+        name: itemName,
+        rrp,
+        startingOffer,
+        midOffer,
+        finalOffer
+      });
+
+      // Reset CeX prices after adding
+      resetCexPrices();
+
+      if (window.ResearchWizard && typeof window.ResearchWizard.close === 'function') {
+        window.ResearchWizard.close();
+      }
+    } catch (err) {
+      console.error('Quick CeX add failed:', err);
+      alert('Quick add failed: ' + (err.message || 'Unknown error'));
+    }
+  });
+}
 
 // ========== Preload all categories ==========
 async function preloadData() {
@@ -643,6 +779,7 @@ async function sendFieldUpdate(fieldName, value) {
 
       if (!hasAttributes) {
         attributesResolved = true;
+        cexPricesComputedForCurrentSelection = false;
         updateAddItemButtonState();
         return;
       }
@@ -674,6 +811,7 @@ async function sendFieldUpdate(fieldName, value) {
         };
 
         filterRemainingAttributes();
+        cexPricesComputedForCurrentSelection = false;
         updateAddItemButtonState();
 
       }
@@ -685,22 +823,21 @@ async function sendFieldUpdate(fieldName, value) {
 
 function updateAddItemButtonState() {
   if (!attributesResolved) {
-    addItemButton.disabled = true;
     return;
   }
 
   const modelSelected = !!modelTomSelect.getValue();
 
-  if (modelSelected && currentAttributes.length === 0) {
-    addItemButton.disabled = false;
-    return;
-  }
-
   const allAttrsSelected =
-    currentAttributes.length > 0 &&
-    currentAttributes.every(attr => selectedVariants[attr.name]);
+    currentAttributes.length === 0 ||
+    (currentAttributes.length > 0 &&
+      currentAttributes.every(attr => selectedVariants[attr.name]));
 
-  addItemButton.disabled = !(modelSelected && allAttrsSelected);
+  const ready = modelSelected && allAttrsSelected;
+
+  if (ready && !cexPricesComputedForCurrentSelection && !cexComputeInProgress) {
+    computeCexPrices();
+  }
 }
 
 
@@ -812,7 +949,7 @@ function renderAttributes(attrs) {
   });
 
   attributesResolved = true;
-
+  cexPricesComputedForCurrentSelection = false;
 
   requestAnimationFrame(() => {
     updateAddItemButtonState();
@@ -820,19 +957,59 @@ function renderAttributes(attrs) {
 
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const confirmBtn = document.querySelector('.cex-confirm-button');
-
-  confirmBtn?.addEventListener('click', () => {
-    window.ResearchWizard.showOverview();
-  });
-});
-
 // Handle the CeX back button
 document.querySelector('.rw-back-cex')?.addEventListener('click', () => {
   window.ResearchWizard.showOverview();
 });
 
+// Handle the Confirm CeX Research button (deep research mode)
+const cexConfirmResearchButton = document.getElementById('cexConfirmResearchButton');
+if (cexConfirmResearchButton) {
+  cexConfirmResearchButton.addEventListener('click', () => {
+    // Save wizard state is already handled by the pricing inputs and other handlers
+    // Reset CeX prices UI (but keep wizard state for overview)
+    resetCexPrices(false); // false = don't clear wizard state, only UI
+    
+    // Navigate to overview
+    if (window.ResearchWizard && typeof window.ResearchWizard.showOverview === 'function') {
+      window.ResearchWizard.showOverview();
+    }
+  });
+}
+
+
+// ========== Restore Last Quick Add Selections ==========
+async function restoreLastQuickAddSelections() {
+  if (!lastQuickAddCategory || !lastQuickAddSubcategory) {
+    return false;
+  }
+
+  try {
+    // Set category
+    categoryTomSelect.setValue(lastQuickAddCategory.id);
+    await fetchSubcategories(lastQuickAddCategory.id);
+    
+    // Wait a bit for subcategories to render
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Set subcategory
+    subcategoryTomSelect.setValue(lastQuickAddSubcategory.id);
+    await fetchModels();
+    
+    // Wait a bit for models to render
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Update wizard state
+    wizardState.source = 'cex';
+    wizardState.cex.category = lastQuickAddCategory;
+    wizardState.cex.subcategory = lastQuickAddSubcategory;
+    
+    return true;
+  } catch (err) {
+    console.error('Failed to restore last quick add selections:', err);
+    return false;
+  }
+}
 
 // ========== Utility Functions ==========
 function getCookie(name) {

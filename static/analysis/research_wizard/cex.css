@@ -2,10 +2,12 @@
 .rw-page-cex {
   display: none;
   flex-direction: column;
-  gap: 64px;
-  padding: 64px 72px;
+  gap: 32px;
+  padding: 32px 48px;
   background: #000;
   color: #fff;
+  height: 100%;
+  overflow: hidden;
 }
 
 /* ===================== Card ===================== */
@@ -33,11 +35,81 @@
   gap: 36px;
 }
 
-/* ===================== Search Bar Row ===================== */
-.search-bar-row {
+/* ===================== Two Pane Layout ===================== */
+.cex-two-pane-layout {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 48px;
+  height: calc(100vh - 120px);
+  min-height: 600px;
+  overflow: hidden;
+}
+
+/* ===================== Input Pane (Left) ===================== */
+.cex-input-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow-y: auto;
+  padding-right: 16px;
+  justify-content: flex-start;
+}
+
+/* Custom scrollbar for input pane */
+.cex-input-pane::-webkit-scrollbar {
+  width: 8px;
+}
+
+.cex-input-pane::-webkit-scrollbar-track {
+  background: #0b0b0b;
+}
+
+.cex-input-pane::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 4px;
+}
+
+.cex-input-pane::-webkit-scrollbar-thumb:hover {
+  background: #3a3a3a;
+}
+
+.cex-input-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ===================== Output Pane (Right) ===================== */
+.cex-output-pane {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding-left: 16px;
+}
+
+/* Custom scrollbar for output pane */
+.cex-output-pane::-webkit-scrollbar {
+  width: 8px;
+}
+
+.cex-output-pane::-webkit-scrollbar-track {
+  background: #0b0b0b;
+}
+
+.cex-output-pane::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 4px;
+}
+
+.cex-output-pane::-webkit-scrollbar-thumb:hover {
+  background: #3a3a3a;
+}
+
+/* ===================== Search Bar Row (Legacy - now vertical) ===================== */
+.search-bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   width: 100%;
 }
 
@@ -58,15 +130,22 @@
 
 /* ===================== Divider ===================== */
 .divider {
-  height: 48px;
-  margin-top: 22px;
+  display: none; /* Hidden in vertical layout */
 }
 
 /* ===================== Add Item Button ===================== */
 .add-item-container {
   display: flex;
   justify-content: center;
-  margin-top: auto;
+  align-items: center;
+  min-height: 40px;
+  margin-bottom: 8px;
+}
+
+.cex-compute-spinner {
+  font-size: 16px;
+  color: #aaa;
+  text-align: center;
 }
 
 .add-item-button {
@@ -178,18 +257,19 @@
 }
 /* ===================== CEX Pricing Panel ===================== */
 .cex-pricing-panel {
-  margin-top: 64px;
-  padding: 48px;
+  padding: 32px;
   background: #0b0b0b;
   border: 1px solid #1f1f1f;
   border-radius: 18px;
+  width: 100%;
 }
 
 /* ===================== Grid ===================== */
 .pricing-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 36px 40px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px 32px;
+  align-content: start;
 }
 
 /* ===================== Pricing Item ===================== */
@@ -254,15 +334,40 @@
 
 /* ===================== Responsive ===================== */
 @media (max-width: 1200px) {
+  .cex-two-pane-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    height: auto;
+    max-height: calc(100vh - 120px);
+  }
+
+  .cex-input-pane {
+    max-height: 400px;
+  }
+
+  .cex-output-pane {
+    padding-left: 0;
+    padding-top: 24px;
+  }
+
   .pricing-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 32px;
+    gap: 24px;
   }
 }
 
 @media (max-width: 640px) {
+  .rw-page-cex {
+    padding: 24px;
+  }
+
   .cex-pricing-panel {
-    padding: 32px;
+    padding: 24px;
+  }
+
+  .pricing-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
   }
 
   .pricing-item .value {
@@ -404,9 +509,10 @@
 /* ===================== CeX Confirm Action (Inverted) ===================== */
 
 .cex-actions {
-  margin-top: 48px;
+  margin-top: 32px;
   display: flex;
   justify-content: center;
+  grid-column: 1 / -1; /* Span full width */
 }
 
 .cex-confirm-button {
@@ -452,8 +558,9 @@
 /* CeX page header */
 .rw-page-header {
   position: relative;
-  text-align: center;  /* centers the heading */
-  margin-bottom: 20px;
+  text-align: center;
+  margin-bottom: 24px;
+  flex-shrink: 0;
 }
 
 .rw-page-header h1.cex-title {
@@ -479,28 +586,65 @@
 }
 
 
-/* ===================== CeX URL Input ===================== */
+/* ===================== CeX URL Section (Alternative Option) ===================== */
+.cex-url-section {
+  margin-top: auto;
+  padding-top: 32px;
+  border-top: 2px solid #1f1f1f;
+}
+
+.cex-url-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.cex-url-divider-line {
+  flex: 1;
+  height: 1px;
+  background: #2a2a2a;
+}
+
+.cex-url-divider-text {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #777;
+  padding: 0 8px;
+}
+
+.cex-url-label {
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #aaa;
+  text-align: center;
+}
+
 /* Container for URL + button */
 .cex-url-row {
   display: flex;
-  gap: 16px;           /* space between input and button */
-  align-items: flex-end; 
-  grid-column: span 3; /* make it span full width of 3 columns */
-  margin-top: 24px;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
 }
 
 /* URL Input */
 #cexUrlInputModal {
-  flex: 1;             /* input grows to fill space */
-  min-height: 64px;
-  padding: 18px 20px;
-  font-size: 20px;
+  width: 100%;
+  min-height: 56px;
+  padding: 16px 18px;
+  font-size: 18px;
   font-weight: 500;
   color: #fff;
   background: #0b0b0b;
   border: 2px solid #2a2a2a;
   border-radius: 14px;
   outline: none;
+  box-sizing: border-box;
 }
 
 #cexUrlInputModal::placeholder {
@@ -509,9 +653,9 @@
 
 /* Compute Button */
 #computeCexUrlButton {
-  flex: 0 0 220px;       /* button fixed width but smaller */
-  padding: 18px 24px;    /* smaller padding */
-  font-size: 18px;       /* smaller font */
+  width: 100%;
+  padding: 16px 24px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: 1.5px;
   background: linear-gradient(135deg, #fff, #dcdcdc);

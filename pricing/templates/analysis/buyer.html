@@ -506,22 +506,15 @@
 <div class="main-content">
   <div class="add-btn-container">
     <button id="researchWizard" class="action-btn cex-url-btn">Deep Research</button>
+    <button id="quickCexBtn" class="action-btn cex-url-btn">Quick CeX</button>
     {% include "analysis/research_wizard/research_wizard.html" %}
   </div>
 <div id="summaryContainer">
   
-  <!-- LEFT SIDE: Total Prices -->
   <div id="totalSection">
     <h3>Summary</h3>
     <p>Total Buying Price: <span id="totalBuying">£0.00 - £0.00</span></p>
     <p>Total Selling Price: <span id="totalSelling">£0.00</span></p>
-  </div>
-
-  <!-- RIGHT SIDE: CEX Prices -->
-  <div id="cexSection">
-    <h3>CEX Prices</h3>
-    <p>CEX Buying Price: <span id="cexBuying">£0.00</span></p>
-    <p>CEX Selling Price: <span id="cexSelling">£0.00</span></p>
   </div>
 
 </div>
@@ -539,11 +532,21 @@
 <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 
 <script>
-// Buyer dashboard JS (Deep Research driven item adding)
+// Buyer dashboard JS (Deep Research / Quick CeX driven item adding)
 const tablesContainer = document.getElementById('tablesContainer');
+const quickCexBtn = document.getElementById('quickCexBtn');
 const categories = {{ categories|safe }};
 
 document.addEventListener('DOMContentLoaded', updateSummary);
+
+// Quick CeX button: open wizard directly on CeX page
+if (quickCexBtn) {
+  quickCexBtn.addEventListener('click', () => {
+    if (window.ResearchWizard && typeof window.ResearchWizard.showCexQuickAdd === 'function') {
+      window.ResearchWizard.showCexQuickAdd();
+    }
+  });
+}
 
 // Constants
 const MAX_OFFER_MARGIN = 0.28; // 28% margin for max offer
@@ -1255,8 +1258,6 @@ function updateSummary() {
 function updateSummary() {
   let totalBuying = 0;
   let totalSelling = 0;
-  let cexBuying = 0;
-  let cexSelling = 0;
   let hasItems = false;
 
   document.querySelectorAll('.item-table tbody tr:not(.placeholder)').forEach(row => {
@@ -1269,12 +1270,6 @@ function updateSummary() {
     totalSelling += rrp * qty;
     totalBuying += buy * qty;
 
-    // CEX totals
-    const cexBuy = parseFloat(row.querySelector('.final-offer')?.textContent.replace(/[£,]/g, '')) || 0;
-    const cexSell = parseFloat(row.querySelector('.cex-price a')?.textContent.replace(/[£,]/g, '')) ||
-                    parseFloat(row.querySelector('.cex-price')?.textContent.replace(/[£,]/g, '')) || 0;
-    cexBuying += cexBuy * qty;
-    cexSelling += cexSell * qty;
   });
 
   const summaryContainer = document.getElementById('summaryContainer');
@@ -1283,13 +1278,9 @@ function updateSummary() {
   if (hasItems) {
     document.getElementById('totalBuying').textContent = `£${totalBuying.toFixed(2)}`;
     document.getElementById('totalSelling').textContent = `£${totalSelling.toFixed(2)}`;
-    document.getElementById('cexBuying').textContent = `£${cexBuying.toFixed(2)}`;
-    document.getElementById('cexSelling').textContent = `£${cexSelling.toFixed(2)}`;
   } else {
     document.getElementById('totalBuying').textContent = '£0.00 - £0.00';
     document.getElementById('totalSelling').textContent = '£0.00';
-    document.getElementById('cexBuying').textContent = '£0.00';
-    document.getElementById('cexSelling').textContent = '£0.00';
   }
 }
 

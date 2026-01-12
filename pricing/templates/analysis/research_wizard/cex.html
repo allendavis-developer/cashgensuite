@@ -3,101 +3,113 @@
     <button class="rw-back-cex">← Back</button>
     <h1 class="cex-title">CEX</h1>
   </div>
-  <div class="search-bar-row" id="searchBarRow">
-    <div class="search-field">
-      <label>Category</label>
-      <select id="modalItemCategory"></select>
-    </div>
-
-    <div class="search-field">
-      <label>Subcategory</label>
-      <select id="modalItemSubcategory"></select>
-    </div>
-
-    <div class="search-field">
-      <label>Model</label>
-      <select id="modalItemModel"></select>
-    </div>
-
-  </div>
   
-  <div class="cex-url-row">
-    <input type="text" id="cexUrlInputModal" placeholder="Paste full CeX URL here" />
-    <button id="computeCexUrlButton">COMPUTE</button>
+  <div class="cex-two-pane-layout">
+    <!-- LEFT PANE: Input Fields -->
+    <div class="cex-input-pane">
+      <div class="cex-input-fields" id="searchBarRow">
+        <div class="search-field">
+          <label>Category</label>
+          <select id="modalItemCategory"></select>
+        </div>
+
+        <div class="search-field">
+          <label>Subcategory</label>
+          <select id="modalItemSubcategory"></select>
+        </div>
+
+        <div class="search-field">
+          <label>Model</label>
+          <select id="modalItemModel"></select>
+        </div>
+      </div>
+
+      <div class="add-item-container">
+        <div id="cexComputeSpinner" class="cex-compute-spinner" style="display:none;">
+          Computing prices...
+        </div>
+      </div>
+
+      <!-- Alternative: CeX URL Input (for items not in dropdowns) -->
+      <div class="cex-url-section">
+        <div class="cex-url-divider">
+          <span class="cex-url-divider-line"></span>
+          <span class="cex-url-divider-text">OR</span>
+          <span class="cex-url-divider-line"></span>
+        </div>
+        <div class="cex-url-label">
+          <span>Item not in dropdowns?</span>
+        </div>
+        <div class="cex-url-row">
+          <input type="text" id="cexUrlInputModal" placeholder="Paste full CeX URL here" />
+          <button id="computeCexUrlButton">COMPUTE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANE: Pricing Results -->
+    <div class="cex-output-pane">
+      <div class="cex-pricing-panel" id="cexResults" hidden>
+        <div class="pricing-grid">
+          <div class="pricing-item primary">
+            <span class="label">CeX Price</span>
+            <span class="value" id="cexPrice">—</span>
+          </div>
+
+          <div class="pricing-item">
+            <span class="label">CeX Price Last Updated</span>
+            <span class="value" id="cexUpdated">—</span>
+          </div>
+
+          <div class="pricing-item">
+            <span class="label">% Used for Suggested RRP</span>
+            <input class="value editable" id="rrpPct" type="number" min="0" max="100" step="1" />
+          </div>
+
+          <div class="pricing-item emphasis">
+            <span class="label">Suggested RRP</span>
+            <input class="value editable" id="suggestedRrp" type="number" min="0" step="1" />
+          </div>
+
+          <div class="pricing-item highlight offer" data-offer="start">
+            <span class="label">Starting Offer</span>
+            <span class="value">
+              <span id="offerStart">—</span>
+              <span class="margin-inline" id="marginStart">—</span>
+            </span>
+          </div>
+
+          <div class="pricing-item highlight offer" data-offer="mid">
+            <span class="label">Second Offer</span>
+            <span class="value">
+              <span id="offerMid">—</span>
+              <span class="margin-inline" id="marginMid">—</span>
+            </span>
+          </div>
+
+          <div class="pricing-item highlight offer" data-offer="match_cex">
+            <span class="label">Third Offer (Match CeX)</span>
+            <span class="value">
+              <span id="offerEnd">—</span>
+              <span class="margin-inline" id="marginEnd">—</span>
+            </span>
+          </div>
+
+          <div class="pricing-item margin">
+            <span class="label">Final Margin</span>
+            <span class="value" id="margin">—</span>
+          </div>
+
+          <div class="cex-actions">
+            <button id="cexConfirmResearchButton" class="cex-confirm-button" style="display:none;">
+              Confirm CeX Research
+            </button>
+            <button id="cexQuickAddButton" class="cex-confirm-button">
+              Quick Add
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-
-  <div class="add-item-container">
-    <button class="add-item-button" disabled>COMPUTE PRICES</button>
-  </div>
-
-<div class="cex-pricing-panel" id="cexResults" hidden>
-  <div class="pricing-grid">
-
-    <div class="pricing-item primary">
-      <span class="label">CeX Price</span>
-      <span class="value" id="cexPrice">—</span>
-    </div>
-
-    <div class="pricing-item">
-      <span class="label">CeX Price Last Updated</span>
-      <span class="value" id="cexUpdated">—</span>
-    </div>
-
-    <div class="pricing-item">
-      <span class="label">% Used for Suggested RRP</span>
-      <input class="value editable" id="rrpPct" type="number" min="0" max="100" step="1" />
-    </div>
-
-    <div class="pricing-item emphasis">
-      <span class="label">Suggested RRP</span>
-      <input class="value editable" id="suggestedRrp" type="number" min="0" step="1" />
-    </div>
-
-    <div class="pricing-item highlight offer" data-offer="start">
-      <span class="label">Starting Offer</span>
-      <span class="value">
-        <span id="offerStart">—</span>
-        <span class="margin-inline" id="marginStart">—</span>
-      </span>
-    </div>
-
-    <div class="pricing-item highlight offer" data-offer="mid">
-      <span class="label">Second Offer</span>
-      <span class="value">
-        <span id="offerMid">—</span>
-        <span class="margin-inline" id="marginMid">—</span>
-      </span>
-    </div>
-
-    <div class="pricing-item highlight offer" data-offer="match_cex">
-      <span class="label">Third Offer (Match CeX)</span>
-      <span class="value">
-        <span id="offerEnd">—</span>
-        <span class="margin-inline" id="marginEnd">—</span>
-      </span>
-    </div>
-
-
-    <div class="pricing-item margin">
-      <span class="label">Final Margin</span>
-      <span class="value" id="margin">—</span>
-    </div>
-
-    <div class="cex-actions">
-      <button class="cex-confirm-button">
-        Confirm CeX Research
-      </button>
-    </div>
-
-    <div class="cex-actions">
-      <button class="cex-confirm-button">
-        Quick Add
-      </button>
-    </div>
-
-
-  </div>
-</div>
-
-
 </div>

@@ -109,9 +109,12 @@ body.rw-open {
 
 .rw-page-overview {
   display: none;
-  padding: 64px 72px;
+  flex-direction: column;
+  padding: 32px 48px;
   background: #000;
   color: #fff;
+  height: 100%;
+  overflow: hidden;
 }
 
 .overview-table-wrapper {
@@ -342,59 +345,113 @@ body.rw-open {
 
 /* Overview Container */
 #overviewContent {
-  padding: 40px 80px;
+  padding: 0;
   max-width: 100%;
-  margin: 0 auto;
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
-/* Cards Grid */
+/* Two Pane Layout */
+.overview-two-pane-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  height: calc(100vh - 200px); /* Increased to account for footer and padding */
+  min-height: 600px;
+  max-height: calc(100vh - 200px);
+  overflow: hidden;
+}
+
+/* Left Pane: Cards */
+.overview-cards-pane {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding-right: 16px;
+  padding-bottom: 24px; /* Ensure Research buttons are visible */
+}
+
+/* Cards Stacked Horizontally (Side by Side) - Shared Border */
 .overview-cards {
   display: flex;
-  gap: 48px;
-  margin-bottom: 2rem;
-  max-width: 1400px;
-  margin-left: auto;
-  margin-right: auto;
+  flex-direction: row;
+  gap: 0;
+  width: 100%;
+  align-items: flex-start;
+  border: 1px solid #1f1f1f;
+  background: #0b0b0b;
+  min-height: fit-content; /* Ensure cards can expand to show all content */
 }
 
-@media (max-width: 968px) {
+/* Custom scrollbar for cards pane */
+.overview-cards-pane::-webkit-scrollbar {
+  width: 8px;
+}
+
+.overview-cards-pane::-webkit-scrollbar-track {
+  background: #0b0b0b;
+}
+
+.overview-cards-pane::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 4px;
+}
+
+.overview-cards-pane::-webkit-scrollbar-thumb:hover {
+  background: #3a3a3a;
+}
+
+@media (max-width: 1200px) {
+  .overview-two-pane-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    height: auto;
+    max-height: calc(100vh - 200px); /* Match main height calculation */
+  }
+
+  .overview-cards-pane {
+    max-height: 500px;
+    padding-right: 0;
+    padding-bottom: 24px; /* Ensure Research buttons are visible on smaller screens */
+  }
+
   .overview-cards {
-    flex-direction: column;
+    flex-direction: column; /* Stack vertically on smaller screens */
+  }
+
+  .overview-final-pane {
+    padding-left: 0;
+    padding-top: 24px;
+  }
+
+  .overview-final {
+    position: static;
   }
 }
 
-/* Market Card Base Styles */
+/* Market Card Base Styles - Static and Simple */
 .market-card {
   flex: 1;
-  min-width: 400px;
+  min-width: 0; /* Allows flex items to shrink below content size */
   background: #0b0b0b;
-  border-radius: 18px;
-  padding: 50px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-  border: 1px solid #1f1f1f;
-  transition: all 0.3s ease;
+  border-radius: 0;
+  padding: 32px;
+  padding-bottom: 40px; /* Extra padding at bottom for Research button */
+  border: none;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 24px;
+  min-height: fit-content; /* Ensure card can expand to show all content */
 }
 
-.market-card:hover {
-  border-color: #333;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8);
-  transform: translateY(-4px);
-}
-
-/* Brand-specific card colors */
-.market-card.ebay {
-  border-left: 4px solid #333;
+/* Add border between cards */
+.market-card:not(:last-child) {
+  border-right: 1px solid #1f1f1f;
 }
 
 .market-card.ebay h3 {
   color: #e5e5e5;
-}
-
-.market-card.cex {
-  border-left: 4px solid #333;
 }
 
 .market-card.cex h3 {
@@ -402,13 +459,21 @@ body.rw-open {
 }
 
 /* Card Header */
+.market-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #1f1f1f;
+  margin-bottom: 0;
+}
+
 .market-card h3 {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 900;
   margin: 0;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #1f1f1f;
   letter-spacing: 1px;
+  flex: 1;
 }
 
 /* Section Styles */
@@ -455,13 +520,13 @@ body.rw-open {
 
 /* Big Value Display */
 .market-card .big {
-  font-size: 36px;
+  font-size: 28px;
   font-weight: 900;
   color: #e5e5e5;
   line-height: 1.2;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .market-card .big small {
@@ -482,31 +547,27 @@ body.rw-open {
   color: #e5e5e5;
 }
 
-/* Research Button */
+/* Research Button - Static */
 .research-btn {
-  width: 100%;
-  padding: 14px 28px;
-  font-size: 16px;
+  padding: 12px 24px;
+  font-size: 14px;
   font-weight: 900;
-  border-radius: 12px;
-  border: 2px solid #333;
+  border-radius: 6px;
+  border: 1px solid #1f1f1f;
   cursor: pointer;
-  transition: all 0.2s ease;
-  margin-top: auto;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   background: #111;
   color: #fff;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  margin-left: 16px;
 }
 
 .research-btn:hover {
   background: #1a1a1a;
-  border-color: #555;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
-}
-
-.research-btn:active {
-  transform: scale(0.95);
+  border-color: #333;
+  color: #fff;
 }
 
 /* Empty State */
@@ -520,22 +581,24 @@ body.rw-open {
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  #overviewContent {
-    padding: 20px;
+  .rw-page-overview {
+    padding: 24px;
   }
 
-  .overview-cards {
-    flex-direction: column;
+  .overview-two-pane-layout {
     gap: 24px;
   }
 
   .market-card {
-    padding: 30px;
-    min-width: unset;
+    padding: 24px;
   }
 
   .market-card .big {
     font-size: 28px;
+  }
+
+  .overview-final {
+    padding: 24px;
   }
 
   .market-card h3 {
@@ -671,24 +734,51 @@ body.rw-open {
 }
 
 /* ===================== Overview Final Pricing ===================== */
+/* Right Pane: Final Pricing */
+.overview-final-pane {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding-left: 16px;
+}
+
 .overview-final {
-  max-width: 600px;
-  margin: 0 auto 40px;
-  padding: 32px 40px;
+  width: 100%;
+  padding: 32px;
   background: #0b0b0b;
   border: 1px solid #1f1f1f;
-  border-radius: 18px;
+  border-radius: 0;
   display: flex;
   flex-direction: column;
   gap: 28px;
+  position: sticky;
+  top: 0;
+}
+
+/* Custom scrollbar for final pane */
+.overview-final-pane::-webkit-scrollbar {
+  width: 8px;
+}
+
+.overview-final-pane::-webkit-scrollbar-track {
+  background: #0b0b0b;
+}
+
+.overview-final-pane::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 4px;
+}
+
+.overview-final-pane::-webkit-scrollbar-thumb:hover {
+  background: #3a3a3a;
 }
 
 .overview-final h3 {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 900;
   letter-spacing: 1px;
   margin: 0;
-  padding-bottom: 16px;
+  padding-bottom: 20px;
   border-bottom: 1px solid #1f1f1f;
   color: #e5e5e5;
 }
@@ -711,11 +801,11 @@ body.rw-open {
 
 .overview-final input {
   background: transparent;
-  border: 1px solid transparent;
+  border: 2px solid #2a2a2a;
   color: #e5e5e5;
-  font-size: 26px;
+  font-size: 32px;
   font-weight: 900;
-  padding: 14px 16px;
+  padding: 16px 20px;
   border-radius: 14px;
   outline: none;
   transition:
@@ -723,6 +813,11 @@ body.rw-open {
     border-color 0.2s ease,
     box-shadow 0.2s ease,
     color 0.2s ease;
+}
+
+.overview-final input:focus {
+  border-color: #fff;
+  background: #111;
 }
 
 /* Placeholder = intentional silence */
