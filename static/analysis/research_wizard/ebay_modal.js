@@ -404,7 +404,10 @@ function updateSelectedCount() {
     }
   });
   
-  ebaySelectedCount.textContent = count;
+  // Update count display if element exists (may have been removed from UI)
+  if (ebaySelectedCount) {
+    ebaySelectedCount.textContent = count;
+  }
 }
 
 function restoreFilterSelections(restoreFilters) {
@@ -546,7 +549,8 @@ function buildEbayUrl(searchTerm, filters, options = {}) {
 // ============================================
 // RESULTS RENDERING
 // ============================================
-// Disable the Complete button by default
+// Hide the Complete button by default - will show when results exist
+ebayApplyBtn.style.display = 'none';
 ebayApplyBtn.disabled = true;
 ebayApplyBtn.classList.add('disabled');
 
@@ -558,6 +562,10 @@ function renderResults(results) {
         No eBay listings found.
       </div>
     `;
+    // Hide the Complete button when there are no results
+    ebayApplyBtn.style.display = 'none';
+    ebayApplyBtn.disabled = true;
+    ebayApplyBtn.classList.add('disabled');
     return;
   }
 
@@ -611,7 +619,8 @@ function renderResults(results) {
     </div>
   `;
 
-    // Enable the Complete button now that there are results
+    // Show and enable the Complete button now that there are results
+  ebayApplyBtn.style.display = 'block';
   ebayApplyBtn.disabled = false;
   ebayApplyBtn.classList.remove('disabled');
 
@@ -858,6 +867,11 @@ function resetEbayAnalysis() {
   if (analysisWrapper) {
     analysisWrapper.style.display = 'none';
   }
+
+  // Hide the Complete button when resetting
+  ebayApplyBtn.style.display = 'none';
+  ebayApplyBtn.disabled = true;
+  ebayApplyBtn.classList.add('disabled');
 }
 
 // ============================================
@@ -968,6 +982,10 @@ window.restoreEbayWizardState = function restoreEbayWizardState() {
         .forEach(card => card.style.display = 'none');
     }
 
+    // Show the Complete button when restoring state with results
+    ebayApplyBtn.style.display = 'block';
+    ebayApplyBtn.disabled = false;
+    ebayApplyBtn.classList.remove('disabled');
   }
 
   // Restore UI state

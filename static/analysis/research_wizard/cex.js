@@ -554,9 +554,14 @@ if (cexQuickAddButton) {
       const itemName = cexState.model?.name || '';
 
       const rrp = prices.rrp || prices.cexSellingPrice || prices.selling_price || 0;
-      const startingOffer = prices.buying?.start || 0;
-      const midOffer = prices.buying?.mid || 0;
-      const finalOffer = prices.buying?.end || 0;
+      
+      // Use the currently highlighted/selected offer (can be switched with Tab)
+      const selectedOffer = cexState.selectedOffer;
+      if (!selectedOffer) {
+        alert('Please select an offer first (use Tab to switch between offers).');
+        return;
+      }
+      const offer = selectedOffer.price || 0;
 
       if (typeof addSimpleItemToTable !== 'function') {
         console.error('addSimpleItemToTable is not available on window');
@@ -568,9 +573,7 @@ if (cexQuickAddButton) {
         category: categoryName,
         name: itemName,
         rrp,
-        startingOffer,
-        midOffer,
-        finalOffer
+        offer
       });
 
       // Reset CeX prices after adding

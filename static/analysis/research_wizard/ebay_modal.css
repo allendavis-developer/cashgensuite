@@ -444,7 +444,17 @@
   text-decoration: underline;
 }
 
-/* ================= SEARCH ROW ================= */
+/* ================= SEARCH SECTION ================= */
+.ebay-search-section {
+  margin-bottom: 24px;
+}
+
+.ebay-search-divider {
+  height: 1px;
+  background: #222;
+  margin-bottom: 20px;
+}
+
 .ebay-search-row {
   display: flex;
   gap: 10px;

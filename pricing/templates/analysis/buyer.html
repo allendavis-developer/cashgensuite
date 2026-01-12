@@ -634,7 +634,11 @@ function createCategoryTable() {
 
 function attachQuantityListeners() {
   document.querySelectorAll('.item-table tbody tr:not(.placeholder) .qty-input').forEach(input => {
-    input.addEventListener('input', updateSummary);
+    // Check if listener is already attached to avoid duplicates
+    if (!input.dataset.listenerAttached) {
+      input.addEventListener('input', updateSummary);
+      input.dataset.listenerAttached = 'true';
+    }
   });
 }
 
@@ -680,6 +684,13 @@ function addSimpleItemToTable({ category, name, rrp, offer }) {
     margin: marginPct
   });
 
+  // Attach quantity input listener to the new row's input
+  const qtyInput = row.querySelector('.qty-input');
+  if (qtyInput) {
+    qtyInput.addEventListener('input', updateSummary);
+    qtyInput.dataset.listenerAttached = 'true';
+  }
+
   // Set up manual input listener if needed
   if (offerValue === 0) {
     const offerInput = row.querySelector('.manual-offer-input');
@@ -713,7 +724,8 @@ function addSimpleItemToTable({ category, name, rrp, offer }) {
   });
 
   tbody.appendChild(row);
-  attachQuantityListeners();
+  // Update summary after adding the item
+  updateSummary();
 }
 
 
@@ -746,7 +758,7 @@ function updateSummary() {
   });
 
   const summaryContainer = document.getElementById('summaryContainer');
-  summaryContainer.style.display = hasItems ? 'block' : 'none';
+  summaryContainer.style.display = hasItems ? 'flex' : 'none';
 
   if (hasItems) {
     document.getElementById('totalBuying').textContent = `£${totalBuying.toFixed(2)}`;
