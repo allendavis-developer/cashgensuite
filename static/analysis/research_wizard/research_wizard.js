@@ -123,6 +123,65 @@
   window.ResearchWizard = window.ResearchWizard || {};
   window.ResearchWizard.close = closeWizard;
 
+  function resetWizardState() {
+    // Clear the wizard state
+    wizardState = {
+      source: null,
+      final: {
+        offer: null,
+        rrp: null
+      },
+      cex: {
+        category: null,
+        subcategory: null,
+        model: null,
+        attributes: {},
+        prices: null,
+        selectedOffer: null,
+        suggestedRrpMethod: null,
+        rrp: null,
+      },
+      ebay: {
+        searchTerm: null,
+        filters: {},
+        topFilters: { sold: false, ukOnly: false, used: false },
+        prices: null,
+        selectedOffer: null,
+        suggestedPriceMethod: null,
+        rrp: null,
+        margin: null,
+        listings: [],
+        category: null,
+        uiState: { expandedSections: [], filterScroll: 0, resultsScroll: 0 }
+      }
+    };
+
+    // Reset eBay UI if resetEbayAnalysis function exists
+    if (typeof resetEbayAnalysis === 'function') {
+      resetEbayAnalysis();
+    }
+
+    // Reset eBay search input
+    const ebaySearchInput = document.getElementById('ebaySearchInput');
+    if (ebaySearchInput) {
+      ebaySearchInput.value = '';
+    }
+
+    // Reset CeX TomSelects if they exist globally
+    if (typeof categoryTomSelect !== 'undefined' && categoryTomSelect) {
+      categoryTomSelect.clear();
+    }
+    if (typeof subcategoryTomSelect !== 'undefined' && subcategoryTomSelect) {
+      subcategoryTomSelect.clear();
+    }
+    if (typeof modelTomSelect !== 'undefined' && modelTomSelect) {
+      modelTomSelect.clear();
+    }
+
+    // Re-render the overview with empty state
+    renderOverview();
+  }
+
   window.ResearchWizard.showOverview = () => {
     renderOverview();
     showPage('.rw-page-overview');
@@ -134,34 +193,7 @@
       restartBtn.classList.add('rw-restart');
       restartBtn.textContent = 'Restart';
       restartBtn.addEventListener('click', () => {
-        // Clear the wizard state
-        wizardState = {
-          source: null,
-          cex: {
-            category: null,
-            subcategory: null,
-            model: null,
-            attributes: {},
-            prices: null,
-            selectedOffer: null,
-            suggestedRrpMethod: null
-          },
-          ebay: {
-            searchTerm: null,
-            filters: {},
-            topFilters: { sold: false, ukOnly: false, used: false },
-            prices: null,
-            selectedOffer: null,
-            suggestedPriceMethod: null,
-            rrp: null,
-            margin: null,
-            listings: [],
-            uiState: { expandedSections: [], filterScroll: 0, resultsScroll: 0 }
-          }
-        };
-
-        // Re-render the overview with empty state
-        renderOverview();
+        resetWizardState();
       });
       overviewActions.appendChild(restartBtn);
     }
@@ -367,7 +399,9 @@ function renderCexOverview(cex) {
       null;
 
     const startingOffer =
-      cex.prices?.buying?.start ?? 0;
+      ebay.selectedOffer ??
+      cex.prices?.buying?.start ??
+      0;
 
     const midOffer =
       cex.prices?.buying?.mid ?? 0;
@@ -375,20 +409,25 @@ function renderCexOverview(cex) {
     const finalOffer =
       final.offer ??
       cex.prices?.buying?.end ??
-      ebay.selectedOffer ??
       null;
 
-    if (rrp == null || finalOffer == null) {
+    if (rrp == null || (startingOffer === 0 && finalOffer == null)) {
       alert('Offer and RRP are required.');
       return;
     }
 
     const itemName =
-      cex.model.name ||
+      cex.model?.name ||
       ebay.searchTerm ||
       '';
 
+    const categoryName =
+      cex.category?.name ||
+      ebay.category?.name ||
+      '';
+
     addSimpleItemToTable({
+      category: categoryName,
       name: itemName,
       rrp,
       startingOffer,
@@ -397,6 +436,7 @@ function renderCexOverview(cex) {
     });
 
     console.log('Confirmed research → added to table:', {
+      category: categoryName,
       name: itemName,
       rrp,
       startingOffer,
@@ -404,7 +444,11 @@ function renderCexOverview(cex) {
       finalOffer
     });
 
-    closeWizard();
+    // Reset wizard state and UI for next item
+    resetWizardState();
+    
+    // Keep wizard open and show overview for next item
+    window.ResearchWizard.showOverview();
   });
 
 

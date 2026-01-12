@@ -505,14 +505,8 @@
 {% block content %}
 <div class="main-content">
   <div class="add-btn-container">
-    <button id="addItemBtn" class="action-btn add-btn">Add</button>
-    <input type="text" id="cexUrlInput" class="cex-url-input" placeholder="Paste CEX URL here...">
-    <button id="addFromCexUrlBtn" class="action-btn cex-url-btn">Add CEX URL</button>
-    <button id="scrapeEbayBtn" class="action-btn cex-url-btn">eBay Item</button>
-
     <button id="researchWizard" class="action-btn cex-url-btn">Deep Research</button>
     {% include "analysis/research_wizard/research_wizard.html" %}
-
   </div>
 <div id="summaryContainer">
   
@@ -537,36 +531,6 @@
 
 </div>
 
-<!-- Add Item Modal -->
-<div id="addItemModal" class="modal">
-  <div class="modal-content">
-    <span class="modal-close" id="closeAddItemModal">&times;</span>
-    <h2>Add New Item</h2>
-
-    <label>Category</label>
-    <select id="modalItemCategory" class="input-field">
-      <option value="">Select category</option>
-    </select>
-
-    <label>Subcategory</label>
-    <select id="modalItemSubcategory" class="input-field">
-      <option value="">Select subcategory</option>
-    </select>
-
-    <label>Model</label>
-    <select id="modalItemModel" class="input-field">
-      <option value="">Select model</option>
-      <option value="__new__">Add new model...</option>
-    </select>
-
-    <div id="attributes-container"></div>
-    <button class="modal-btn" id="saveItemBtn">Save Item</button>
-  </div>
-</div>
-
-{% comment %} {% include "analysis/research_wizard/ebay.html" %} {% endcomment %}
-
-
 </div>
 
 <!-- Tom Select CSS -->
@@ -575,7 +539,7 @@
 <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 
 <script>
-const addItemBtn = document.getElementById('addItemBtn');
+// Buyer dashboard JS (Deep Research driven item adding)
 const tablesContainer = document.getElementById('tablesContainer');
 const categories = {{ categories|safe }};
 
@@ -650,18 +614,14 @@ function createCategoryTable() {
   table.className = 'item-table';
   const columns = [
     'Quantity',
+    'Category',
     'Subcategory',
-    'Model',
-    'CEX Price',
-    'CEX Price Last Updated',
-    '% Used for suggested RRP',
+    'Item Name',
     'Suggested RRP',
     'Starting Offer',
     'Second Offer',
     'Third Offer (Match CEX)',
     'MAX Offer',
-    'CC Mode',
-    'CG Mode',
     'Current Offer',
     'Margin'
   ];
@@ -683,215 +643,10 @@ function attachQuantityListeners() {
 }
 
 
-let lastSelections = {
-  category: null,
-  subcategory: null
-};
+// Manual and CEX URL item-adding flows removed;
+// rows are now added exclusively via the Deep Research wizard.
 
-// Global Enter key listener to open modal if not already active
-
-
-// Add this event listener after your existing code
-document.getElementById('addFromCexUrlBtn').addEventListener('click', async () => {
-  const urlInput = document.getElementById('cexUrlInput');
-  const cexUrl = urlInput.value.trim();
-  
-  if (!cexUrl) {
-    alert('Please paste a CEX URL first');
-    return;
-  }
-  
-  // Validate it's a CEX URL
-  if (!cexUrl.includes('cex.uk') && !cexUrl.includes('webuy.com')) {
-    alert('Please enter a valid CEX URL');
-    return;
-  }
-  
-  const tbody = createCategoryTable();
-  if (tbody.querySelector('.placeholder')) tbody.innerHTML = '';
-  
-  // Create a simplified row for CEX items
-  const row = document.createElement('tr');
-  row.innerHTML = `
-    <td><input type="number" class="qty-input" min="1" value="1"></td>
-    <td class="subcategory-cell">Loading...</td>
-    <td class="model-cell">Loading...</td>
-    <td class="cex-price">—</td>
-    <td class="cex-price-last-updated">—</td>
-    <td class="cex-rrp-pct">—</td>
-    <td class="suggested-rrp">—</td>
-    <td class="starting-offer">—</td>
-    <td class="mid-offer">—</td>
-    <td class="final-offer">—</td>
-    <td class="max-offer">—</td>
-    <td class="cc-mode">—</td>
-    <td class="cg-mode">—</td>
-    <td class="current-offer">
-      <div class="buying-range-cell">
-        <button class="qty-btn decrease-buying">−</button>
-        <span class="buying-value">—</span>
-        <button class="qty-btn increase-buying">+</button>
-      </div>
-    </td>
-    <td class="margin">—</td>
-  `;
-  
-  // KEY: Mark this as a CEX URL item
-  row.dataset.cexUrl = cexUrl;
-  row.dataset.fromCexUrl = 'true';
-  
-  // Add double-click delete
-  row.addEventListener('dblclick', function(e) {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
-    if (confirm('Delete this item?')) {
-      row.remove();
-      const tb = row.parentElement;
-      if (!tb.children.length) {
-        const colCount = tb.parentElement.querySelectorAll('th').length;
-        tb.innerHTML = `<tr class="placeholder"><td colspan="${colCount}">No items added yet.</td></tr>`;
-      }
-      updateSummary();
-    }
-  });
-  
-  tbody.appendChild(row);
-  urlInput.value = ''; // Clear the input
-  attachQuantityListeners();
-  
-  // Analyse immediately
-  await handleAnalyseClick(row);
-});
-
-async function addItemToTable() {
-  const catId = modalItemCategory.value;
-  if (!catId) return alert("Please select a category.");
-
-  lastSelections.category = modalItemCategory.value;
-  lastSelections.subcategory = modalItemSubcategory.value;
-
-  const catName = modalItemCategory.options[modalItemCategory.selectedIndex]?.text;
-  const subcategory = modalItemSubcategory.options[modalItemSubcategory.selectedIndex]?.text || '—';
-  const baseModel = modalItemModel.options[modalItemModel.selectedIndex]?.text || '—';
-  const tbody = createCategoryTable();
-  if (tbody.querySelector('.placeholder')) tbody.innerHTML = '';
-
-  const attributesPayload = {};
-  const attributeStrings = [];
-  currentAttributes.forEach(attr => {
-    const input = attributesContainer.querySelector(`#attr_${attr.id}`);
-    const value = input?.value || '—';
-    attributesPayload[attr.name] = value;
-    if (value !== '—') {
-      attributeStrings.push(value);
-    }
-  });
-
-  // Concatenate model with attributes
-  const model = attributeStrings.length > 0 
-    ? `${baseModel} (${attributeStrings.join(', ')})`
-    : baseModel;
-
-  console.log(attributesPayload);
-
-  let itemName = '—';
-  try {
-    const response = await fetch('/api/generate_search_term/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken')
-      },
-      body: JSON.stringify({ category: catName, subcategory, model: baseModel, attributes: attributesPayload })
-    });
-    itemName = (await response.json()).data.generated_search_term;
-    console.log("generated term", itemName);
-  } catch (error) {
-    console.error("Error generating item name:", error);
-  }
-
-
-  const cells = [
-    `<td><input type="number" class="qty-input" min="1" value="1"></td>`,
-    `<td>${subcategory}</td>`,
-    `<td class="model-cell">${model}</td>`,
-    `<td class="cex-price">—</td>`,
-    `<td class="cex-price-last-updated">—</td>`,
-    `<td class="cex-rrp-pct">—</td>`,
-    `<td class="suggested-rrp">—</td>`,
-    `<td class="starting-offer">—</td>`,
-    `<td class="mid-offer">—</td>`,
-    `<td class="final-offer">—</td>`,
-    `<td class="max-offer">—</td>`,
-    `<td class="cc-mode">—</td>`,
-    `<td class="cg-mode">—</td>`,
-    `<td class="current-offer">
-        <div class="buying-range-cell">
-          <button class="qty-btn decrease-buying">−</button>
-          <span class="buying-value">—</span>
-          <button class="qty-btn increase-buying">+</button>
-        </div>
-    </td>`,
-    `<td class="margin">—</td>`
-  ];
-
-
-  const row = document.createElement('tr');
-  row.innerHTML = cells.join('');
-
-  Object.assign(row.dataset, {
-    categoryId: catId,
-    subcategoryId: modalItemSubcategory.value,
-    modelId: modalItemModel.value,
-    categoryName: catName,
-    attributes: JSON.stringify(attributesPayload),
-    itemName,
-    subcategoryName: subcategory
-  });
-  row.dataset.model = baseModel;
-
-
-  // Create the details URL and add it to the model cell
-  const query = new URLSearchParams({
-    categoryId: catId,
-    subcategoryId: modalItemSubcategory.value,
-    modelId: modalItemModel.value,
-    attributes: JSON.stringify(attributesPayload),
-    name: itemName || 'Unnamed Item'
-  });
-  
-  const modelCell = row.querySelector('.model-cell');
-  modelCell.innerHTML = `<a href="/item-buying-analyser/?${query.toString()}" target="_blank" class="model-link">${model}</a>`;
-
-  // Add double-click to delete functionality
-  row.addEventListener('dblclick', function(e) {
-    // Don't trigger if double-clicking on input fields or buttons
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'A') {
-      return;
-    }
-    
-    if (confirm('Delete this item?')) {
-      const tb = row.parentElement;
-      row.remove();
-      if (!tb.children.length) {
-        const colCount = tb.parentElement.querySelectorAll('th').length;
-        tb.innerHTML = `<tr class="placeholder"><td colspan="${colCount}" style="text-align:center; color:#777;">No items added yet. Double-click any row to delete.</td></tr>`;
-      }
-      updateSummary();
-    }
-  });
-
-
-
-
-  tbody.appendChild(row);
-  addItemModal.classList.remove('active');
-  resetModal();
-  attachQuantityListeners();
-    // Immediately analyse the new row
-  await handleAnalyseClick(row);
-}
-
-function addSimpleItemToTable({ name, rrp, startingOffer, midOffer, finalOffer }) {
+function addSimpleItemToTable({ category, name, rrp, startingOffer, midOffer, finalOffer }) {
   const tbody = createCategoryTable();
   if (tbody.querySelector('.placeholder')) tbody.innerHTML = '';
 
@@ -907,32 +662,26 @@ function addSimpleItemToTable({ name, rrp, startingOffer, midOffer, finalOffer }
       ? (((rrpNum - offerForMargin) / rrpNum) * 100).toFixed(1) + '%'
       : '—';
 
-  const cells = [
+  const row = document.createElement('tr');
+  row.innerHTML = [
     `<td><input type="number" class="qty-input" min="1" value="1"></td>`,
-    `<td>—</td>`,                     // subcategory
-    `<td class="model-cell">${name}</td>`,
-    `<td class="cex-price">—</td>`,
-    `<td class="cex-price-last-updated">—</td>`,
-    `<td class="cex-rrp-pct">—</td>`,
+    `<td class="category-cell">${category || '—'}</td>`,
+    `<td class="subcategory-cell">—</td>`,
+    `<td class="item-name-cell">${name}</td>`,
     `<td class="suggested-rrp">£${rrpNum.toFixed(2)}</td>`,
     `<td class="starting-offer">£${startingNum.toFixed(2)}</td>`,
     `<td class="mid-offer">£${midNum.toFixed(2)}</td>`,
     `<td class="final-offer">£${finalNum.toFixed(2)}</td>`,
     `<td class="max-offer">—</td>`,
-    `<td class="cc-mode">—</td>`,
-    `<td class="cg-mode">—</td>`,
     `<td class="current-offer">
         <div class="buying-range-cell">
           <button class="qty-btn decrease-buying">−</button>
-            <span class="buying-value">£${offerForMargin.toFixed(2)}</span>
+          <span class="buying-value">£${offerForMargin.toFixed(2)}</span>
           <button class="qty-btn increase-buying">+</button>
         </div>
      </td>`,
     `<td class="margin">${marginPct}</td>`
-  ];
-
-  const row = document.createElement('tr');
-  row.innerHTML = cells.join('');
+  ].join('');
 
   Object.assign(row.dataset, {
     itemName: name,
@@ -987,24 +736,10 @@ function addSimpleItemToTable({ name, rrp, startingOffer, midOffer, finalOffer }
 async function handleAnalyseClick(row) {
   showRowSpinner(row);
 
-    // Check if this is a CEX URL item
-  if (row.dataset.fromCexUrl === 'true') {
-    // Different fetch logic for CEX URL items
-    try {
-      const priceResult = await fetchPriceDataFromCexUrl(row);
-      await updatePriceCells(row, priceResult);
-    } catch (error) {
-      console.error('CEX URL analysis error:', error);
-      alert('Error analysing CEX URL: ' + error.message);
-      hideRowSpinner(row);
-    }
-    return;
-  }
-
   const category = row.dataset.categoryName;
   const subcategory = row.dataset.subcategoryName;
 
-  const model = row.querySelector('td:nth-child(2)')?.textContent?.trim() || '';
+  const model = row.dataset.model || '';
   const attributes = JSON.parse(row.dataset.attributes || '{}');
 
   try {
@@ -1035,29 +770,6 @@ async function handleAnalyseClick(row) {
   }
 }
 
-async function fetchPriceDataFromCexUrl(row) {
-  const cexUrl = row.dataset.cexUrl;
-  
-  const response = await fetch('/api/get-prices-from-cex-url/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCookie('csrftoken')
-    },
-    body: JSON.stringify({ cex_url: cexUrl })
-  });
-  
-  const result = await response.json();
-  if (!result.success) throw new Error(result.error || 'Failed to fetch CEX item');
-  
-  // Update the model/subcategory cells with fetched data
-  row.querySelector('.subcategory-cell').textContent = result.subcategory || '—';
-  row.querySelector('.model-cell').innerHTML = 
-    `<a href="${cexUrl}" target="_blank">${result.model || 'Unknown Item'}</a>`;
-
-  return result;
-}
-
 async function fetchPriceData(row, category, model, attributes) {
   const priceResponse = await fetch('/api/get-selling-and-buying-price/', {
     method: 'POST',
@@ -1084,9 +796,6 @@ async function fetchPriceData(row, category, model, attributes) {
 }
 
 function updateRRPCells(row, priceResult, sellingPrice, reasons) {
-  const rrpPctCell = row.querySelector('.cex-rrp-pct');
-  rrpPctCell.textContent = `${priceResult.cex_rrp_pct * 100}%`;
-
   const rrpCell = row.querySelector('.suggested-rrp');
   rrpCell.textContent = `£${sellingPrice.toFixed(2)}`;
   if (reasons.selling_price) rrpCell.title = reasons.selling_price;
@@ -1178,6 +887,7 @@ function updateCurrentOffer(row, buyingStartPrice, midOffer, cexOfferCashPrice, 
 }
 
 function updateCEXInfo(row, priceResult, cexCell) {
+  if (!cexCell) return;
   // CEX price link
   if (priceResult.cex_selling_price && priceResult.cex_url) {
     cexCell.innerHTML = `<a href="${priceResult.cex_url}" target="_blank">£${parseFloat(priceResult.cex_selling_price).toFixed(2)}</a>`;
@@ -1202,6 +912,7 @@ function updateCompetitorStats(row, competitorStats) {
   if (!competitorStats) return;
 
   const updateModeCell = (cell, stats) => {
+    if (!cell) return;
     if (stats.mode != null) {
       const totalListings = stats.total_listings ?? 0;
       const listingsText = totalListings
@@ -1241,19 +952,10 @@ async function updatePriceCells(row, priceResult) {
 
   const reasons = priceResult.reasons;
   const maxOffer = (1 - MAX_OFFER_MARGIN) * sellingPrice;
-  const movementCategory = CATEGORY_COLOR_MAP[priceResult.category] || 'Unknown';
-
-  // Get cells
-  const modelCell = row.querySelector('.model-cell');
-  const cexCell = row.querySelector('.cex-price');
-
   // Update all cells using helper functions
   updateRRPCells(row, priceResult, sellingPrice, reasons);
-  applyCategoryColor(modelCell, cexCell, movementCategory);
   const midOffer = updateOfferCells(row, sellingPrice, buyingStartPrice, buyingSecondPrice, buyingThirdPrice, maxOffer, reasons);
   updateCurrentOffer(row, buyingStartPrice, midOffer, cexOfferCashPrice, maxOffer, reasons);
-  updateCEXInfo(row, priceResult, cexCell);
-  updateCompetitorStats(row, priceResult.competitor_stats);
   updateMargin(row, sellingPrice, buyingStartPrice);
 
   updateSummary();

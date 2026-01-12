@@ -2,7 +2,6 @@
 // DOM ELEMENT REFERENCES
 // ============================================
 
-const scrapeEbayBtn = document.getElementById('scrapeEbayBtn');
 const ebayModal = document.getElementById('ebayModal');
 const ebaySearchInput = document.getElementById('ebaySearchInput');
 const ebayWizardBtn = document.getElementById('ebayWizardBtn');
@@ -31,11 +30,6 @@ let ebayWizardStep = 1; // 1 = fetch filters, 2 = ready to search
 // EVENT LISTENERS
 // ============================================
 
-// Open modal
-scrapeEbayBtn.addEventListener('click', () => {
-  ebayModal.classList.add('active');
-  ebaySearchInput.focus();
-});
 
 // Cancel button
 ebayCancelBtn.addEventListener('click', () => {
@@ -854,6 +848,8 @@ function saveEbayWizardState() {
       ukOnly: filterUKCheckbox.checked,
       used: filterUsedCheckbox.checked
     },
+    // Persist currently selected category (if any) from the TomSelect control
+    category: window.wizardState.ebay?.category || null,
     prices: {
       min: document.getElementById('ebay-min')?.textContent,
       avg: document.getElementById('ebay-avg')?.textContent,
