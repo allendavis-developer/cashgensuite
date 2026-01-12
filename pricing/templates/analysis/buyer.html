@@ -561,12 +561,9 @@ let globalTableBody = null;
 function showRowSpinner(row) {
   const cellsToSpin = [
     '.suggested-rrp',
-    '.starting-offer',
-    '.mid-offer',
+    '.offer',
     '.cex-movement-category',
     '.cex-price-last-updated',
-    '.final-offer',
-    '.current-offer',
     '.cex-price',
     '.cc-mode',
     '.cg-mode',
@@ -621,11 +618,7 @@ function createCategoryTable() {
     'Subcategory',
     'Item Name',
     'Suggested RRP',
-    'Starting Offer',
-    'Second Offer',
-    'Third Offer (Match CEX)',
-    'MAX Offer',
-    'Current Offer',
+    'OFFER',
     'Margin'
   ];
 
@@ -649,51 +642,56 @@ function attachQuantityListeners() {
 // Manual and CEX URL item-adding flows removed;
 // rows are now added exclusively via the Deep Research wizard.
 
-function addSimpleItemToTable({ category, name, rrp, startingOffer, midOffer, finalOffer }) {
+function addSimpleItemToTable({ category, name, rrp, offer }) {
   const tbody = createCategoryTable();
   if (tbody.querySelector('.placeholder')) tbody.innerHTML = '';
 
   const rrpNum = Number(rrp);
-  const startingNum = Number(startingOffer || 0);
-  const midNum = Number(midOffer || 0);
-  const finalNum = Number(finalOffer || 0);
-
-  // Compute margin based on final offer if available, otherwise starting offer
-  const offerForMargin = finalNum || startingNum;
+  const offerValue = Number(offer || 0);
   const marginPct =
     rrpNum > 0
-      ? (((rrpNum - offerForMargin) / rrpNum) * 100).toFixed(1) + '%'
+      ? (((rrpNum - offerValue) / rrpNum) * 100).toFixed(1) + '%'
       : '—';
 
   const row = document.createElement('tr');
+  
+  // If offer is zero, use manual input
+  let offerCellContent;
+  if (offerValue === 0) {
+    offerCellContent = `<td class="offer"><input type="number" class="manual-offer-input" min="0" step="0.01" value="" placeholder="Enter offer"></td>`;
+  } else {
+    offerCellContent = `<td class="offer">£${offerValue.toFixed(2)}</td>`;
+  }
+  
   row.innerHTML = [
     `<td><input type="number" class="qty-input" min="1" value="1"></td>`,
     `<td class="category-cell">${category || '—'}</td>`,
     `<td class="subcategory-cell">—</td>`,
     `<td class="item-name-cell">${name}</td>`,
     `<td class="suggested-rrp">£${rrpNum.toFixed(2)}</td>`,
-    `<td class="starting-offer">£${startingNum.toFixed(2)}</td>`,
-    `<td class="mid-offer">£${midNum.toFixed(2)}</td>`,
-    `<td class="final-offer">£${finalNum.toFixed(2)}</td>`,
-    `<td class="max-offer">—</td>`,
-    `<td class="current-offer">
-        <div class="buying-range-cell">
-          <button class="qty-btn decrease-buying">−</button>
-          <span class="buying-value">£${offerForMargin.toFixed(2)}</span>
-          <button class="qty-btn increase-buying">+</button>
-        </div>
-     </td>`,
+    offerCellContent,
     `<td class="margin">${marginPct}</td>`
   ].join('');
 
   Object.assign(row.dataset, {
     itemName: name,
     rrp: rrpNum,
-    startingOffer: startingNum,
-    midOffer: midNum,
-    finalOffer: finalNum,
+    offer: offerValue,
     margin: marginPct
   });
+
+  // Set up manual input listener if needed
+  if (offerValue === 0) {
+    const offerInput = row.querySelector('.manual-offer-input');
+    offerInput.addEventListener('input', () => {
+      const val = parseFloat(offerInput.value) || 0;
+      row.dataset.offer = val;
+      // Recalculate margin
+      const margin = rrpNum > 0 ? (((rrpNum - val) / rrpNum) * 100).toFixed(1) + '%' : '—';
+      row.querySelector('.margin').textContent = margin;
+      updateSummary();
+    });
+  }
 
   row.addEventListener('dblclick', e => {
     if (['INPUT', 'BUTTON', 'A'].includes(e.target.tagName)) return;
@@ -716,560 +714,35 @@ function addSimpleItemToTable({ category, name, rrp, startingOffer, midOffer, fi
 
   tbody.appendChild(row);
   attachQuantityListeners();
-
-  // ADD THIS:
-  // Get the current offer cell and set up the data attributes
-  const currentOfferCell = row.querySelector('.current-offer');
-  currentOfferCell.dataset.buyMin = offerForMargin;
-  currentOfferCell.dataset.baseBuyMin = startingNum;
-  currentOfferCell.dataset.baseBuyMid = midNum;
-  currentOfferCell.dataset.baseBuyThird = finalNum;
-  currentOfferCell.dataset.baseBuyMaxOffer = (rrpNum * (1 - 0.28)).toFixed(2); // 28% margin
-  currentOfferCell.dataset.adjustPercent = "0";
-
-  // Attach the button listeners
-  const decreaseBtn = currentOfferCell.querySelector('.decrease-buying');
-  const increaseBtn = currentOfferCell.querySelector('.increase-buying');
-  decreaseBtn.onclick = () => adjustBuying(currentOfferCell, -1);
-  increaseBtn.onclick = () => adjustBuying(currentOfferCell, 1);
-
 }
 
 
-async function handleAnalyseClick(row) {
-  showRowSpinner(row);
-
-  const category = row.dataset.categoryName;
-  const subcategory = row.dataset.subcategoryName;
-
-  const model = row.dataset.model || '';
-  const attributes = JSON.parse(row.dataset.attributes || '{}');
-
-  try {
-    const checkResponse = await fetch('/api/check_existing_items/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken')
-      },
-      body: JSON.stringify({ category, subcategory: subcategory, model: row.dataset.model, attributes })
-    });
-
-    const checkResult = await checkResponse.json();
-    if (!checkResult.success) throw new Error(checkResult.error || 'Failed to check items');
-
-    if (checkResult.competitor_count > 0) {
-      const priceResult = await fetchPriceData(row, category, model, attributes);
-      await updatePriceCells(row, priceResult);
-    } else {
-      // No competitor data available
-      hideRowSpinner(row);
-      alert('No competitor data found for this item.');
-    }
-  } catch (error) {
-    console.error('Analyse error:', error);
-    alert('Error during analysis: ' + error.message);
-    hideRowSpinner(row);
-  }
-}
-
-async function fetchPriceData(row, category, model, attributes) {
-  const priceResponse = await fetch('/api/get-selling-and-buying-price/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCookie('csrftoken')
-    },
-    body: JSON.stringify({
-      category,
-      categoryId: row.dataset.categoryId,
-      subcategoryId: row.dataset.subcategoryId,
-      subcategory: row.dataset.subcategoryName,
-      model: row.dataset.model,
-      modelId: row.dataset.modelId,
-      attributes
-    })
-  });
-
-  const priceResult = await priceResponse.json();
-  console.log(priceResult);
-  if (!priceResult.success) throw new Error(priceResult.error || 'Failed to get selling price');
-  
-  return priceResult;
-}
-
-function updateRRPCells(row, priceResult, sellingPrice, reasons) {
-  const rrpCell = row.querySelector('.suggested-rrp');
-  rrpCell.textContent = `£${sellingPrice.toFixed(2)}`;
-  if (reasons.selling_price) rrpCell.title = reasons.selling_price;
-}
-
-function updateOfferCells(row, sellingPrice, buyingStartPrice, buyingSecondPrice, buyingThirdPrice, maxOffer, reasons) {
-  // Starting offer
-  const startingOfferCell = row.querySelector('.starting-offer');
-  const startingOfferMargin = ((sellingPrice - buyingStartPrice) / sellingPrice) * 100;
-  startingOfferCell.textContent = `£${buyingStartPrice.toFixed(2)} (${startingOfferMargin.toFixed(1)}%)`;
-  startingOfferCell.classList.add('offer-green');
-  if (reasons.buying_start_price) startingOfferCell.title = reasons.buying_start_price;
-
-  // Max offer (hidden initially)
-  const maxOfferCell = row.querySelector('.max-offer');
-  const maxOfferContent = `£${maxOffer.toFixed(2)} (${(MAX_OFFER_MARGIN * 100).toFixed(1)}%)`;
-  maxOfferCell.textContent = maxOfferContent;
-  maxOfferCell.classList.add('max-offer-hidden');
-  maxOfferCell.title = 'Click to reveal max offer';
-  maxOfferCell.style.cursor = 'pointer';
-  maxOfferCell.onclick = function() {
-    if (this.classList.contains('max-offer-hidden')) {
-      this.classList.remove('max-offer-hidden');
-      this.classList.add('max-offer-revealed');
-      this.title = '';
-      this.style.cursor = 'default';
-      this.onclick = null;
-    }
-  };
-
-  // Mid offer
-  const midOfferCell = row.querySelector('.mid-offer');
-  const midOffer = buyingSecondPrice;
-  const midOfferMargin = ((sellingPrice - midOffer) / sellingPrice) * 100;
-  midOfferCell.textContent = `£${midOffer.toFixed(2)} (${midOfferMargin.toFixed(1)}%)`;
-  if (reasons.buying_mid_price) midOfferCell.title = reasons.buying_mid_price;
-  midOfferCell.classList.add('offer-yellow');
-
-  // Final offer
-  const finalOfferCell = row.querySelector('.final-offer');
-  const finalOfferMargin = ((sellingPrice - buyingThirdPrice) / sellingPrice) * 100;
-  finalOfferCell.textContent = `£${buyingThirdPrice.toFixed(2)} (${finalOfferMargin.toFixed(1)}%)`;
-  if (reasons.buying_end_price) finalOfferCell.title = reasons.buying_end_price;
-  finalOfferCell.classList.add('offer-red');
-
-  return midOffer;
-}
-
-function updateCurrentOffer(row, buyingStartPrice, midOffer, cexOfferCashPrice, maxOffer, reasons) {
-  const currentOfferCell = row.querySelector('.current-offer');
-
-  // Set dataset values for adjustBuying function
-  currentOfferCell.dataset.buyMin = 0;
-  currentOfferCell.dataset.baseBuyMin = buyingStartPrice;
-  currentOfferCell.dataset.baseBuyMid = midOffer;
-  currentOfferCell.dataset.baseBuyThird = cexOfferCashPrice;
-  currentOfferCell.dataset.baseBuyMaxOffer = maxOffer;
-  currentOfferCell.dataset.adjustPercent = "0";
-
-  if (buyingStartPrice === 0) {
-    // Manual input for zero starting price
-    currentOfferCell.innerHTML = '';
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.min = '0';
-    input.step = '0.01';
-    input.value = '';
-    input.placeholder = 'Enter offer';
-    input.classList.add('manual-offer-input');
-    input.addEventListener('input', () => {
-      const val = parseFloat(input.value) || 0;
-      currentOfferCell.dataset.buyMin = val;
-      updateSummary();
-    });
-    currentOfferCell.appendChild(input);
-  } else {
-    // Normal non-zero behavior with buttons
-    const buyVal = currentOfferCell.querySelector('.buying-value');
-    buyVal.textContent = `£${buyingStartPrice.toFixed(2)}`;
-    buyVal.classList.add('offer-green');
-    if (reasons.buying_start_price) {
-      buyVal.title = "Initially set at start price but can be switched to mid and max price";
-    }
-    const decreaseBtn = currentOfferCell.querySelector('.decrease-buying');
-    const increaseBtn = currentOfferCell.querySelector('.increase-buying');
-    decreaseBtn.onclick = () => adjustBuying(currentOfferCell, -1);
-    increaseBtn.onclick = () => adjustBuying(currentOfferCell, 1);
-  }
-}
-
-function updateCEXInfo(row, priceResult, cexCell) {
-  if (!cexCell) return;
-  // CEX price link
-  if (priceResult.cex_selling_price && priceResult.cex_url) {
-    cexCell.innerHTML = `<a href="${priceResult.cex_url}" target="_blank">£${parseFloat(priceResult.cex_selling_price).toFixed(2)}</a>`;
-  } else {
-    cexCell.textContent = '—';
-  }
-
-  // OUT OF STOCK tag
-  if (priceResult.out_of_stock === true) {
-    const outTag = document.createElement('span');
-    outTag.textContent = ' OUT OF STOCK';
-    outTag.classList.add('out-of-stock-tag');
-    cexCell.appendChild(outTag);
-  }
-
-  // CEX price last updated
-  const cexPriceLastUpdatedCell = row.querySelector('.cex-price-last-updated');
-  cexPriceLastUpdatedCell.textContent = priceResult.cex_last_price_updated_date || '—';
-}
-
-function updateCompetitorStats(row, competitorStats) {
-  if (!competitorStats) return;
-
-  const updateModeCell = (cell, stats) => {
-    if (!cell) return;
-    if (stats.mode != null) {
-      const totalListings = stats.total_listings ?? 0;
-      const listingsText = totalListings
-        ? `${stats.frequency}/${totalListings} listings`
-        : `${stats.frequency} listings`;
-
-      cell.innerHTML = `
-        £${parseFloat(stats.mode).toFixed(2)} (${listingsText})<br>
-        £${parseFloat(stats.low).toFixed(2)} - £${parseFloat(stats.high).toFixed(2)}
-      `;
-    } else {
-      cell.textContent = '—';
-    }
-  };
-
-  updateModeCell(row.querySelector('.cc-mode'), competitorStats.CashConverters || {});
-  updateModeCell(row.querySelector('.cg-mode'), competitorStats.CashGenerator || {});
-}
-
-function updateMargin(row, sellingPrice, buyingStartPrice) {
-  const margin = sellingPrice > 0
-    ? ((sellingPrice - buyingStartPrice) / sellingPrice) * 100
-    : 0;
-  row.querySelector('.margin').textContent = `${margin.toFixed(1)}%`;
-}
-
-async function updatePriceCells(row, priceResult) {
-  hideRowSpinner(row);
-
-  const sellingPrice = parseFloat(priceResult.selling_price);
-  const buyingStartPrice = parseFloat(priceResult.buying_start_price);
-  const buyingSecondPrice = parseFloat(priceResult.buying_mid_price);
-  console.log(priceResult);
-  const buyingThirdPrice = parseFloat(priceResult.buying_end_price);
-
-  const cexOfferCashPrice = parseFloat(priceResult.cex_buying_price);
-
-  const reasons = priceResult.reasons;
-  const maxOffer = (1 - MAX_OFFER_MARGIN) * sellingPrice;
-  // Update all cells using helper functions
-  updateRRPCells(row, priceResult, sellingPrice, reasons);
-  const midOffer = updateOfferCells(row, sellingPrice, buyingStartPrice, buyingSecondPrice, buyingThirdPrice, maxOffer, reasons);
-  updateCurrentOffer(row, buyingStartPrice, midOffer, cexOfferCashPrice, maxOffer, reasons);
-  updateMargin(row, sellingPrice, buyingStartPrice);
-
-  updateSummary();
-}
-
-
-function adjustBuying(td, direction) {
-  // Read base values
-  const baseMin = parseFloat(td.dataset.baseBuyMin);
-  const baseMid = parseFloat(td.dataset.baseBuyMid);
-  const baseThird = parseFloat(td.dataset.baseBuyThird);
-  const baseMaxOffer = parseFloat(td.dataset.baseBuyMaxOffer);  
-
-  // Check if max offer has been revealed
-  const row = td.closest("tr");
-  const maxOfferCell = row.querySelector('.max-offer');
-  const isMaxOfferRevealed = !maxOfferCell.classList.contains('max-offer-hidden');
-
-
-  // Get current mode (min, mid, or max)
-  let currentMode = td.dataset.buyMode || "min";
-  const modes = ["min", "mid", "third", "maxoffer"];
-  let index = modes.indexOf(currentMode);
-
-  // Adjust direction (+1 = up, -1 = down)
-  index += direction;
-  if (index < 0) index = 0;
-  
-  // Limit max index based on whether max offer is revealed
-  const maxAllowedIndex = isMaxOfferRevealed ? 3 : 2;
-  if (index > maxAllowedIndex) index = maxAllowedIndex;
-
-  currentMode = modes[index];
-  td.dataset.buyMode = currentMode;
-
-  // Pick the correct value
-  let newValue;
-  let colorClass;
-  switch (currentMode) {
-    case "min":
-      newValue = baseMin;
-      colorClass = "offer-green";
-      break;
-    case "mid":
-      newValue = baseMid;
-      colorClass = "offer-yellow";
-      break;
-    case "third":
-      newValue = baseThird;
-      colorClass = "offer-red";
-      break;
-    case "maxoffer":
-      newValue = baseMaxOffer;
-      colorClass = "offer-red";
-      break;
-  }
-
-  // Update dataset and display
-  td.dataset.buyMin = newValue;
-  const buyingValue = td.querySelector(".buying-value");
-  buyingValue.textContent = `£${newValue.toFixed(2)}`;
-  
-  // Update color
-  buyingValue.classList.remove('offer-green', 'offer-yellow', 'offer-red');
-  buyingValue.classList.add(colorClass);
-
-  // Recalculate margin for the row
-  const sellingPrice = parseFloat(
-    row.querySelector(".suggested-rrp")?.textContent.replace(/[£,]/g, "")
-  ) || 0;
-
-  const marginCell = row.querySelector(".margin");
-  if (sellingPrice > 0) {
-    const margin = ((sellingPrice - newValue) / sellingPrice) * 100;
-    marginCell.textContent = `${margin.toFixed(1)}%`;
-  } else {
-    marginCell.textContent = "—";
-  }
-
-  updateSummary();
-}
-
-
-function updateSummary() {
-
-  // Add click-to-reveal functionality
-  maxOfferCell.style.cursor = 'pointer';
-  maxOfferCell.onclick = function() {
-    if (this.classList.contains('max-offer-hidden')) {
-      this.classList.remove('max-offer-hidden');
-      this.classList.add('max-offer-revealed');
-      this.title = '';
-      this.style.cursor = 'default';
-      this.onclick = null; // Remove the click handler after revealing
-    }
-  };
-
-
-  startingOfferCell.classList.add('offer-green');
-  if (reasons.buying_start_price) startingOfferCell.title = reasons.buying_start_price;
-  
-  // Current offer
-  const currentOfferCell = row.querySelector('.current-offer');
-
-  // If starting price is zero → replace with plain text input
-  if (buyingStartPrice === 0) {
-      currentOfferCell.innerHTML = '';   // remove everything inside
-
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.min = '0';
-      input.step = '0.01';
-      input.value = '';
-      input.placeholder = 'Enter offer';
-      input.classList.add('manual-offer-input');
-      
-
-      // Store it for other logic if needed
-      input.addEventListener('input', () => {
-          const val = parseFloat(input.value) || 0;
-          currentOfferCell.dataset.buyMin = val;
-          updateSummary();
-      });
-
-      currentOfferCell.appendChild(input);
-
-  } else {
-      // Normal non-zero behaviour
-      const buyVal = currentOfferCell.querySelector('.buying-value');
-      buyVal.textContent = `£${buyingStartPrice.toFixed(2)}`;
-      buyVal.classList.add('offer-green');
-      if (reasons.buying_start_price) {
-          buyVal.title = "Initially set at start price but can be switched to mid and max price";
-      }
-      
-    // Set up increase/decrease buttons normally
-    const decreaseBtn = currentOfferCell.querySelector('.decrease-buying');
-    const increaseBtn = currentOfferCell.querySelector('.increase-buying');
-    decreaseBtn.onclick = () => adjustBuying(currentOfferCell, -1);
-    increaseBtn.onclick = () => adjustBuying(currentOfferCell, 1);
-}
-
-
-  // Mid offer = starting + 50% of range
-  const midOfferCell = row.querySelector('.mid-offer');
-  const midOffer = buyingSecondPrice;
-  const midOfferMargin = ((sellingPrice - midOffer)/sellingPrice) * 100
-  midOfferCell.textContent = `£${midOffer.toFixed(2)} (${midOfferMargin.toFixed(1)})%`;
-  if (reasons.buying_mid_price) midOfferCell.title = reasons.buying_mid_price;
-  midOfferCell.classList.add('offer-yellow');
-
-  // Final offer = max CEX offer
-  const finalOfferCell = row.querySelector('.final-offer');
-  const finalOfferMargin = ((sellingPrice - buyingThirdPrice)/sellingPrice) * 100
-  finalOfferCell.textContent = `£${buyingThirdPrice.toFixed(2)} (${finalOfferMargin.toFixed(1)}%)`;
-
-  if (reasons.buying_end_price) finalOfferCell.title = reasons.buying_end_price;
-  finalOfferCell.classList.add('offer-red');
-
-  currentOfferCell.dataset.buyMin = 0;
-  currentOfferCell.dataset.baseBuyMin = buyingStartPrice;
-  currentOfferCell.dataset.baseBuyMid = midOffer;
-  currentOfferCell.dataset.baseBuyThird = cexOfferCashPrice;
-  currentOfferCell.dataset.baseBuyMaxOffer = maxOffer;     // ADD THIS - the 28% margin price
-
-
-
-  currentOfferCell.dataset.adjustPercent = "0";
-
-  // CEX price link
-  if (priceResult.cex_selling_price && priceResult.cex_url) {
-    cexCell.innerHTML = `<a href="${priceResult.cex_url}" target="_blank">£${parseFloat(priceResult.cex_selling_price).toFixed(2)}</a>`;
-  } else {
-    cexCell.textContent = '—';
-  }
-
-  // OUT OF STOCK tag
-  if (priceResult.out_of_stock === true) {
-    const outTag = document.createElement('span');
-    outTag.textContent = ' OUT OF STOCK';
-    outTag.classList.add('out-of-stock-tag'); // Style this in CSS
-    cexCell.appendChild(outTag);
-  }
-
-
-  const cexPriceLastUpdatedCell = row.querySelector('.cex-price-last-updated');
-  cexPriceLastUpdatedCell.textContent = `${priceResult.cex_last_price_updated_date}`
-  
-  if (priceResult.competitor_stats) {
-  const updateModeCell = (cell, stats) => {
-    if (stats.mode != null) {
-      const totalListings = stats.total_listings ?? 0; // 
-      const listingsText = totalListings
-        ? `${stats.frequency}/${totalListings} listings`
-        : `${stats.frequency} listings`;
-
-      cell.innerHTML = `
-        £${parseFloat(stats.mode).toFixed(2)} (${listingsText})<br>
-        £${parseFloat(stats.low).toFixed(2)} - £${parseFloat(stats.high).toFixed(2)}
-      `;
-    } else {
-      cell.textContent = '—';
-    }
-  };
-
-  updateModeCell(row.querySelector('.cc-mode'), priceResult.competitor_stats.CashConverters || {});
-  updateModeCell(row.querySelector('.cg-mode'), priceResult.competitor_stats.CashGenerator || {});
-}
-
-  // Margin
-  const margin = sellingPrice > 0
-    ? ((sellingPrice - buyingStartPrice) / sellingPrice) * 100
-    : 0;
-  row.querySelector('.margin').textContent = `${margin.toFixed(1)}%`;
-
-  updateSummary();
-}
-
-
-function updateSummary() {
-  const baseMin = parseFloat(td.dataset.baseBuyMin);
-  const baseMid = parseFloat(td.dataset.baseBuyMid);
-  const baseThird = parseFloat(td.dataset.baseBuyThird);
-  const baseMaxOffer = parseFloat(td.dataset.baseBuyMaxOffer);  
-
-  // Check if max offer has been revealed
-  const row = td.closest("tr");
-  const maxOfferCell = row.querySelector('.max-offer');
-  const isMaxOfferRevealed = !maxOfferCell.classList.contains('max-offer-hidden');
-
-
-  // Get current mode (min, mid, or max)
-  let currentMode = td.dataset.buyMode || "min";
-  const modes = ["min", "mid", "third", "maxoffer"];
-  let index = modes.indexOf(currentMode);
-
-  // Adjust direction (+1 = up, -1 = down)
-  index += direction;
-  if (index < 0) index = 0;
-  
-  // Limit max index based on whether max offer is revealed
-  const maxAllowedIndex = isMaxOfferRevealed ? 3 : 2;
-  if (index > maxAllowedIndex) index = maxAllowedIndex;
-
-  currentMode = modes[index];
-  td.dataset.buyMode = currentMode;
-
-  // Pick the correct value
-  let newValue;
-  let colorClass;
-  switch (currentMode) {
-    case "min":
-      newValue = baseMin;
-      colorClass = "offer-green";
-      break;
-    case "mid":
-      newValue = baseMid;
-      colorClass = "offer-yellow";
-      break;
-    case "third":
-      newValue = baseThird;
-      colorClass = "offer-red";
-      break;
-    case "maxoffer":  // ADD THIS CASE
-      newValue = baseMaxOffer;
-      colorClass = "offer-red";  // or create a new color class if you want
-      break;
-
-  }
-
-  // Update dataset and display
-  td.dataset.buyMin = newValue;
-  const buyingValue = td.querySelector(".buying-value");
-  buyingValue.textContent = `£${newValue.toFixed(2)}`;
-  
-  // Update color
-  buyingValue.classList.remove('offer-green', 'offer-yellow', 'offer-red');
-  buyingValue.classList.add(colorClass);
-
-  // Recalculate margin for the row
-  const sellingPrice = parseFloat(
-    row.querySelector(".suggested-rrp")?.textContent.replace(/[£,]/g, "")
-  ) || 0;
-
-  const marginCell = row.querySelector(".margin");
-  if (sellingPrice > 0) {
-    const margin = ((sellingPrice - newValue) / sellingPrice) * 100;
-    marginCell.textContent = `${margin.toFixed(1)}%`;
-  } else {
-    marginCell.textContent = "—";
-  }
-
-  updateSummary();
-}
 
 
 function updateSummary() {
   let totalBuying = 0;
-  let totalSelling = 0;
+  let totalRetail = 0;
   let hasItems = false;
 
   document.querySelectorAll('.item-table tbody tr:not(.placeholder)').forEach(row => {
     hasItems = true;
     const qty = parseInt(row.querySelector('.qty-input')?.value) || 1;
 
-    // Regular totals
+    // Get RRP (retail price)
     const rrp = parseFloat(row.querySelector('.suggested-rrp')?.textContent.replace(/[£,]/g, '')) || 0;
-    const buy = parseFloat(row.querySelector('.current-offer .buying-value')?.textContent.replace(/[£,]/g, '')) || 0;
-    totalSelling += rrp * qty;
-    totalBuying += buy * qty;
-
+    
+    // Get offer value - either from input field or from text content
+    let offer = 0;
+    const offerCell = row.querySelector('.offer');
+    const offerInput = offerCell?.querySelector('.manual-offer-input');
+    if (offerInput) {
+      offer = parseFloat(offerInput.value) || 0;
+    } else {
+      offer = parseFloat(offerCell?.textContent.replace(/[£,]/g, '')) || 0;
+    }
+    
+    totalRetail += rrp * qty;
+    totalBuying += offer * qty;
   });
 
   const summaryContainer = document.getElementById('summaryContainer');
@@ -1277,9 +750,9 @@ function updateSummary() {
 
   if (hasItems) {
     document.getElementById('totalBuying').textContent = `£${totalBuying.toFixed(2)}`;
-    document.getElementById('totalSelling').textContent = `£${totalSelling.toFixed(2)}`;
+    document.getElementById('totalSelling').textContent = `£${totalRetail.toFixed(2)}`;
   } else {
-    document.getElementById('totalBuying').textContent = '£0.00 - £0.00';
+    document.getElementById('totalBuying').textContent = '£0.00';
     document.getElementById('totalSelling').textContent = '£0.00';
   }
 }

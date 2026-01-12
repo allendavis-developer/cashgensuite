@@ -25,6 +25,8 @@ let selectedFilters = {};
 let previousSelectedFilters = {};
 let isEbayScraping = false;
 let ebayWizardStep = 1; // 1 = fetch filters, 2 = ready to search
+// Flag to prevent sync loops - use window property to avoid duplicate declaration errors
+window.ebayIsSyncingCategory = window.ebayIsSyncingCategory || false;
 
 // ============================================
 // EVENT LISTENERS
@@ -709,16 +711,39 @@ function initEbayCategorySelect() {
   });
 
   ebayCategoryTomSelect.on('change', value => {
+    // Prevent sync loops
+    if (window.ebayIsSyncingCategory) return;
+    
     if (!value) return;
 
     const option = ebayCategoryTomSelect.options[value];
 
     // Persist to wizard state
     window.wizardState.ebay = window.wizardState.ebay || {};
-    window.wizardState.ebay.category = {
+    const categoryData = {
       id: value,
       name: option?.text || null
     };
+    window.wizardState.ebay.category = categoryData;
+
+    // Sync to CeX category in wizardState
+    if (!window.wizardState.cex) {
+      window.wizardState.cex = {};
+    }
+    window.wizardState.cex.category = categoryData;
+
+    // Sync CeX TomSelect if it exists and is initialized
+    if (typeof categoryTomSelect !== 'undefined' && categoryTomSelect) {
+      // Check if the category exists in CeX categories and isn't already selected
+      const cexCategoryExists = categoryTomSelect.options[value];
+      const currentCexValue = categoryTomSelect.getValue();
+      if (cexCategoryExists && currentCexValue !== value) {
+        window.ebayIsSyncingCategory = true;
+        categoryTomSelect.setValue(value);
+        // Reset flag after a short delay to allow the change event to process
+        setTimeout(() => { window.ebayIsSyncingCategory = false; }, 100);
+      }
+    }
 
     console.log('eBay category selected:', window.wizardState.ebay.category);
   });
@@ -871,7 +896,8 @@ function saveEbayWizardState() {
   };
 }
 
-function restoreEbayWizardState() {
+// Expose globally for use in research_wizard.js
+window.restoreEbayWizardState = function restoreEbayWizardState() {
   const state = window.wizardState.ebay;
   if (!state) return;
 
@@ -880,6 +906,30 @@ function restoreEbayWizardState() {
   filterSoldCheckbox.checked = state.topFilters?.sold || false;
   filterUKCheckbox.checked = state.topFilters?.ukOnly || false;
   filterUsedCheckbox.checked = state.topFilters?.used || false;
+
+  // Restore category from either ebay.category or cex.category (they should be synced)
+  const category = state.category || window.wizardState.cex?.category;
+  if (category && category.id && ebayCategoryTomSelect) {
+    // Check if category exists in the dropdown
+    const categoryExists = ebayCategoryTomSelect.options[category.id];
+    if (categoryExists) {
+      window.ebayIsSyncingCategory = true;
+      ebayCategoryTomSelect.setValue(category.id);
+      setTimeout(() => { window.ebayIsSyncingCategory = false; }, 100);
+    } else if (category.name) {
+      // Category might not be loaded yet, add it
+      ebayCategoryTomSelect.addOption({ value: category.id, text: category.name });
+      ebayCategoryTomSelect.refreshOptions(false);
+      window.ebayIsSyncingCategory = true;
+      ebayCategoryTomSelect.setValue(category.id);
+      setTimeout(() => { window.ebayIsSyncingCategory = false; }, 100);
+    }
+    
+    // Ensure both are synced in wizard state
+    if (!window.wizardState.cex) window.wizardState.cex = {};
+    window.wizardState.cex.category = category;
+    window.wizardState.ebay.category = category;
+  }
 
   // Only auto-run if we have no results yet
   if (!state.listings || !state.listings.length && window.wizardState.ebay?.searchTerm) {
@@ -930,7 +980,7 @@ function restoreEbayWizardState() {
     ebayFiltersContainer.scrollTop = state.uiState.filterScroll || 0;
     ebayResultsContainer.scrollTop = state.uiState.resultsScroll || 0;
   }
-}
+};
 
 function setEbayScrapingState(isScraping) {
   isEbayScraping = isScraping;

@@ -103,7 +103,9 @@
 
     // 🔁 Restore eBay state when entering eBay page
     if (selector === '.rw-page-ebay') {
-      restoreEbayWizardState();
+      if (typeof window.restoreEbayWizardState === 'function') {
+        window.restoreEbayWizardState();
+      }
     }
 
     // Focus category when entering CeX page (from overview, not quick add)
@@ -111,6 +113,11 @@
       // Don't reset isQuickAddMode here - it's set before showPage is called
       // If it's true (from quick add), keep it; if false (from overview), keep it false
       updateCexButtonVisibility();
+      
+      // Restore category from wizard state if available
+      if (typeof restoreCategoryFromWizardState === 'function') {
+        restoreCategoryFromWizardState();
+      }
       
       // Only focus category if not in quick add mode
       if (!isQuickAddMode) {
@@ -226,6 +233,26 @@
 
     // Re-render the overview with empty state
     renderOverview();
+    
+    // Update confirm button state (should be disabled after reset)
+    updateConfirmButtonState();
+  }
+
+  function updateConfirmButtonState() {
+    const confirmBtn = modal.querySelector('.rw-confirm');
+    if (!confirmBtn) return;
+
+    const { final } = wizardState;
+    const hasOffer = final?.offer != null && final.offer > 0;
+    const hasRrp = final?.rrp != null && final.rrp > 0;
+    const isValid = hasOffer && hasRrp;
+
+    confirmBtn.disabled = !isValid;
+    if (isValid) {
+      confirmBtn.classList.remove('disabled');
+    } else {
+      confirmBtn.classList.add('disabled');
+    }
   }
 
   window.ResearchWizard.showOverview = () => {
@@ -243,6 +270,9 @@
       });
       overviewActions.appendChild(restartBtn);
     }
+
+    // Update confirm button state after rendering
+    updateConfirmButtonState();
   };
 
 
@@ -360,11 +390,13 @@
   offerInput?.addEventListener('input', () => {
     wizardState.final.offer = Number(offerInput.value) || null;
     console.log('Final offer updated:', wizardState.final.offer);
+    updateConfirmButtonState();
   });
 
   rrpInput?.addEventListener('input', () => {
     wizardState.final.rrp = Number(rrpInput.value) || null;
     console.log('Final RRP updated:', wizardState.final.rrp);
+    updateConfirmButtonState();
   });
 
   const ebaySearchInput = container.querySelector('.ebay-search-term');
@@ -437,6 +469,13 @@ function renderCexOverview(cex) {
         </button>
       </div>
 
+      ${cex.model?.name ? `
+      <section>
+        <h4>Model</h4>
+        <div>${cex.model.name}</div>
+      </section>
+      ` : ''}
+
       <section>
         <h4>Sell price</h4>
         <div class="big">
@@ -488,98 +527,64 @@ function renderCexOverview(cex) {
 }
 
 
-  modal.querySelector('.rw-confirm')?.addEventListener('click', () => {
-    const { final, ebay, cex } = wizardState;
+  // Set up confirm button handler (button exists in template, not re-rendered)
+  function setupConfirmButton() {
+    const confirmBtn = modal.querySelector('.rw-confirm');
+    if (!confirmBtn) return;
 
-    const rrp =
-      final.rrp ??
-      ebay.rrp ??
-      cex.prices?.rrp ??
-      null;
-
-    const startingOffer =
-      ebay.selectedOffer ??
-      cex.prices?.buying?.start ??
-      0;
-
-    const midOffer =
-      cex.prices?.buying?.mid ?? 0;
-
-    const finalOffer =
-      final.offer ??
-      cex.prices?.buying?.end ??
-      null;
-
-    if (rrp == null || (startingOffer === 0 && finalOffer == null)) {
-      alert('Offer and RRP are required.');
-      return;
-    }
-
-    const itemName =
-      cex.model?.name ||
-      ebay.searchTerm ||
-      '';
-
-    const categoryName =
-      cex.category?.name ||
-      ebay.category?.name ||
-      '';
-
-    addSimpleItemToTable({
-      category: categoryName,
-      name: itemName,
-      rrp,
-      startingOffer,
-      midOffer,
-      finalOffer
-    });
-
-    console.log('Confirmed research → added to table:', {
-      category: categoryName,
-      name: itemName,
-      rrp,
-      startingOffer,
-      midOffer,
-      finalOffer
-    });
-
-    // Reset wizard state and UI for next item
-    resetWizardState();
+    // Remove any existing listeners by cloning the button
+    const newConfirmBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
     
-    // Keep wizard open and show overview for next item
-    window.ResearchWizard.showOverview();
-  });
+    newConfirmBtn.addEventListener('click', () => {
+      const { final, ebay, cex } = wizardState;
 
+      // Require both final offer and final RRP
+      if (!final?.offer || final.offer <= 0 || !final?.rrp || final.rrp <= 0) {
+        alert('Please enter both Offer and Suggested RRP in the Final Pricing section.');
+        return;
+      }
 
-  function resolveFinalPricing() {
-    const { final, ebay, cex } = wizardState;
+      const itemName =
+        cex.model?.name ||
+        ebay.searchTerm ||
+        '';
 
-    const resolvedOffer =
-      final.offer ??
-      ebay.selectedOffer ??
-      cex.selectedOffer?.price ??
-      null;
+      const categoryName =
+        cex.category?.name ||
+        ebay.category?.name ||
+        '';
 
-    const resolvedRrp =
-      final.rrp ??
-      ebay.rrp ??
-      cex.prices?.rrp ??
-      null;
+      // Use only the final offer and final RRP from the inputs
+      addSimpleItemToTable({
+        category: categoryName,
+        name: itemName,
+        rrp: final.rrp,
+        offer: final.offer
+      });
 
-    return {
-      offer: resolvedOffer,
-      rrp: resolvedRrp
-    };
+      console.log('Confirmed research → added to table:', {
+        category: categoryName,
+        name: itemName,
+        rrp: final.rrp,
+        offer: final.offer
+      });
+
+      // Close the modal after adding the item
+      closeWizard();
+      
+      // Reset wizard state for next time
+      resetWizardState();
+    });
+
+    // Set initial disabled state
+    updateConfirmButtonState();
   }
 
-  modal.querySelector('.rw-confirm')?.addEventListener('click', () => {
-    const aggregated = resolveFinalPricing();
+  // Set up the confirm button when modal is ready
+  if (modal) {
+    setupConfirmButton();
+  }
 
-    wizardState.final.offer = aggregated.offer;
-    wizardState.final.rrp = aggregated.rrp;
 
-    console.log('Confirmed research (aggregated):', wizardState);
-
-    closeWizard();
-  });
 })();

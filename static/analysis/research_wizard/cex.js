@@ -10,6 +10,7 @@ let attributeTomSelects = {}; // Store TomSelect instances for attributes
 let attributesResolved = false;
 let cexComputeInProgress = false;
 let cexPricesComputedForCurrentSelection = false;
+let isSyncingCategory = false; // Flag to prevent sync loops
 
 
 // ========== Local Cache ==========
@@ -62,7 +63,8 @@ function initTomSelects() {
   });
 
   categoryTomSelect.on('change', (value) => {
-
+    // Prevent sync loops
+    if (isSyncingCategory) return;
 
     const categoryId = categoryTomSelect.getValue();
     if (!categoryId) return;
@@ -72,10 +74,31 @@ function initTomSelects() {
 
     if (value) { 
       wizardState.source = 'cex';
-      wizardState.cex.category = {
+      const categoryData = {
         id: value,
         name: categoryTomSelect.options[value]?.text || null
       };
+      
+      wizardState.cex.category = categoryData;
+
+      // Sync to eBay category in wizardState
+      if (!wizardState.ebay) {
+        wizardState.ebay = {};
+      }
+      wizardState.ebay.category = categoryData;
+
+      // Sync eBay TomSelect if it exists and is initialized
+      if (typeof ebayCategoryTomSelect !== 'undefined' && ebayCategoryTomSelect) {
+        // Check if the category exists in eBay categories and isn't already selected
+        const ebayCategoryExists = ebayCategoryTomSelect.options[value];
+        const currentEbayValue = ebayCategoryTomSelect.getValue();
+        if (ebayCategoryExists && currentEbayValue !== value) {
+          isSyncingCategory = true;
+          ebayCategoryTomSelect.setValue(value);
+          // Reset flag after a short delay to allow the change event to process
+          setTimeout(() => { isSyncingCategory = false; }, 100);
+        }
+      }
 
       // Persist for quick add
       lastQuickAddCategory = {
@@ -977,6 +1000,49 @@ if (cexConfirmResearchButton) {
   });
 }
 
+
+// ========== Restore Category from Wizard State ==========
+async function restoreCategoryFromWizardState() {
+  // Check both cex.category and ebay.category (they should be synced)
+  const category = wizardState.cex?.category || wizardState.ebay?.category;
+  
+  if (!category || !category.id) {
+    return false;
+  }
+
+  try {
+    // Check if category exists in the dropdown
+    const categoryExists = categoryTomSelect.options[category.id];
+    if (!categoryExists) {
+      // Category might not be loaded yet, add it if we have the name
+      if (category.name) {
+        categoryTomSelect.addOption({ value: category.id, text: category.name });
+        categoryTomSelect.refreshOptions(false);
+      } else {
+        return false;
+      }
+    }
+
+    // Set the category value (use flag to prevent sync during restoration)
+    isSyncingCategory = true;
+    categoryTomSelect.setValue(category.id);
+    setTimeout(() => { isSyncingCategory = false; }, 100);
+    
+    // Fetch subcategories for this category
+    await fetchSubcategories(category.id);
+    
+    // Update wizard state to ensure both are synced
+    if (!wizardState.cex) wizardState.cex = {};
+    if (!wizardState.ebay) wizardState.ebay = {};
+    wizardState.cex.category = category;
+    wizardState.ebay.category = category;
+    
+    return true;
+  } catch (err) {
+    console.error('Failed to restore category from wizard state:', err);
+    return false;
+  }
+}
 
 // ========== Restore Last Quick Add Selections ==========
 async function restoreLastQuickAddSelections() {
