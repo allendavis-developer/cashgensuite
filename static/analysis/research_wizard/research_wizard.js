@@ -477,7 +477,7 @@ function renderEbayOverview(ebay) {
       <section>
         <h4>Suggested RRP</h4>
         <div class="big">
-          £${ebay.rrp ? Number(ebay.rrp).toFixed(2) : '-'}
+          £${ebay.rrp != null ? (typeof ebay.rrp === 'number' ? ebay.rrp.toFixed(2) : (parseFloat(String(ebay.rrp).replace(/,/g, '')) || 0).toFixed(2)) : '-'}
           ${ebay.suggestedPriceMethod ? `<small>${ebay.suggestedPriceMethod}</small>` : ''}
         </div>
       </section>
@@ -485,7 +485,7 @@ function renderEbayOverview(ebay) {
       <section>
         <h4>Selected offer</h4>
         <div class="big">
-          £${ebay.selectedOffer ? Number(ebay.selectedOffer).toFixed(2) : '-'}
+          £${ebay.selectedOffer != null ? (typeof ebay.selectedOffer === 'number' ? ebay.selectedOffer.toFixed(2) : (parseFloat(String(ebay.selectedOffer).replace(/,/g, '')) || 0).toFixed(2)) : '-'}
         </div>
       </section>
     </div>

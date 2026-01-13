@@ -45,16 +45,21 @@
   background-color: #000;
 }
 
+.ebay-checkboxes-row {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
 .ebay-anomalies-checkbox {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 13px;
   color: #ccc;
-  margin-bottom: 16px;
   cursor: pointer;
   user-select: none;
-  width: 100%;
 }
 
 .ebay-anomalies-checkbox input[type="checkbox"] {
@@ -563,6 +568,121 @@
 
 .competitor-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+/* ================= HISTOGRAM ================= */
+
+.ebay-histogram-container {
+  margin-top: 24px;
+  padding: 20px;
+  background: #0b0b0b;
+  border: 1px solid #222;
+  border-radius: 8px;
+  display: none; /* Hidden by default */
+}
+
+.ebay-histogram-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.ebay-histogram-header h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ebay-histogram-info {
+  font-size: 11px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ebay-histogram-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 240px;
+  padding: 10px 0;
+  border-bottom: 1px solid #222;
+  margin-bottom: 10px;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.ebay-histogram-bar-container {
+  flex: 1;
+  min-width: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  position: relative;
+  cursor: pointer;
+}
+
+.ebay-histogram-bar {
+  width: 100%;
+  background: linear-gradient(to top, #0d6efd, #4da3ff);
+  border-radius: 4px 4px 0 0;
+  min-height: 2px;
+  position: relative;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 4px;
+}
+
+.ebay-histogram-bar-container:hover .ebay-histogram-bar {
+  opacity: 0.8;
+  background: linear-gradient(to top, #0b5ed7, #3d93ff);
+}
+
+.ebay-histogram-frequency {
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+}
+
+.ebay-histogram-label {
+  font-size: 10px;
+  color: #666;
+  margin-top: 4px;
+  text-align: center;
+  white-space: nowrap;
+  position: absolute;
+  bottom: -20px;
+  width: 100%;
+  left: 0;
+}
+
+.ebay-histogram-label.rotated {
+  transform: rotate(-45deg);
+  transform-origin: center;
+  width: 60px;
+  left: 50%;
+  margin-left: -30px;
+}
+
+.ebay-histogram-chart.rotated-labels {
+  padding-bottom: 30px;
+}
+
+.ebay-histogram-empty {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 13px;
 }
 
 /* ================= FOOTER ================= */

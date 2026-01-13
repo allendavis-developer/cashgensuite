@@ -51,10 +51,16 @@
 
     <!-- Right side: Results -->
     <div class="ebay-right-panel">
-    <label class="ebay-anomalies-checkbox">
-      <input type="checkbox" id="ebayShowAnomalies" checked>
-      Include price anomalies
-    </label>
+    <div class="ebay-checkboxes-row">
+      <label class="ebay-anomalies-checkbox">
+        <input type="checkbox" id="ebayShowAnomalies" checked>
+        Include price anomalies
+      </label>
+      <label class="ebay-anomalies-checkbox">
+        <input type="checkbox" id="ebayShowHistogram">
+        Show price histogram
+      </label>
+    </div>
 
 
       <!-- Analysis / Summary Table -->
@@ -77,6 +83,9 @@
             </tr>
           </tbody>
         </table>
+        
+        <!-- Price Distribution Histogram -->
+        <div id="ebayHistogramContainer" class="ebay-histogram-container"></div>
       </div>
 
       <!-- Pricing Controls -->

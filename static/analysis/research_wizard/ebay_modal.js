@@ -13,8 +13,13 @@ const ebaySelectedCount = document.getElementById('ebaySelectedCount');
 const filterSoldCheckbox = document.getElementById('filterSold');
 const filterUKCheckbox = document.getElementById('filterUK');
 const filterUsedCheckbox = document.getElementById('filterUsed');
+const ebayShowHistogramCheckbox = document.getElementById('ebayShowHistogram');
 const rrpDisplay = document.getElementById('ebaySuggestedRrp');
 const offerDisplay = document.getElementById('ebayOfferValue');
+
+// Store numeric values for wizard state (not formatted strings)
+let ebayRrpNumeric = null;
+let ebayOfferNumeric = null;
 
 // ============================================
 // STATE VARIABLES
@@ -190,6 +195,11 @@ async function runEbayScrape() {
           document.getElementById('ebay-median').textContent = stats.median;
           document.getElementById('ebay-mode').textContent = stats.mode;
 
+          // Render histogram only if checkbox is checked
+          if (ebayShowHistogramCheckbox?.checked) {
+            renderHistogram(cleanedListings);
+          }
+
           // Show the analysis wrapper after successful scraping
           const analysisWrapper = document.querySelector('.ebay-analysis-wrapper');
           if (analysisWrapper) {
@@ -212,6 +222,10 @@ async function runEbayScrape() {
           if (!isNaN(avgNum)) {
               const rrp = Math.round(avgNum);
               const offer = Math.round(avgNum * 0.4);
+              // Store numeric values for wizard state
+              ebayRrpNumeric = rrp;
+              ebayOfferNumeric = offer;
+              // Display formatted values
               rrpDisplay.textContent = rrp.toLocaleString();
               offerDisplay.textContent = offer.toLocaleString();
           }
@@ -259,6 +273,11 @@ document.getElementById('ebayShowAnomalies')?.addEventListener('change', e => {
   document.getElementById('ebay-median').textContent = stats.median;
   document.getElementById('ebay-mode').textContent = stats.mode;
 
+  // Update histogram if visible
+  if (ebayShowHistogramCheckbox?.checked) {
+    renderHistogram(listings);
+  }
+
   // Update RRP based on intelligent average, Offer is 40% of intelligent average
   const intelligentAvg = calculateIntelligentAverage(listings);
   const normalAvg = Number(stats.avg);
@@ -273,6 +292,10 @@ document.getElementById('ebayShowAnomalies')?.addEventListener('change', e => {
   if (!isNaN(avgNum)) {
     const rrp = Math.round(avgNum);
     const offer = Math.round(avgNum * 0.4);
+    // Store numeric values for wizard state
+    ebayRrpNumeric = rrp;
+    ebayOfferNumeric = offer;
+    // Display formatted values
     rrpDisplay.textContent = rrp.toLocaleString();
     offerDisplay.textContent = offer.toLocaleString();
   }
@@ -288,6 +311,27 @@ document.getElementById('ebayShowAnomalies')?.addEventListener('change', e => {
   saveEbayWizardState();
   updateVisibleEbayCount();
 
+});
+
+// Histogram visibility toggle
+ebayShowHistogramCheckbox?.addEventListener('change', e => {
+  const histogramContainer = document.getElementById('ebayHistogramContainer');
+  if (!histogramContainer) return;
+  
+  if (e.target.checked) {
+    // Show histogram - need to render it if we have data
+    const cache = window._ebayPriceCache;
+    if (cache && cache.rawListings) {
+      const showAnomalies = document.getElementById('ebayShowAnomalies')?.checked ?? true;
+      const listings = showAnomalies ? cache.rawListings : removeOutliers(cache.rawListings);
+      renderHistogram(listings);
+    }
+    histogramContainer.style.display = 'block';
+  } else {
+    histogramContainer.style.display = 'none';
+  }
+  
+  saveEbayWizardState();
 });
 
 
@@ -1024,6 +1068,145 @@ function populateEbayCategories() {
 }
 
 
+/**
+ * Calculate optimal bin width for histogram using Freedman-Diaconis rule
+ * Falls back to Sturges' rule for small datasets
+ */
+function calculateBinWidth(prices) {
+  if (!prices || prices.length < 2) return 10; // Default fallback
+  
+  const sorted = [...prices].sort((a, b) => a - b);
+  const n = sorted.length;
+  const min = sorted[0];
+  const max = sorted[sorted.length - 1];
+  const range = max - min;
+  
+  if (range === 0) return 10; // All prices are the same
+  
+  // Calculate IQR for Freedman-Diaconis rule
+  const q1Index = Math.floor(n * 0.25);
+  const q3Index = Math.floor(n * 0.75);
+  const q1 = sorted[q1Index];
+  const q3 = sorted[q3Index];
+  const iqr = q3 - q1;
+  
+  let binWidth;
+  
+  if (iqr > 0 && n >= 4) {
+    // Freedman-Diaconis rule: bin width = 2 * IQR / n^(1/3)
+    binWidth = (2 * iqr) / Math.pow(n, 1/3);
+  } else {
+    // Sturges' rule fallback: number of bins = 1 + log2(n), then bin width = range / bins
+    const numBins = Math.ceil(1 + Math.log2(n));
+    binWidth = range / numBins;
+  }
+  
+  // Round to a nice number for readability
+  // Round to nearest 5, 10, 25, 50, 100, etc. based on magnitude
+  const magnitude = Math.pow(10, Math.floor(Math.log10(binWidth)));
+  const normalized = binWidth / magnitude;
+  
+  let rounded;
+  if (normalized <= 1) rounded = 1;
+  else if (normalized <= 2) rounded = 2;
+  else if (normalized <= 5) rounded = 5;
+  else rounded = 10;
+  
+  binWidth = rounded * magnitude;
+  
+  // Ensure minimum bin width of 1
+  return Math.max(1, binWidth);
+}
+
+/**
+ * Generate histogram data (bins and frequencies) from price data
+ */
+function generateHistogramData(listings) {
+  const prices = listings
+    .map(item => Number(item.price))
+    .filter(p => !isNaN(p) && p > 0);
+  
+  if (!prices.length) {
+    return { bins: [], frequencies: [], binWidth: 0 };
+  }
+  
+  const sorted = [...prices].sort((a, b) => a - b);
+  const min = sorted[0];
+  const max = sorted[sorted.length - 1];
+  const binWidth = calculateBinWidth(prices);
+  
+  // Create bins
+  const bins = [];
+  const frequencies = [];
+  
+  // Start from a rounded-down value
+  const startBin = Math.floor(min / binWidth) * binWidth;
+  const endBin = Math.ceil(max / binWidth) * binWidth;
+  
+  // Initialize bins
+  for (let binStart = startBin; binStart < endBin; binStart += binWidth) {
+    const binEnd = binStart + binWidth;
+    bins.push({ start: binStart, end: binEnd });
+    frequencies.push(0);
+  }
+  
+  // Count frequencies
+  prices.forEach(price => {
+    const binIndex = Math.floor((price - startBin) / binWidth);
+    // Handle edge case where price equals the last bin's end
+    const actualIndex = binIndex >= frequencies.length ? frequencies.length - 1 : binIndex;
+    if (actualIndex >= 0 && actualIndex < frequencies.length) {
+      frequencies[actualIndex]++;
+    }
+  });
+  
+  return { bins, frequencies, binWidth };
+}
+
+/**
+ * Render histogram visualization
+ */
+function renderHistogram(listings) {
+  const histogramContainer = document.getElementById('ebayHistogramContainer');
+  if (!histogramContainer) return;
+  
+  const histogramData = generateHistogramData(listings);
+  
+  if (!histogramData.bins.length) {
+    histogramContainer.innerHTML = '<div class="ebay-histogram-empty">No price data available</div>';
+    return;
+  }
+  
+  const maxFrequency = Math.max(...histogramData.frequencies);
+  const maxBarHeight = 200; // pixels
+  const numBins = histogramData.bins.length;
+  const shouldRotateLabels = numBins > 8; // Rotate labels if too many bins
+  
+  histogramContainer.innerHTML = `
+    <div class="ebay-histogram-header">
+      <h4>Price Distribution</h4>
+      <span class="ebay-histogram-info">Bin width: £${histogramData.binWidth.toFixed(2)}</span>
+    </div>
+    <div class="ebay-histogram-chart ${shouldRotateLabels ? 'rotated-labels' : ''}">
+      ${histogramData.bins.map((bin, index) => {
+        const frequency = histogramData.frequencies[index];
+        const height = maxFrequency > 0 ? (frequency / maxFrequency) * maxBarHeight : 0;
+        const binLabel = `£${bin.start.toFixed(0)}-£${bin.end.toFixed(0)}`;
+        const labelText = bin.start.toFixed(0);
+        
+        return `
+          <div class="ebay-histogram-bar-container" title="${binLabel}: ${frequency} listing${frequency !== 1 ? 's' : ''}">
+            <div class="ebay-histogram-bar" style="height: ${height}px;">
+              ${frequency > 0 ? `<span class="ebay-histogram-frequency">${frequency}</span>` : ''}
+            </div>
+            <div class="ebay-histogram-label ${shouldRotateLabels ? 'rotated' : ''}">${labelText}</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
 function calculateStats(listings) {
   // Extract prices from listings
   const prices = listings
@@ -1086,10 +1269,26 @@ function resetEbayAnalysis() {
 
   if (rrpDisplay) rrpDisplay.textContent = '--';
   if (offerDisplay) offerDisplay.textContent = '--';
+  
+  // Reset numeric values
+  ebayRrpNumeric = null;
+  ebayOfferNumeric = null;
 
   const analysisWrapper = document.querySelector('.ebay-analysis-wrapper');
   if (analysisWrapper) {
     analysisWrapper.style.display = 'none';
+  }
+
+  // Clear and hide histogram
+  const histogramContainer = document.getElementById('ebayHistogramContainer');
+  if (histogramContainer) {
+    histogramContainer.innerHTML = '';
+    histogramContainer.style.display = 'none';
+  }
+  
+  // Uncheck histogram checkbox
+  if (ebayShowHistogramCheckbox) {
+    ebayShowHistogramCheckbox.checked = false;
   }
 
   // Disable the Complete button when resetting
@@ -1118,11 +1317,12 @@ function saveEbayWizardState() {
       median: document.getElementById('ebay-median')?.textContent,
       mode: document.getElementById('ebay-mode')?.textContent
     },
-    selectedOffer: offerDisplay?.textContent || '',
+    selectedOffer: ebayOfferNumeric ?? (offerDisplay?.textContent ? parseFloat(offerDisplay.textContent.replace(/,/g, '')) : null),
     suggestedPriceMethod: 'Average Price',
-    rrp: rrpDisplay?.textContent || '',
+    rrp: ebayRrpNumeric ?? (rrpDisplay?.textContent ? parseFloat(rrpDisplay.textContent.replace(/,/g, '')) : null),
     listings: window.currentEbayResults || [],
     showAnomalies: document.getElementById('ebayShowAnomalies')?.checked ?? true,
+    showHistogram: ebayShowHistogramCheckbox?.checked ?? false,
     uiState: {
       expandedSections: Array.from(
         ebayFiltersContainer.querySelectorAll('.ebay-filter-section.expanded h4')
@@ -1148,6 +1348,11 @@ window.restoreEbayWizardState = function restoreEbayWizardState() {
   const anomaliesCheckbox = document.getElementById('ebayShowAnomalies');
   if (anomaliesCheckbox) {
     anomaliesCheckbox.checked = state.showAnomalies !== undefined ? state.showAnomalies : true;
+  }
+  
+  // Restore histogram checkbox (default to unchecked)
+  if (ebayShowHistogramCheckbox) {
+    ebayShowHistogramCheckbox.checked = state.showHistogram ?? false;
   }
 
   // Restore category from either ebay.category or cex.category (they should be synced)
@@ -1200,8 +1405,22 @@ window.restoreEbayWizardState = function restoreEbayWizardState() {
   document.getElementById('ebay-median').textContent = state.prices?.median ?? '-';
   document.getElementById('ebay-mode').textContent = state.prices?.mode ?? '-';
 
-  if (rrpDisplay) rrpDisplay.textContent = state.rrp || '--';
-  if (offerDisplay) offerDisplay.textContent = state.selectedOffer || '--';
+  // Restore numeric values
+  if (state.rrp != null) {
+    ebayRrpNumeric = typeof state.rrp === 'number' ? state.rrp : parseFloat(String(state.rrp).replace(/,/g, ''));
+    rrpDisplay.textContent = isNaN(ebayRrpNumeric) ? '--' : ebayRrpNumeric.toLocaleString();
+  } else {
+    ebayRrpNumeric = null;
+    if (rrpDisplay) rrpDisplay.textContent = '--';
+  }
+  
+  if (state.selectedOffer != null) {
+    ebayOfferNumeric = typeof state.selectedOffer === 'number' ? state.selectedOffer : parseFloat(String(state.selectedOffer).replace(/,/g, ''));
+    offerDisplay.textContent = isNaN(ebayOfferNumeric) ? '--' : ebayOfferNumeric.toLocaleString();
+  } else {
+    ebayOfferNumeric = null;
+    if (offerDisplay) offerDisplay.textContent = '--';
+  }
 
   if (state.listings?.length) {
     // Show the analysis wrapper when restoring state with results
@@ -1241,6 +1460,22 @@ window.restoreEbayWizardState = function restoreEbayWizardState() {
       document
         .querySelectorAll('.ebay-listing-card[data-anomalous="true"]')
         .forEach(card => card.style.display = 'none');
+    }
+
+    // Restore histogram visibility and render if enabled
+    if (ebayShowHistogramCheckbox) {
+      ebayShowHistogramCheckbox.checked = state.showHistogram ?? false;
+      const histogramContainer = document.getElementById('ebayHistogramContainer');
+      if (histogramContainer) {
+        if (ebayShowHistogramCheckbox.checked) {
+          const showAnomalies = document.getElementById('ebayShowAnomalies')?.checked ?? true;
+          const listingsForHistogram = showAnomalies ? state.listings : removeOutliers(state.listings);
+          renderHistogram(listingsForHistogram);
+          histogramContainer.style.display = 'block';
+        } else {
+          histogramContainer.style.display = 'none';
+        }
+      }
     }
 
     // Enable the Complete button when restoring state with results
