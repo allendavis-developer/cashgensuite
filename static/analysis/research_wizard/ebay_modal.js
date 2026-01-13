@@ -116,9 +116,14 @@ async function runEbayScrape() {
     const categoryInputValue = ebayCategoryTomSelect?.getValue() || '';
     const categoryText = ebayCategoryTomSelect?.options[categoryInputValue]?.text || '';
     
+    // If N/A is selected, category should be null/empty
+    const category = (categoryInputValue === 'na' || categoryText === 'N/A') 
+      ? null 
+      : categoryText.toLowerCase(); // lowercase for mapping
+    
     // Build the options object for buildEbayUrl
     const options = {
-        category: categoryText.toLowerCase(), // lowercase for mapping
+        category: category,
         model: window.wizardState.ebay?.model || '', // if you store model in wizard state
         attributes: window.wizardState.ebay?.attributes || {}, // e.g., { storage: "256GB" }
         ebayFilterSold,
@@ -935,6 +940,21 @@ function initEbayCategorySelect() {
 
     // Persist to wizard state
     window.wizardState.ebay = window.wizardState.ebay || {};
+    
+    // If N/A is selected, set category to null
+    if (value === 'na') {
+      window.wizardState.ebay.category = null;
+      
+      // Also set CeX category to null
+      if (!window.wizardState.cex) {
+        window.wizardState.cex = {};
+      }
+      window.wizardState.cex.category = null;
+      
+      console.log('eBay category set to N/A (null)');
+      return;
+    }
+
     const categoryData = {
       id: value,
       name: option?.text || null
@@ -984,6 +1004,12 @@ function populateEbayCategories() {
   ebayCategoryTomSelect.clear();
   ebayCategoryTomSelect.clearOptions();
 
+  // Add N/A option first (auto-selected)
+  ebayCategoryTomSelect.addOption({
+    value: 'na',
+    text: 'N/A'
+  });
+
   ebayCategoryCache.categories.forEach(cat => {
     ebayCategoryTomSelect.addOption({
       value: cat.id,
@@ -992,6 +1018,9 @@ function populateEbayCategories() {
   });
 
   ebayCategoryTomSelect.refreshOptions(false);
+  
+  // Auto-select N/A
+  ebayCategoryTomSelect.setValue('na');
 }
 
 
@@ -1123,26 +1152,38 @@ window.restoreEbayWizardState = function restoreEbayWizardState() {
 
   // Restore category from either ebay.category or cex.category (they should be synced)
   const category = state.category || window.wizardState.cex?.category;
-  if (category && category.id && ebayCategoryTomSelect) {
-    // Check if category exists in the dropdown
-    const categoryExists = ebayCategoryTomSelect.options[category.id];
-    if (categoryExists) {
+  if (ebayCategoryTomSelect) {
+    if (!category || !category.id) {
+      // No category or null category means N/A
       window.ebayIsSyncingCategory = true;
-      ebayCategoryTomSelect.setValue(category.id);
+      ebayCategoryTomSelect.setValue('na');
       setTimeout(() => { window.ebayIsSyncingCategory = false; }, 100);
-    } else if (category.name) {
-      // Category might not be loaded yet, add it
-      ebayCategoryTomSelect.addOption({ value: category.id, text: category.name });
-      ebayCategoryTomSelect.refreshOptions(false);
-      window.ebayIsSyncingCategory = true;
-      ebayCategoryTomSelect.setValue(category.id);
-      setTimeout(() => { window.ebayIsSyncingCategory = false; }, 100);
+      
+      // Ensure both are synced in wizard state
+      if (!window.wizardState.cex) window.wizardState.cex = {};
+      window.wizardState.cex.category = null;
+      window.wizardState.ebay.category = null;
+    } else {
+      // Check if category exists in the dropdown
+      const categoryExists = ebayCategoryTomSelect.options[category.id];
+      if (categoryExists) {
+        window.ebayIsSyncingCategory = true;
+        ebayCategoryTomSelect.setValue(category.id);
+        setTimeout(() => { window.ebayIsSyncingCategory = false; }, 100);
+      } else if (category.name) {
+        // Category might not be loaded yet, add it
+        ebayCategoryTomSelect.addOption({ value: category.id, text: category.name });
+        ebayCategoryTomSelect.refreshOptions(false);
+        window.ebayIsSyncingCategory = true;
+        ebayCategoryTomSelect.setValue(category.id);
+        setTimeout(() => { window.ebayIsSyncingCategory = false; }, 100);
+      }
+      
+      // Ensure both are synced in wizard state
+      if (!window.wizardState.cex) window.wizardState.cex = {};
+      window.wizardState.cex.category = category;
+      window.wizardState.ebay.category = category;
     }
-    
-    // Ensure both are synced in wizard state
-    if (!window.wizardState.cex) window.wizardState.cex = {};
-    window.wizardState.cex.category = category;
-    window.wizardState.ebay.category = category;
   }
 
   // Only auto-run if we have no results yet
