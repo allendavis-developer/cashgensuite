@@ -443,7 +443,7 @@
 
 .ebay-pricing-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 }
 
@@ -497,6 +497,30 @@
   font-size: 14px;
   color: #666;
   font-weight: 500;
+}
+
+.ebay-pricing-display {
+  display: flex;
+  align-items: center;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 10px 14px;
+  gap: 6px;
+}
+
+.ebay-pricing-display .currency {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.ebay-pricing-display .ebay-pricing-value {
+  flex: 1;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: inherit;
 }
 
 /* ================= ANALYSIS TABLE ================= */

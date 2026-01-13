@@ -13,9 +13,8 @@ const ebaySelectedCount = document.getElementById('ebaySelectedCount');
 const filterSoldCheckbox = document.getElementById('filterSold');
 const filterUKCheckbox = document.getElementById('filterUK');
 const filterUsedCheckbox = document.getElementById('filterUsed');
-const rrpInput = document.getElementById('ebaySuggestedRrp');
-const marginInput = document.getElementById('ebayMinMargin');
-const offerInput = document.getElementById('ebayOfferValue');
+const rrpDisplay = document.getElementById('ebaySuggestedRrp');
+const offerDisplay = document.getElementById('ebayOfferValue');
 
 // ============================================
 // STATE VARIABLES
@@ -152,13 +151,20 @@ async function runEbayScrape() {
           // Keep only the first 20 listings
           const listings = response.results.slice(0, 20);
 
-          const rawPrices = listings
-              .map(item => Number(item.price))
-              .filter(p => !isNaN(p) && p > 0);
+          // Filter to valid listings with prices
+          const validListings = listings.filter(item => {
+            const price = Number(item.price);
+            return !isNaN(price) && price > 0;
+          });
 
-          const cleanedPrices = removeOutliers(rawPrices);
-          window._ebayPriceCache = { rawPrices, cleanedPrices };
+          // Store only raw listings - everything else can be derived
+          window._ebayPriceCache = { 
+            rawListings: validListings
+          };
 
+          // Derive cleaned listings for anomaly detection
+          const cleanedListings = removeOutliers(validListings);
+          const cleanedPrices = cleanedListings.map(item => Number(item.price));
           const cleanedSet = new Set(
               cleanedPrices.map(p => Number(p.toFixed(2)))
           );
@@ -173,7 +179,7 @@ async function runEbayScrape() {
           renderResults(listings);
           updateVisibleEbayCount();
 
-          const stats = calculateStats(cleanedPrices);
+          const stats = calculateStats(cleanedListings);
           document.getElementById('ebay-min').textContent = stats.min;
           document.getElementById('ebay-avg').textContent = stats.avg;
           document.getElementById('ebay-median').textContent = stats.median;
@@ -185,16 +191,24 @@ async function runEbayScrape() {
             analysisWrapper.style.display = 'block';
           }
 
-          // Suggested RRP
-          const avgNum = Number(stats.avg);
+          // Suggested RRP and Offer (40% of intelligent average)
+          const intelligentAvg = calculateIntelligentAverage(cleanedListings);
+          const normalAvg = Number(stats.avg);
+          const avgNum = intelligentAvg !== null ? intelligentAvg : normalAvg;
+          
+          console.log('=== eBay Average Calculation ===');
+          console.log('Normal average (table):', normalAvg);
+          console.log('Intelligent average:', intelligentAvg);
+          console.log('Using for RRP:', avgNum);
+          console.log('RRP value:', Math.round(avgNum));
+          console.log('Listings count:', cleanedListings.length);
+          console.log('Listings with sold dates:', cleanedListings.filter(item => parseSoldDate(item.sold)).length);
+          
           if (!isNaN(avgNum)) {
-              rrpInput.value = Math.round(avgNum);
-              offerInput.value = (Math.round(avgNum) * 0.4).toFixed(0);
-          }
-
-          if (marginInput && !marginInput.value) {
-              marginInput.value = 50;
-              recalculateOfferValue();
+              const rrp = Math.round(avgNum);
+              const offer = Math.round(avgNum * 0.4);
+              rrpDisplay.textContent = rrp.toLocaleString();
+              offerDisplay.textContent = offer.toLocaleString();
           }
 
           refreshFiltersFromUrl(ebayUrl);
@@ -215,16 +229,7 @@ async function runEbayScrape() {
   cb.addEventListener('change', saveEbayWizardState);
 });
 
-// Pricing inputs - recalculate and save
-rrpInput.addEventListener('input', () => {
-  recalculateOfferValue();
-  saveEbayWizardState();
-});
-
-marginInput.addEventListener('input', () => {
-  recalculateOfferValue();
-  saveEbayWizardState();
-});
+// No event listeners needed for display-only values
 
 // Back button
 document.querySelector('.rw-back-ebay')?.addEventListener('click', () => {
@@ -234,27 +239,37 @@ document.querySelector('.rw-back-ebay')?.addEventListener('click', () => {
 
 document.getElementById('ebayShowAnomalies')?.addEventListener('change', e => {
   const cache = window._ebayPriceCache;
-  if (!cache) return;
+  if (!cache || !cache.rawListings) return;
 
-  const prices = document.getElementById('ebayShowAnomalies').checked
-    ? cache.rawPrices
-    : cache.cleanedPrices;
+  // Derive cleaned listings from raw listings
+  const cleanedListings = removeOutliers(cache.rawListings);
+  const listings = document.getElementById('ebayShowAnomalies').checked
+    ? cache.rawListings
+    : cleanedListings;
 
-  const stats = calculateStats(prices);
+  const stats = calculateStats(listings);
 
   document.getElementById('ebay-min').textContent = stats.min;
   document.getElementById('ebay-avg').textContent = stats.avg;
   document.getElementById('ebay-median').textContent = stats.median;
   document.getElementById('ebay-mode').textContent = stats.mode;
 
-  // keep your existing RRP logic intact
-  const medianNum = Number(stats.median);
-  if (!isNaN(medianNum)) {
-    let rounded = Math.round(medianNum);
-    let suggestedRrp = (rounded % 2 === 0) ? rounded - 2 : rounded - 1;
-    if (suggestedRrp < 0) suggestedRrp = 0;
-    rrpInput.value = suggestedRrp.toFixed(0);
-    recalculateOfferValue();
+  // Update RRP based on intelligent average, Offer is 40% of intelligent average
+  const intelligentAvg = calculateIntelligentAverage(listings);
+  const normalAvg = Number(stats.avg);
+  const avgNum = intelligentAvg !== null ? intelligentAvg : normalAvg;
+  
+  console.log('=== eBay Average Calculation (Anomalies Toggle) ===');
+  console.log('Normal average (table):', normalAvg);
+  console.log('Intelligent average:', intelligentAvg);
+  console.log('Using for RRP:', avgNum);
+  console.log('RRP value:', Math.round(avgNum));
+  
+  if (!isNaN(avgNum)) {
+    const rrp = Math.round(avgNum);
+    const offer = Math.round(avgNum * 0.4);
+    rrpDisplay.textContent = rrp.toLocaleString();
+    offerDisplay.textContent = offer.toLocaleString();
   }
 
   const show = e.target.checked;
@@ -638,12 +653,192 @@ function renderResults(results) {
 // STATS & CALCULATIONS
 // ============================================
 
-function removeOutliers(prices) {
-  if (prices.length < 4) return prices;
+/**
+ * Parse sold date from text like "Sold 12 Jan 2026"
+ * Returns Date object or null if parsing fails
+ */
+function parseSoldDate(soldText) {
+  if (!soldText || typeof soldText !== 'string') return null;
+  
+  // Remove "Sold" prefix and trim
+  const dateStr = soldText.replace(/^Sold\s+/i, '').trim();
+  if (!dateStr) return null;
+  
+  // Try to parse the date
+  // Format: "12 Jan 2026" or "12 January 2026"
+  const months = {
+    'jan': 0, 'january': 0,
+    'feb': 1, 'february': 1,
+    'mar': 2, 'march': 2,
+    'apr': 3, 'april': 3,
+    'may': 4,
+    'jun': 5, 'june': 5,
+    'jul': 6, 'july': 6,
+    'aug': 7, 'august': 7,
+    'sep': 8, 'september': 8,
+    'oct': 9, 'october': 9,
+    'nov': 10, 'november': 10,
+    'dec': 11, 'december': 11
+  };
+  
+  // Match pattern: day month year
+  const match = dateStr.match(/^(\d{1,2})\s+(\w+)\s+(\d{4})$/i);
+  if (match) {
+    const day = parseInt(match[1], 10);
+    const monthName = match[2].toLowerCase();
+    const year = parseInt(match[3], 10);
+    const month = months[monthName];
+    
+    if (month !== undefined && day >= 1 && day <= 31) {
+      return new Date(year, month, day);
+    }
+  }
+  
+  // Fallback: try native Date parsing
+  const parsed = new Date(dateStr);
+  if (!isNaN(parsed.getTime())) {
+    return parsed;
+  }
+  
+  return null;
+}
+
+/**
+ * Calculate intelligent time-weighted average based on sold dates
+ * Implements the algorithm described in the requirements
+ */
+function calculateIntelligentAverage(listings) {
+  // Filter to only listings with valid price and sold date
+  const validListings = listings
+    .map(item => {
+      const price = Number(item.price);
+      const soldDate = parseSoldDate(item.sold);
+      if (isNaN(price) || price <= 0 || !soldDate) return null;
+      return { price, date: soldDate };
+    })
+    .filter(item => item !== null);
+  
+  console.log('[calculateIntelligentAverage] Total listings:', listings.length);
+  console.log('[calculateIntelligentAverage] Valid listings with sold dates:', validListings.length);
+  
+  if (validListings.length === 0) {
+    console.log('[calculateIntelligentAverage] No valid listings, returning null');
+    return null;
+  }
+  
+  const n = validListings.length;
+  const now = new Date();
+  
+  // Case 1: 4+ data points - learn from time
+  if (n >= 4) {
+    console.log('[calculateIntelligentAverage] Case 1: 4+ data points');
+    // Sort by date (oldest first)
+    validListings.sort((a, b) => a.date.getTime() - b.date.getTime());
+    
+    // Calculate time differences in days
+    const timeDiffs = [];
+    const logPriceDiffs = [];
+    
+    // Minimum time delta to avoid numerical instability from same-day noise
+    // This is a physics/clock constant, not an economic parameter
+    const MIN_DT_DAYS = 0.25; // 6 hours - ignore sub-day price jitter
+    
+    for (let i = 1; i < validListings.length; i++) {
+      const dt = (validListings[i].date.getTime() - validListings[i - 1].date.getTime()) / (1000 * 60 * 60 * 24); // days
+      // Only consider time deltas above minimum threshold to avoid pathological volatility
+      // from same-day sales with small price differences
+      if (dt > MIN_DT_DAYS) {
+        timeDiffs.push(dt);
+        const logDiff = Math.abs(Math.log(validListings[i].price) - Math.log(validListings[i - 1].price));
+        logPriceDiffs.push(logDiff / dt);
+      }
+    }
+    
+    if (timeDiffs.length === 0) {
+      // No time differences, fall back to simple average
+      console.log('[calculateIntelligentAverage] No valid time differences, falling back to simple average');
+      const sum = validListings.reduce((s, item) => s + item.price, 0);
+      const simpleAvg = sum / n;
+      console.log('[calculateIntelligentAverage] Simple average:', simpleAvg);
+      return simpleAvg;
+    }
+    
+    // Measure observed instability: median of |log(price_i) - log(price_i-1)| / Δt_i
+    const sortedInstability = [...logPriceDiffs].sort((a, b) => a - b);
+    const mid = Math.floor(sortedInstability.length / 2);
+    const v = sortedInstability.length % 2 === 0
+      ? (sortedInstability[mid - 1] + sortedInstability[mid]) / 2
+      : sortedInstability[mid];
+    
+    console.log('[calculateIntelligentAverage] Volatility (v):', v);
+    console.log('[calculateIntelligentAverage] Valid time deltas:', timeDiffs.length);
+    
+    // Convert instability into trust weights: w_i = e^(-v * t_i)
+    // where t_i is time since sale (in days)
+    const weights = validListings.map(item => {
+      const daysSinceSale = (now.getTime() - item.date.getTime()) / (1000 * 60 * 60 * 24);
+      return Math.exp(-v * daysSinceSale);
+    });
+    
+    console.log('[calculateIntelligentAverage] Weights:', weights);
+    
+    // Compute weighted average: E = Σ(p_i * w_i) / Σ(w_i)
+    const weightedSum = validListings.reduce((sum, item, i) => sum + item.price * weights[i], 0);
+    const weightSum = weights.reduce((sum, w) => sum + w, 0);
+    
+    const result = weightSum > 0 ? weightedSum / weightSum : null;
+    console.log('[calculateIntelligentAverage] Weighted average result:', result);
+    return result;
+  }
+  
+  // Case 2: 2-3 data points - geometric center with directional trust
+  if (n === 2 || n === 3) {
+    console.log('[calculateIntelligentAverage] Case 2: 2-3 data points');
+    // Work in log space
+    const logPrices = validListings.map(item => Math.log(item.price));
+    const avgLog = logPrices.reduce((sum, lp) => sum + lp, 0) / n;
+    const geometricCenter = Math.exp(avgLog);
+    
+    // Find newest price
+    const newest = validListings.reduce((newest, item) => 
+      item.date > newest.date ? item : newest
+    );
+    
+    console.log('[calculateIntelligentAverage] Geometric center:', geometricCenter);
+    console.log('[calculateIntelligentAverage] Newest price:', newest.price);
+    
+    // Apply directional trust
+    let result;
+    if (newest.price < geometricCenter) {
+      // If newest price < G → trust newest
+      result = newest.price;
+      console.log('[calculateIntelligentAverage] Newest < G, using newest:', result);
+    } else {
+      // Else → split between G and newest
+      result = (geometricCenter + newest.price) / 2;
+      console.log('[calculateIntelligentAverage] Newest >= G, using average:', result);
+    }
+    return result;
+  }
+  
+  // Case 3: 1 data point - pure observation
+  console.log('[calculateIntelligentAverage] Case 3: 1 data point');
+  const result = validListings[0].price;
+  console.log('[calculateIntelligentAverage] Single price:', result);
+  return result;
+}
+
+function removeOutliers(listings) {
+  // Extract prices for outlier removal
+  const prices = listings
+    .map(item => Number(item.price))
+    .filter(p => !isNaN(p) && p > 0);
+  
+  if (prices.length < 4) return listings;
 
   // --- Step 0: keep only valid positive prices
   const valid = prices.filter(p => p > 0);
-  if (valid.length < 4) return prices;
+  if (valid.length < 4) return listings;
 
   // --- Step 1: semantic floor (meaning before statistics)
   const sortedLinear = [...valid].sort((a, b) => a - b);
@@ -661,7 +856,8 @@ function removeOutliers(prices) {
 
   // If semantic filtering nukes too much data, fall back
   if (semanticFiltered.length < 4) {
-    return semanticFiltered;
+    const priceSet = new Set(semanticFiltered);
+    return listings.filter(item => priceSet.has(Number(item.price)));
   }
 
   // --- Step 2: log-space IQR
@@ -691,9 +887,13 @@ function removeOutliers(prices) {
   const lowerBound = q1 - 1.5 * iqr;
   const upperBound = q3 + 3.0 * iqr;
 
-  return pairs
-    .filter(p => p.log >= lowerBound && p.log <= upperBound)
-    .map(p => p.price);
+  const validPrices = new Set(
+    pairs
+      .filter(p => p.log >= lowerBound && p.log <= upperBound)
+      .map(p => p.price)
+  );
+  
+  return listings.filter(item => validPrices.has(Number(item.price)));
 }
 
 // ============================================
@@ -795,7 +995,12 @@ function populateEbayCategories() {
 }
 
 
-function calculateStats(prices) {
+function calculateStats(listings) {
+  // Extract prices from listings
+  const prices = listings
+    .map(item => Number(item.price))
+    .filter(p => !isNaN(p) && p > 0);
+  
   if (!prices.length) {
     return {
       min: '-',
@@ -810,7 +1015,7 @@ function calculateStats(prices) {
   // Min
   const min = sorted[0];
 
-  // Average
+  // Normal arithmetic average (for display in stats table)
   const avg = sorted.reduce((sum, p) => sum + p, 0) / sorted.length;
 
   // Median
@@ -842,18 +1047,7 @@ function calculateStats(prices) {
   };
 }
 
-function recalculateOfferValue() {
-  const rrp = Number(rrpInput.value);
-  const margin = Number(marginInput.value);
-
-  if (isNaN(rrp) || isNaN(margin)) {
-    offerInput.value = '';
-    return;
-  }
-
-  const offer = rrp * (1 - margin / 100);
-  offerInput.value = offer.toFixed(0);
-}
+// Offer is always 40% of average, no recalculation needed
 
 function resetEbayAnalysis() {
   document.getElementById('ebay-min').textContent = '-';
@@ -861,13 +1055,8 @@ function resetEbayAnalysis() {
   document.getElementById('ebay-median').textContent = '-';
   document.getElementById('ebay-mode').textContent = '-';
 
-  const rrpEl = document.getElementById('ebaySuggestedRrp');
-  const marginEl = document.getElementById('ebayMinMargin');
-  const offerEl = document.getElementById('ebayOfferValue');
-
-  if (rrpEl) rrpEl.value = '';
-  if (marginEl) marginEl.value = '';
-  if (offerEl) offerEl.value = '';
+  if (rrpDisplay) rrpDisplay.textContent = '--';
+  if (offerDisplay) offerDisplay.textContent = '--';
 
   const analysisWrapper = document.querySelector('.ebay-analysis-wrapper');
   if (analysisWrapper) {
@@ -900,10 +1089,9 @@ function saveEbayWizardState() {
       median: document.getElementById('ebay-median')?.textContent,
       mode: document.getElementById('ebay-mode')?.textContent
     },
-    selectedOffer: offerInput.value,
+    selectedOffer: offerDisplay?.textContent || '',
     suggestedPriceMethod: 'Average Price',
-    rrp: rrpInput.value,
-    margin: marginInput.value,
+    rrp: rrpDisplay?.textContent || '',
     listings: window.currentEbayResults || [],
     showAnomalies: document.getElementById('ebayShowAnomalies')?.checked ?? true,
     uiState: {
@@ -971,9 +1159,8 @@ window.restoreEbayWizardState = function restoreEbayWizardState() {
   document.getElementById('ebay-median').textContent = state.prices?.median ?? '-';
   document.getElementById('ebay-mode').textContent = state.prices?.mode ?? '-';
 
-  rrpInput.value = state.rrp || '';
-  marginInput.value = state.margin || '';
-  offerInput.value = state.selectedOffer || '';
+  if (rrpDisplay) rrpDisplay.textContent = state.rrp || '--';
+  if (offerDisplay) offerDisplay.textContent = state.selectedOffer || '--';
 
   if (state.listings?.length) {
     // Show the analysis wrapper when restoring state with results
@@ -984,12 +1171,28 @@ window.restoreEbayWizardState = function restoreEbayWizardState() {
 
     window.currentEbayResults = state.listings;
 
-    const rawPrices = state.listings
-      .map(item => Number(item.price))
-      .filter(p => !isNaN(p) && p > 0);
+    // Filter to valid listings with prices
+    const validListings = state.listings.filter(item => {
+      const price = Number(item.price);
+      return !isNaN(price) && price > 0;
+    });
 
-    const cleanedPrices = removeOutliers(rawPrices);
-    window._ebayPriceCache = { rawPrices, cleanedPrices };
+    // Store only raw listings - everything else can be derived
+    window._ebayPriceCache = { 
+      rawListings: validListings
+    };
+
+    // Derive cleaned listings for anomaly detection
+    const cleanedListings = removeOutliers(validListings);
+    const cleanedPrices = cleanedListings.map(item => Number(item.price));
+    const cleanedSet = new Set(
+      cleanedPrices.map(p => Number(p.toFixed(2)))
+    );
+
+    state.listings.forEach(item => {
+      const price = Number(Number(item.price).toFixed(2));
+      item.isAnomalous = !cleanedSet.has(price);
+    });
 
     renderResults(state.listings);
 

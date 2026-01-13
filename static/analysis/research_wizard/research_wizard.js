@@ -116,17 +116,55 @@
       
       // Restore category from wizard state if available
       if (typeof restoreCategoryFromWizardState === 'function') {
-        restoreCategoryFromWizardState();
-      }
-      
-      // Only focus category if not in quick add mode
-      if (!isQuickAddMode) {
-        requestAnimationFrame(() => {
-          // Focus the category TomSelect input
-          if (typeof categoryTomSelect !== 'undefined' && categoryTomSelect) {
-            categoryTomSelect.focus();
+        restoreCategoryFromWizardState().then(categoryWasRestored => {
+          // Only focus if not in quick add mode
+          if (!isQuickAddMode) {
+            requestAnimationFrame(() => {
+              if (categoryWasRestored) {
+                // Category was pre-selected, focus and open subcategory dropdown
+                if (typeof subcategoryTomSelect !== 'undefined' && subcategoryTomSelect) {
+                  // Wait for subcategories to be rendered and DOM to update
+                  setTimeout(() => {
+                    // Check if subcategories are available
+                    const hasOptions = Object.keys(subcategoryTomSelect.options).length > 0;
+                    if (hasOptions) {
+                      subcategoryTomSelect.focus();
+                      subcategoryTomSelect.open();
+                    } else {
+                      // Fallback to category if no subcategories yet
+                      if (typeof categoryTomSelect !== 'undefined' && categoryTomSelect) {
+                        categoryTomSelect.focus();
+                      }
+                    }
+                  }, 300);
+                }
+              } else {
+                // No category pre-selected, focus category dropdown
+                if (typeof categoryTomSelect !== 'undefined' && categoryTomSelect) {
+                  categoryTomSelect.focus();
+                }
+              }
+            });
+          }
+        }).catch(() => {
+          // If restoration fails, just focus category as fallback
+          if (!isQuickAddMode) {
+            requestAnimationFrame(() => {
+              if (typeof categoryTomSelect !== 'undefined' && categoryTomSelect) {
+                categoryTomSelect.focus();
+              }
+            });
           }
         });
+      } else {
+        // No restore function, just focus category
+        if (!isQuickAddMode) {
+          requestAnimationFrame(() => {
+            if (typeof categoryTomSelect !== 'undefined' && categoryTomSelect) {
+              categoryTomSelect.focus();
+            }
+          });
+        }
       }
     }
   }
