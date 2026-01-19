@@ -14,12 +14,12 @@ urlpatterns = [
     
 
     # ----------------------------- API -----------------------------
-    
-
     path("bulk-analysis", v.bulk_analysis, name='bulk_analysis'),
     path('save_listing/', v.save_listing, name='save_listing'),
     path("save_scraped_data/", v.save_scraped_data, name="save_scraped_data"),
     path("api/save-overnight-scraped-data/", v.save_overnight_scraped_data, name="api-save-overnight-scraped-data"),
+    path("api/save-scraped-variants/", v.save_scraped_variants, name="api-save-scraped-variants"),
+
     path('admin/get-models/', v.get_models, name='get_models'),
 
     path("api/generate_search_term/", v.generate_search_term, name="generate_search_term"),

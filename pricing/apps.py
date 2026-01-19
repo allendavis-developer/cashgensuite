@@ -7,3 +7,4 @@ class PricingConfig(AppConfig):
 
     def ready(self):
         import pricing.models_v2  # noqa
+        import pricing.admin_v2  # noqa

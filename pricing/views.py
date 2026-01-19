@@ -24,8 +24,10 @@ from pricing.models import (
     CEXPricingRule
     )
 
-import json, requests, traceback, re
+import json, requests, traceback, re, logging
 from decimal import Decimal, InvalidOperation
+
+logger = logging.getLogger(__name__)
 
 from pricing.utils.ai_utils import call_gemini_sync, generate_price_analysis, generate_bulk_price_analysis
 from pricing.utils.competitor_utils import get_competitor_data
@@ -1718,8 +1720,198 @@ def save_overnight_scraped_data(request):
         traceback.print_exc()
         connection.close()
         return JsonResponse({'success': False, 'error': str(e)})
-    
-    
+
+from decimal import Decimal
+import json
+
+from django.db import transaction
+from django.http import JsonResponse
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+
+from .models_v2 import Variant, VariantPriceHistory, ConditionGrade
+
+
+@csrf_exempt
+@require_POST
+def save_scraped_variants(request):
+    logger.info("save_scraped_variants: starting")
+
+    try:
+        listings = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    if not isinstance(listings, list):
+        return JsonResponse({"error": "Payload must be a list"}, status=400)
+
+    if not listings:
+        return JsonResponse({"received": 0})
+
+    now = timezone.now()
+
+    # ---------- normalize input ----------
+    normalized = []
+    condition_codes = set()
+    skus = set()
+
+    for e in listings:
+        if not e.get("id") or e.get("price") is None:
+            continue
+
+        try:
+            price = Decimal(str(e["price"]))
+        except Exception:
+            continue
+
+        condition = (e.get("condition") or "N/A").strip().upper()
+
+        skus.add(e["id"])
+        condition_codes.add(condition)
+
+        normalized.append({
+            "sku": e["id"],
+            "title": (e.get("title") or "").strip(),
+            "price": price,
+            "condition": condition,
+        })
+
+    if not normalized:
+        return JsonResponse({"received": 0})
+
+    # ---------- preload condition grades ----------
+    condition_map = {
+        c.code: c
+        for c in ConditionGrade.objects.filter(code__in=condition_codes)
+    }
+
+    missing_conditions = condition_codes - condition_map.keys()
+    if missing_conditions:
+        ConditionGrade.objects.bulk_create(
+            [ConditionGrade(code=c) for c in missing_conditions],
+            ignore_conflicts=True,
+        )
+        condition_map.update({
+            c.code: c
+            for c in ConditionGrade.objects.filter(code__in=condition_codes)
+        })
+
+    # ---------- preload existing variants ----------
+    existing_variants = {
+        v.cex_sku: v
+        for v in Variant.objects.filter(cex_sku__in=skus)
+    }
+
+    variants_to_create = []
+    variants_to_update = []
+    price_history = []
+
+    # ---------- build changes ----------
+    for row in normalized:
+        sku = row["sku"]
+        price = row["price"]
+        title = row["title"]
+        condition = condition_map[row["condition"]]
+
+        variant = existing_variants.get(sku)
+
+        if not variant:
+            variants_to_create.append(
+                Variant(
+                    cex_sku=sku,
+                    product=None,
+                    condition_grade=condition,
+                    current_price_gbp=price,
+                    title=title,
+                    variant_signature="",
+                )
+            )
+            continue
+
+        dirty = False
+
+        if variant.condition_grade != condition:
+            variant.condition_grade = condition
+            dirty = True
+
+        if variant.title != title:
+            variant.title = title
+            dirty = True
+
+        if variant.current_price_gbp != price:
+            price_history.append(
+                VariantPriceHistory(
+                    variant=variant,
+                    price_gbp=price,
+                    recorded_at=now,
+                )
+            )
+            variant.current_price_gbp = price
+            dirty = True
+
+        if dirty:
+            variants_to_update.append(variant)
+
+    # ---------- single transaction ----------
+    with transaction.atomic():
+
+        # INSERT (conflict-safe)
+        if variants_to_create:
+            Variant.objects.bulk_create(
+                variants_to_create,
+                batch_size=1000,
+                ignore_conflicts=True,
+            )
+
+        # REFRESH after insert (truth source)
+        all_variants = {
+            v.cex_sku: v
+            for v in Variant.objects.filter(cex_sku__in=skus)
+        }
+
+        # INITIAL price history only for truly new variants
+        newly_created_skus = all_variants.keys() - existing_variants.keys()
+        for sku in newly_created_skus:
+            v = all_variants[sku]
+            price_history.append(
+                VariantPriceHistory(
+                    variant=v,
+                    price_gbp=v.current_price_gbp,
+                    recorded_at=now,
+                )
+            )
+
+        # UPDATE
+        if variants_to_update:
+            Variant.objects.bulk_update(
+                variants_to_update,
+                ["condition_grade", "title", "current_price_gbp"],
+                batch_size=1000,
+            )
+
+        # PRICE HISTORY
+        if price_history:
+            VariantPriceHistory.objects.bulk_create(
+                price_history,
+                batch_size=1000,
+            )
+
+    created = len(newly_created_skus)
+    updated = len(variants_to_update)
+    price_changes = len(price_history) - created
+
+    logger.info(
+        f"save_scraped_variants: received={len(listings)} "
+        f"created={created} updated={updated} price_changes={price_changes}"
+    )
+
+    return JsonResponse({
+        "received": len(listings),
+        "created": created,
+        "updated": updated,
+        "price_changes": price_changes,
+    })
 
 @require_GET
 def get_ebay_filters(request):

@@ -1,0 +1,36 @@
+{
+  "By Availability": {
+    "title": "By Availability",
+    "options": [
+      "In Stock In Store",
+      "In Stock Online"
+    ]
+  },
+  "Stores": {
+    "title": "Stores",
+    "options": [
+      "Birmingham",
+      "Fareham",
+      "Grantham",
+      "Leigh",
+      "Lewisham",
+      "Oldham",
+      "Richmond"
+    ]
+  },
+  "By Category": {
+    "title": "By Category",
+    "options": [
+      "Laptops - Other OS"
+    ]
+  },
+  "Manufacturer": {
+    "title": "Manufacturer",
+    "options": [
+      "Asus",
+      "Dell",
+      "Dynabook",
+      "Lenovo"
+    ]
+  }
+}

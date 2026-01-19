@@ -157,7 +157,10 @@ class Variant(models.Model):
         Product,
         on_delete=models.CASCADE,
         related_name='variants',
-        db_column='product_id'
+        db_column='product_id',
+        null=True,
+        blank=True,
+        help_text="Product (nullable for raw scraped data)"
     )
     condition_grade = models.ForeignKey(
         ConditionGrade,
@@ -177,9 +180,17 @@ class Variant(models.Model):
         validators=[MinValueValidator(Decimal('0.01'))],
         help_text="Current price in GBP (denormalized for fast reads)"
     )
+    title = models.CharField(
+        max_length=500,
+        db_index=True,
+        blank=True,
+        help_text="Title from the listing (e.g., 'Xbox Console, Black, Unboxed')"
+    )
     variant_signature = models.CharField(
         max_length=500,
         db_index=True,
+        null=True,
+        blank=True,
         help_text="Unique signature encoding attribute values (e.g., 'storage=1TB|edition=Digital')"
     )
     attribute_values = models.ManyToManyField(
@@ -190,7 +201,7 @@ class Variant(models.Model):
 
     class Meta:
         db_table = 'pricing_variant'
-        unique_together = [['product', 'condition_grade', 'variant_signature']]
+        # Note: unique_together removed since product and variant_signature can be null
         indexes = [
             models.Index(fields=['product', 'condition_grade']),
             models.Index(fields=['cex_sku']),
@@ -198,7 +209,8 @@ class Variant(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.product.name} ({self.condition_grade.code}) - {self.cex_sku}"
+        product_name = self.product.name if self.product else "Unknown Product"
+        return f"{product_name} ({self.condition_grade.code}) - {self.cex_sku}"
 
 
 class VariantAttributeValue(models.Model):

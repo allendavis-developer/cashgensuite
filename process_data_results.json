@@ -1,0 +1,5877 @@
+{
+  "summary": {
+    "total_processed": 243,
+    "http_requests": 217,
+    "rule_matches": 26,
+    "rules_learned": 299,
+    "unlearnable_count": 14
+  },
+  "categories": {
+    "1142": {
+      "name": "Playstation5 Accessories",
+      "requirements": [
+        "manufacturer"
+      ],
+      "covered": [
+        "manufacturer"
+      ],
+      "complete": true
+    },
+    "1063": {
+      "name": "Switch Consoles",
+      "requirements": [
+        "consoles_condition",
+        "consoles_colour",
+        "model_name",
+        "simplecolour",
+        "storage_GB",
+        "edition"
+      ],
+      "covered": [
+        "storage_GB",
+        "consoles_colour",
+        "consoles_condition",
+        "edition",
+        "simplecolour",
+        "model_name"
+      ],
+      "complete": true
+    },
+    "1212": {
+      "name": "Switch 2 Consoles",
+      "requirements": [
+        "storage_GB",
+        "consoles_colour",
+        "consoles_condition",
+        "simplecolour",
+        "edition",
+        "manufacturer",
+        "model_name"
+      ],
+      "covered": [
+        "edition"
+      ],
+      "complete": false
+    },
+    "796": {
+      "name": "Wii Consoles",
+      "requirements": [
+        "consoles_condition",
+        "simplecolour",
+        "manufacturer",
+        "model_name"
+      ],
+      "covered": [
+        "consoles_condition",
+        "model_name",
+        "manufacturer",
+        "simplecolour"
+      ],
+      "complete": true
+    },
+    "1145": {
+      "name": "Xbox Series Consoles",
+      "requirements": [
+        "storage_GB",
+        "consoles_colour",
+        "consoles_condition",
+        "simplecolour",
+        "edition",
+        "manufacturer",
+        "model_name"
+      ],
+      "covered": [
+        "storage_GB",
+        "consoles_colour",
+        "consoles_condition",
+        "edition",
+        "simplecolour",
+        "manufacturer",
+        "model_name"
+      ],
+      "complete": true
+    },
+    "999": {
+      "name": "Xbox One Consoles",
+      "requirements": [
+        "storage_GB",
+        "consoles_colour",
+        "consoles_condition",
+        "simplecolour",
+        "edition",
+        "manufacturer",
+        "model_name"
+      ],
+      "covered": [
+        "storage_GB",
+        "consoles_colour",
+        "consoles_condition",
+        "edition",
+        "simplecolour",
+        "manufacturer",
+        "model_name"
+      ],
+      "complete": true
+    },
+    "672": {
+      "name": "Xbox Consoles",
+      "requirements": [
+        "consoles_condition",
+        "simplecolour",
+        "edition",
+        "manufacturer",
+        "model_name"
+      ],
+      "covered": [
+        "simplecolour",
+        "edition",
+        "manufacturer"
+      ],
+      "complete": false
+    },
+    "783": {
+      "name": "Xbox 360 Consoles",
+      "requirements": [
+        "storage_GB",
+        "consoles_colour",
+        "consoles_condition",
+        "simplecolour",
+        "manufacturer",
+        "model_name"
+      ],
+      "covered": [
+        "storage_GB",
+        "consoles_colour",
+        "consoles_condition",
+        "simplecolour",
+        "manufacturer",
+        "model_name"
+      ],
+      "complete": true
+    },
+    "402": {
+      "name": "Playstation2 Consoles",
+      "requirements": [
+        "consoles_colour",
+        "consoles_condition",
+        "simplecolour",
+        "edition",
+        "manufacturer",
+        "model_name"
+      ],
+      "covered": [
+        "consoles_colour",
+        "consoles_condition",
+        "edition",
+        "simplecolour",
+        "manufacturer",
+        "model_name"
+      ],
+      "complete": true
+    },
+    "810": {
+      "name": "Playstation3 Consoles",
+      "requirements": [
+        "storage_GB",
+        "consoles_colour",
+        "consoles_condition",
+        "simplecolour",
+        "edition",
+        "manufacturer",
+        "model_name"
+      ],
+      "covered": [
+        "storage_GB",
+        "consoles_colour",
+        "simplecolour",
+        "edition",
+        "consoles_condition",
+        "manufacturer",
+        "model_name"
+      ],
+      "complete": true
+    },
+    "1002": {
+      "name": "Playstation4 Consoles",
+      "requirements": [
+        "storage_GB",
+        "consoles_colour",
+        "consoles_condition",
+        "simplecolour",
+        "edition",
+        "manufacturer",
+        "model_name"
+      ],
+      "covered": [
+        "storage_GB",
+        "consoles_colour",
+        "consoles_condition",
+        "edition",
+        "simplecolour",
+        "manufacturer",
+        "model_name"
+      ],
+      "complete": true
+    },
+    "1143": {
+      "name": "Playstation5 Consoles",
+      "requirements": [
+        "storage_GB",
+        "consoles_colour",
+        "consoles_condition",
+        "simplecolour",
+        "edition",
+        "model_name"
+      ],
+      "covered": [
+        "storage_GB",
+        "consoles_colour",
+        "consoles_condition",
+        "edition",
+        "simplecolour",
+        "model_name"
+      ],
+      "complete": true
+    },
+    "1069": {
+      "name": "Playstation1 Consoles",
+      "requirements": [
+        "consoles_colour",
+        "consoles_condition",
+        "simplecolour"
+      ],
+      "covered": [],
+      "complete": false
+    },
+    "1193": {
+      "name": "Analogue Consoles",
+      "requirements": [
+        "consoles_condition"
+      ],
+      "covered": [],
+      "complete": false
+    },
+    "1178": {
+      "name": "Playstation2 Rarities",
+      "requirements": [],
+      "covered": [],
+      "complete": true
+    },
+    "1071": {
+      "name": "Playstation1 Software",
+      "requirements": [],
+      "covered": [],
+      "complete": true
+    },
+    "971": {
+      "name": "3DS Consoles",
+      "requirements": [
+        "consoles_colour",
+        "consoles_condition",
+        "simplecolour",
+        "manufacturer",
+        "model_name"
+      ],
+      "covered": [
+        "consoles_colour",
+        "consoles_condition",
+        "simplecolour",
+        "manufacturer",
+        "model_name"
+      ],
+      "complete": true
+    },
+    "992": {
+      "name": "Wii U Consoles",
+      "requirements": [
+        "storage_GB",
+        "consoles_condition",
+        "simplecolour",
+        "edition",
+        "manufacturer",
+        "model_name"
+      ],
+      "covered": [
+        "edition",
+        "manufacturer"
+      ],
+      "complete": false
+    }
+  },
+  "sku_prefixes": {
+    "SPS5PSP": {
+      "category_id": 1142,
+      "category_name": "Playstation5 Accessories"
+    },
+    "0454964NS": {
+      "category_id": 1063,
+      "category_name": "Switch Consoles"
+    },
+    "SWIIWII": {
+      "category_id": 796,
+      "category_name": "Wii Consoles"
+    },
+    "SXS": {
+      "category_id": 1145,
+      "category_name": "Xbox Series Consoles"
+    },
+    "SXB1": {
+      "category_id": 999,
+      "category_name": "Xbox One Consoles"
+    },
+    "659": {
+      "category_id": 672,
+      "category_name": "Xbox Consoles"
+    },
+    "882": {
+      "category_id": 783,
+      "category_name": "Xbox 360 Consoles"
+    },
+    "SPS4": {
+      "category_id": 1002,
+      "category_name": "Playstation4 Consoles"
+    },
+    "SPS5": {
+      "category_id": 1143,
+      "category_name": "Playstation5 Consoles"
+    },
+    "SSO": {
+      "category_id": 1069,
+      "category_name": "Playstation1 Consoles"
+    },
+    "SAN": {
+      "category_id": 1193,
+      "category_name": "Analogue Consoles"
+    },
+    "SLEGPS2S": {
+      "category_id": 1178,
+      "category_name": "Playstation2 Rarities"
+    },
+    "SPS1G1166": {
+      "category_id": 1071,
+      "category_name": "Playstation1 Software"
+    },
+    "071": {
+      "category_id": 402,
+      "category_name": "Playstation2 Consoles"
+    },
+    "711": {
+      "category_id": 810,
+      "category_name": "Playstation3 Consoles"
+    },
+    "045496": {
+      "category_id": 971,
+      "category_name": "3DS Consoles"
+    },
+    "SWIIU": {
+      "category_id": 992,
+      "category_name": "Wii U Consoles"
+    }
+  },
+  "rules": {
+    "manufacturer": [
+      {
+        "value": "Sony",
+        "match_rule": "on",
+        "source_sku": "SPS5PSP001",
+        "source_title": "Playstation Portal Remote Player, White, Boxed"
+      },
+      {
+        "value": "Nintendo",
+        "match_rule": "nintendo",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Nintendo",
+        "match_rule": "te",
+        "source_sku": "SWIIWIIE001",
+        "source_title": "Wii Console, White (No Game), Boxed"
+      },
+      {
+        "value": "Microsoft",
+        "match_rule": "microsoft",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Series Consoles"
+      },
+      {
+        "value": "Microsoft",
+        "match_rule": "so",
+        "source_sku": "SXSS512GBW001",
+        "source_title": "Xbox Series S Console, 512GB, White, Boxed"
+      },
+      {
+        "value": "Sony",
+        "match_rule": "so",
+        "source_sku": "711719638742",
+        "source_title": "Playstation 2 Slimline Console, Black, Boxed"
+      }
+    ],
+    "acc_colour": [
+      {
+        "value": "Pastel Green/Blue",
+        "match_rule": "pastel green/blue",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Colours May Vary",
+        "match_rule": "colours may vary",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Neon Red/Blue",
+        "match_rule": "neon red/blue",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Yellow/Brown",
+        "match_rule": "yellow/brown",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Blue/Yellow",
+        "match_rule": "blue/yellow",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Yellow/Blue",
+        "match_rule": "yellow/blue",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Coral Pink",
+        "match_rule": "coral pink",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Red/Purple",
+        "match_rule": "red/purple",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Turquoise",
+        "match_rule": "turquoise",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Yellow",
+        "match_rule": "yellow",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Black",
+        "match_rule": "black",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "White",
+        "match_rule": "white",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Blue",
+        "match_rule": "blue",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Gold",
+        "match_rule": "gold",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Grey",
+        "match_rule": "grey",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Red",
+        "match_rule": "red",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Gradient Purple",
+        "match_rule": "gradient purple",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Military Green",
+        "match_rule": "military green",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Silver/Black",
+        "match_rule": "silver/black",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Robot White",
+        "match_rule": "robot white",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Grey/Black",
+        "match_rule": "grey/black",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Storm Grey",
+        "match_rule": "storm grey",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "White/Grey",
+        "match_rule": "white/grey",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Deep Blue",
+        "match_rule": "deep blue",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Gold/Grey",
+        "match_rule": "gold/grey",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Green",
+        "match_rule": "green",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Crystal",
+        "match_rule": "crystal",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Consoles"
+      },
+      {
+        "value": "Black & Lime Green",
+        "match_rule": "black & lime green",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Transparent Yellow",
+        "match_rule": "transparent yellow",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Black & Turquoise",
+        "match_rule": "black & turquoise",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Transparent Blue",
+        "match_rule": "transparent blue",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "White & Lavender",
+        "match_rule": "white & lavender",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Transparent Red",
+        "match_rule": "transparent red",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Metallic Black",
+        "match_rule": "metallic black",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Orange & Black",
+        "match_rule": "orange & black",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "White & Orange",
+        "match_rule": "white & orange",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Metallic Blue",
+        "match_rule": "metallic blue",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Black & Blue",
+        "match_rule": "black & blue",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Cosmos Black",
+        "match_rule": "cosmos black",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Metallic Red",
+        "match_rule": "metallic red",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Pink & White",
+        "match_rule": "pink & white",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Pearl White",
+        "match_rule": "pearl white",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "White & Red",
+        "match_rule": "white & red",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Aqua Blue",
+        "match_rule": "aqua blue",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Ice White",
+        "match_rule": "ice white",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Silver",
+        "match_rule": "silver",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Pink",
+        "match_rule": "pink",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      }
+    ],
+    "consoles_condition": [
+      {
+        "value": "Discounted",
+        "match_rule": "discounted",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Unboxed",
+        "match_rule": "unboxed",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Boxed",
+        "match_rule": "boxed",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      }
+    ],
+    "consoles_colour": [
+      {
+        "value": "Neon Red/Blue",
+        "match_rule": "neon red/blue",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Pastel/White",
+        "match_rule": "pastel/white",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Yellow/Brown",
+        "match_rule": "yellow/brown",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Blue/Yellow",
+        "match_rule": "blue/yellow",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Yellow/Blue",
+        "match_rule": "yellow/blue",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Coral Pink",
+        "match_rule": "coral pink",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Red/Purple",
+        "match_rule": "red/purple",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Solid Red",
+        "match_rule": "solid red",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Turquoise",
+        "match_rule": "turquoise",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Yellow",
+        "match_rule": "yellow",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Black",
+        "match_rule": "black",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Mixed",
+        "match_rule": "mixed",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "White",
+        "match_rule": "white",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Blue",
+        "match_rule": "blue",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Gold",
+        "match_rule": "gold",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Grey",
+        "match_rule": "grey",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Red",
+        "match_rule": "red",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Carbon Black",
+        "match_rule": "carbon black",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Series Consoles"
+      },
+      {
+        "value": "Galaxy Black",
+        "match_rule": "galaxy black",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Series Consoles"
+      },
+      {
+        "value": "Robot White",
+        "match_rule": "robot white",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Series Consoles"
+      },
+      {
+        "value": "Carbon Black",
+        "match_rule": "black",
+        "source_sku": "SXSX1TBB001",
+        "source_title": "Xbox Series X Console, 1TB, Black, Boxed"
+      },
+      {
+        "value": "Call of Duty: Advanced Warfare",
+        "match_rule": "call of duty: advanced warfare",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Cyberpunk 2077",
+        "match_rule": "cyberpunk 2077",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Gears of War 4",
+        "match_rule": "gears of war 4",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Minecraft",
+        "match_rule": "minecraft",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Gears 5",
+        "match_rule": "gears 5",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Halo 5",
+        "match_rule": "halo 5",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Purple",
+        "match_rule": "purple",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Green",
+        "match_rule": "green",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Call of Duty: Advanced Warfare",
+        "match_rule": "call of duty",
+        "source_sku": "SXB11TBCD001",
+        "source_title": "Xbox One Console, 1TB, Call Of Duty A.W Ed. (No Game), Boxed"
+      },
+      {
+        "value": "Blue/White",
+        "match_rule": "blue/white",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox 360 Consoles"
+      },
+      {
+        "value": "Red/Black",
+        "match_rule": "red/black",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox 360 Consoles"
+      },
+      {
+        "value": "Silver",
+        "match_rule": "silver",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox 360 Consoles"
+      },
+      {
+        "value": "Red/Black",
+        "match_rule": "ed",
+        "source_sku": "SX360SGEAR31A",
+        "source_title": "Xbox 360S (Slim) Console, Gears of War 3 Ed. +1Pad (No Game), Boxed"
+      },
+      {
+        "value": "Black",
+        "match_rule": "la",
+        "source_sku": "SPS3120SEB001",
+        "source_title": "Playstation 3 Slim Console, 120GB, Boxed"
+      },
+      {
+        "value": "Jet Black",
+        "match_rule": "black",
+        "source_sku": "SPS4P1TB001",
+        "source_title": "Playstation 4 Pro Console, 1TB Black, Boxed"
+      },
+      {
+        "value": "Glacier White",
+        "match_rule": "white",
+        "source_sku": "SPS4S500GBW001",
+        "source_title": "Playstation 4 Slim Console, 500GB White, Boxed"
+      },
+      {
+        "value": "Pink",
+        "match_rule": "pink",
+        "source_sku": "0711719693970",
+        "source_title": "Playstation 2 Slimline Console, Pink, Boxed"
+      },
+      {
+        "value": "The Legend of Zelda: 25th Anniversary Edition",
+        "match_rule": "the legend of zelda: 25th anniversary edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Animal Crossing: Happy Home Designer Edition",
+        "match_rule": "animal crossing: happy home designer edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "The Legend of Zelda: A Link Between Worlds",
+        "match_rule": "the legend of zelda: a link between worlds",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Monster Hunter Generations Edition",
+        "match_rule": "monster hunter generations edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Fire Emblem Awakening Edition",
+        "match_rule": "fire emblem awakening edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Pokemon Sun and Moon Editon",
+        "match_rule": "pokemon sun and moon editon",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Minecraft Creeper Edition",
+        "match_rule": "minecraft creeper edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Solgaleo & Lunala Edition",
+        "match_rule": "solgaleo & lunala edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Super Smash Bros. Edition",
+        "match_rule": "super smash bros. edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Fire Emblem Fates Edtion",
+        "match_rule": "fire emblem fates edtion",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Monster Hunter 4 Edition",
+        "match_rule": "monster hunter 4 edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Animal Crossing Edition",
+        "match_rule": "animal crossing edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Xerneas & Yveltal Blue",
+        "match_rule": "xerneas & yveltal blue",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Luigi Special Edition",
+        "match_rule": "luigi special edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Majora's Mask Edition",
+        "match_rule": "majora's mask edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Xerneas & Yveltal Red",
+        "match_rule": "xerneas & yveltal red",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Yoshi Special Edition",
+        "match_rule": "yoshi special edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Chotto Mario Edition",
+        "match_rule": "chotto mario edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Chotto Peach Edition",
+        "match_rule": "chotto peach edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Chotto Toad Edition",
+        "match_rule": "chotto toad edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Ambassador Edition",
+        "match_rule": "ambassador edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Black & Lime Green",
+        "match_rule": "black & lime green",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Transparent Yellow",
+        "match_rule": "transparent yellow",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Black & Turquoise",
+        "match_rule": "black & turquoise",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Pokeball Edition",
+        "match_rule": "pokeball edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Transparent Blue",
+        "match_rule": "transparent blue",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "White & Lavender",
+        "match_rule": "white & lavender",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Pikachu Edition",
+        "match_rule": "pikachu edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Transparent Red",
+        "match_rule": "transparent red",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Hyrule Edition",
+        "match_rule": "hyrule edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Metallic Black",
+        "match_rule": "metallic black",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Orange & Black",
+        "match_rule": "orange & black",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "White & Orange",
+        "match_rule": "white & orange",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Metallic Blue",
+        "match_rule": "metallic blue",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Samus Edition",
+        "match_rule": "samus edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Black & Blue",
+        "match_rule": "black & blue",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Cosmos Black",
+        "match_rule": "cosmos black",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Metallic Red",
+        "match_rule": "metallic red",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Pink & White",
+        "match_rule": "pink & white",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "SNES Edition",
+        "match_rule": "snes edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "White & Pink",
+        "match_rule": "white & pink",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Pearl White",
+        "match_rule": "pearl white",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "White & Red",
+        "match_rule": "white & red",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Aqua Blue",
+        "match_rule": "aqua blue",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Ice White",
+        "match_rule": "ice white",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Black & Blue",
+        "match_rule": [
+          "black",
+          "blue"
+        ],
+        "source_sku": "0454962DBB01",
+        "source_title": "Nintendo 2DS Console, Black/Blue, Boxed"
+      },
+      {
+        "value": "White & Pink",
+        "match_rule": [
+          "white",
+          "pink"
+        ],
+        "source_sku": "0454962DBB08",
+        "source_title": "Nintendo 2DS Console, White/Pink, Boxed"
+      }
+    ],
+    "edition": [
+      {
+        "value": "Animal Crossing: New Horizons Timmy & Tommy Aloha Edition",
+        "match_rule": "animal crossing: new horizons timmy & tommy aloha edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Animal Crossing: New Horizons Isabelle Aloha Edition",
+        "match_rule": "animal crossing: new horizons isabelle aloha edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Legend of Zelda: Tears of the Kingdom Edition",
+        "match_rule": "legend of zelda: tears of the kingdom edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Pokemon Scarlet and Violet Edition",
+        "match_rule": "pokemon scarlet and violet edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Super Smash Bros Ultimate Edition",
+        "match_rule": "super smash bros ultimate edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Monster Hunter Rise Edition",
+        "match_rule": "monster hunter rise edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Zacian & Zamazenta Edition",
+        "match_rule": "zacian & zamazenta edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Mario Red & Blue Edition",
+        "match_rule": "mario red & blue edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Animal Crossing Edition",
+        "match_rule": "animal crossing edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Dialga & Palkia Edition",
+        "match_rule": "dialga & palkia edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Pikachu & Eevee Edition",
+        "match_rule": "pikachu & eevee edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Splatoon 3 Edition",
+        "match_rule": "splatoon 3 edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Mario Red Edition",
+        "match_rule": "mario red edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Fortnite Edition",
+        "match_rule": "fortnite edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Standard Edition",
+        "match_rule": "standard edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Diablo Edition",
+        "match_rule": "diablo edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Hyrule Edition",
+        "match_rule": "hyrule edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Standard Edition",
+        "match_rule": "ed",
+        "source_sku": "0454964NS64V3WH01",
+        "source_title": "Switch Console, 64GB OLED + White Joy-Con, Boxed"
+      },
+      {
+        "value": "Halo Infinite Edition",
+        "match_rule": "halo infinite edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Series Consoles"
+      },
+      {
+        "value": "Galaxy Black Edition",
+        "match_rule": "galaxy black edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Series Consoles"
+      },
+      {
+        "value": "All-Digital",
+        "match_rule": "all-digital",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Series Consoles"
+      },
+      {
+        "value": "Call of Duty: Advanced Warfare Edition",
+        "match_rule": "call of duty: advanced warfare edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Forza Motorsport 6 Limited Edition",
+        "match_rule": "forza motorsport 6 limited edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Battlefield V Gold Rush Edition",
+        "match_rule": "battlefield v gold rush edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Minecraft Green Edition",
+        "match_rule": "minecraft green edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Cyberpunk 2077 Edition",
+        "match_rule": "cyberpunk 2077 edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Gears of War 4 Edition",
+        "match_rule": "gears of war 4 edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Halo 5 Limited Edition",
+        "match_rule": "halo 5 limited edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "All-Digital Edition",
+        "match_rule": "all-digital edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Hyperspace Edition",
+        "match_rule": "hyperspace edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Gears 5 Edition",
+        "match_rule": "gears 5 edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Elite Edition",
+        "match_rule": "elite edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Call of Duty: Advanced Warfare Edition",
+        "match_rule": "call of duty",
+        "source_sku": "SXB11TBCD001",
+        "source_title": "Xbox One Console, 1TB, Call Of Duty A.W Ed. (No Game), Boxed"
+      },
+      {
+        "value": "Crystal Limited Edition",
+        "match_rule": "crystal limited edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Consoles"
+      },
+      {
+        "value": "Green Limited Edition",
+        "match_rule": "green limited edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Consoles"
+      },
+      {
+        "value": "Crystal Limited Edition",
+        "match_rule": "crystal",
+        "source_sku": "SXBXXBOE008",
+        "source_title": "Xbox Console, Crystal Ltd. Ed. (With 2 Crystal Pads), Boxed"
+      },
+      {
+        "value": "Green Limited Edition",
+        "match_rule": "green",
+        "source_sku": "SXBXXBOE006",
+        "source_title": "Xbox Console, Green Ltd. Ed. (With 2 Green Pads), Boxed"
+      },
+      {
+        "value": "Standard Edition",
+        "match_rule": "tion",
+        "source_sku": "711719638742",
+        "source_title": "Playstation 2 Slimline Console, Black, Boxed"
+      },
+      {
+        "value": "Legend of Zelda: The Wind Waker HD Edition",
+        "match_rule": "legend of zelda: the wind waker hd edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Wii U Consoles"
+      },
+      {
+        "value": "Premium Edition",
+        "match_rule": "premium edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Wii U Consoles"
+      },
+      {
+        "value": "Basic Edition",
+        "match_rule": "basic edition",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Wii U Consoles"
+      },
+      {
+        "value": "Premium Edition",
+        "match_rule": "premium",
+        "source_sku": "SWIIU32GBP001",
+        "source_title": "Wii U Console, 32GB Premium Black (No Game), Boxed"
+      },
+      {
+        "value": "Legend of Zelda: The Wind Waker HD Edition",
+        "match_rule": "legend of zelda",
+        "source_sku": "SWIIU32GBPZ001",
+        "source_title": "Wii U Console, 32GB Legend of Zelda Limited Ed. (No Game), Boxed"
+      }
+    ],
+    "simplecolour": [
+      {
+        "value": "Neon Red/Blue",
+        "match_rule": "neon red/blue",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Pastel/White",
+        "match_rule": "pastel/white",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Yellow/Brown",
+        "match_rule": "yellow/brown",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Blue/Yellow",
+        "match_rule": "blue/yellow",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Yellow/Blue",
+        "match_rule": "yellow/blue",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Coral Pink",
+        "match_rule": "coral pink",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Red/Purple",
+        "match_rule": "red/purple",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Solid Red",
+        "match_rule": "solid red",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Turquoise",
+        "match_rule": "turquoise",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Yellow",
+        "match_rule": "yellow",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Black",
+        "match_rule": "black",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Mixed",
+        "match_rule": "mixed",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "White",
+        "match_rule": "white",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Blue",
+        "match_rule": "blue",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Gold",
+        "match_rule": "gold",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Grey",
+        "match_rule": "grey",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Red",
+        "match_rule": "red",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Silver/Black",
+        "match_rule": "silver/black",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Grey/Black",
+        "match_rule": "grey/black",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "White/Grey",
+        "match_rule": "white/grey",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Purple",
+        "match_rule": "purple",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Green",
+        "match_rule": "green",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "White",
+        "match_rule": "it",
+        "source_sku": "SXBXXBOE008",
+        "source_title": "Xbox Console, Crystal Ltd. Ed. (With 2 Crystal Pads), Boxed"
+      },
+      {
+        "value": "Blue/White",
+        "match_rule": "blue/white",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox 360 Consoles"
+      },
+      {
+        "value": "Red/Black",
+        "match_rule": "red/black",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox 360 Consoles"
+      },
+      {
+        "value": "Silver",
+        "match_rule": "silver",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox 360 Consoles"
+      },
+      {
+        "value": "Red/Black",
+        "match_rule": "ed",
+        "source_sku": "SX360SGEAR31A",
+        "source_title": "Xbox 360S (Slim) Console, Gears of War 3 Ed. +1Pad (No Game), Boxed"
+      },
+      {
+        "value": "Black",
+        "match_rule": "la",
+        "source_sku": "SPS3120SEB001",
+        "source_title": "Playstation 3 Slim Console, 120GB, Boxed"
+      },
+      {
+        "value": "Pink",
+        "match_rule": "pink",
+        "source_sku": "0711719693970",
+        "source_title": "Playstation 2 Slimline Console, Pink, Boxed"
+      },
+      {
+        "value": "Black/Lime Green",
+        "match_rule": "black/lime green",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Black/Turquoise",
+        "match_rule": "black/turquoise",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "White/Lavender",
+        "match_rule": "white/lavender",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "White & Green",
+        "match_rule": "white & green",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Black & Gold",
+        "match_rule": "black & gold",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Orange/Black",
+        "match_rule": "orange/black",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "White/Orange",
+        "match_rule": "white/orange",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Red & Black",
+        "match_rule": "red & black",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "White/Black",
+        "match_rule": "white/black",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "White/Green",
+        "match_rule": "white/green",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Pink/White",
+        "match_rule": "pink/white",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Red &White",
+        "match_rule": "red &white",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Orange",
+        "match_rule": "orange",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      }
+    ],
+    "model_name": [
+      {
+        "value": "Switch (HAC-001-01)",
+        "match_rule": "switch (hac-001-01)",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Switch Lite",
+        "match_rule": "switch lite",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Switch OLED",
+        "match_rule": "switch oled",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Switch",
+        "match_rule": "switch",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "Switch OLED",
+        "match_rule": [
+          "switch",
+          "oled"
+        ],
+        "source_sku": "0454964NS64V3WH01",
+        "source_title": "Switch Console, 64GB OLED + White Joy-Con, Boxed"
+      },
+      {
+        "value": "Switch (HAC-001-01)",
+        "match_rule": [
+          "switch",
+          "hac",
+          "001",
+          "01"
+        ],
+        "source_sku": "0454964NS32V2NE01",
+        "source_title": "Switch Console, 32GB HAC-001-01 + Neon Red/Blue Joy-Con, Boxed"
+      },
+      {
+        "value": "Switch 2",
+        "match_rule": "switch 2",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch 2 Consoles"
+      },
+      {
+        "value": "Wii (RVL-201)",
+        "match_rule": "wii (rvl-201)",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Wii Consoles"
+      },
+      {
+        "value": "Wii Mini",
+        "match_rule": "wii mini",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Wii Consoles"
+      },
+      {
+        "value": "Wii",
+        "match_rule": "wii",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Wii Consoles"
+      },
+      {
+        "value": "Wii (RVL-201)",
+        "match_rule": "wii",
+        "source_sku": "SWIIWIIBLAC11001",
+        "source_title": "Wii Console, V2 Black (No Game), Boxed"
+      },
+      {
+        "value": "Xbox Series S",
+        "match_rule": "xbox series s",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Series Consoles"
+      },
+      {
+        "value": "Xbox Series X",
+        "match_rule": "xbox series x",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Series Consoles"
+      },
+      {
+        "value": "Xbox One S",
+        "match_rule": "xbox one s",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Xbox One X",
+        "match_rule": "xbox one x",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Xbox One",
+        "match_rule": "xbox one",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "Xbox",
+        "match_rule": "xbox",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Consoles"
+      },
+      {
+        "value": "Xbox 360 S (Slim)",
+        "match_rule": "xbox 360 s (slim)",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox 360 Consoles"
+      },
+      {
+        "value": "Xbox 360 E",
+        "match_rule": "xbox 360 e",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox 360 Consoles"
+      },
+      {
+        "value": "Xbox 360",
+        "match_rule": "xbox 360",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox 360 Consoles"
+      },
+      {
+        "value": "Xbox 360 S (Slim)",
+        "match_rule": "slim",
+        "source_sku": "SX360S4A",
+        "source_title": "Xbox 360S (Slim) Console, 4GB, Boxed"
+      },
+      {
+        "value": "Xbox 360 E",
+        "match_rule": [
+          "xbox",
+          "360"
+        ],
+        "source_sku": "SX360E003A",
+        "source_title": "Xbox 360 \"E\" Console, 500GB, Boxed"
+      },
+      {
+        "value": "PlayStation 2 Slimline",
+        "match_rule": "playstation 2 slimline",
+        "source_sku": "711719638742",
+        "source_title": "Playstation 2 Slimline Console, Black, Boxed"
+      },
+      {
+        "value": "PlayStation 3 Slim",
+        "match_rule": "playstation 3 slim",
+        "source_sku": "SPS3120SEB001",
+        "source_title": "Playstation 3 Slim Console, 120GB, Boxed"
+      },
+      {
+        "value": "PlayStation 3 Super Slim",
+        "match_rule": "super slim",
+        "source_sku": "SPS312GSSB001",
+        "source_title": "PS3 Super Slim Console, 12GB, Boxed"
+      },
+      {
+        "value": "PlayStation 3",
+        "match_rule": "playstation 3",
+        "source_sku": "SPS380BE001",
+        "source_title": "Playstation 3 Console, 80GB, Boxed"
+      },
+      {
+        "value": "PlayStation 4 Pro",
+        "match_rule": "playstation 4 pro",
+        "source_sku": "SPS4P1TB001",
+        "source_title": "Playstation 4 Pro Console, 1TB Black, Boxed"
+      },
+      {
+        "value": "PlayStation 4 Slim",
+        "match_rule": "playstation 4 slim",
+        "source_sku": "SPS4S500GB001",
+        "source_title": "Playstation 4 Slim Console, 500GB Black, Boxed"
+      },
+      {
+        "value": "Playstation 5",
+        "match_rule": "playstation 5",
+        "source_sku": "SPS5825GBW001",
+        "source_title": "Playstation 5 Console, 825GB, White, Boxed"
+      },
+      {
+        "value": "Playstation 5 Slim",
+        "match_rule": "playstation 5 slim",
+        "source_sku": "SPS5S1TBW001",
+        "source_title": "Playstation 5 Slim Console, 1TB, White, Boxed"
+      },
+      {
+        "value": "New 2DS XL",
+        "match_rule": "new 2ds xl",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "New 3DS XL",
+        "match_rule": "new 3ds xl",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "New 3DS",
+        "match_rule": "new 3ds",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "3DS XL",
+        "match_rule": "3ds xl",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "2DS",
+        "match_rule": "2ds",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "3DS",
+        "match_rule": "3ds",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Wii U",
+        "match_rule": "wii u",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Wii U Consoles"
+      }
+    ],
+    "storage_GB": [
+      {
+        "value": "32GB",
+        "match_rule": "32gb",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "64GB",
+        "match_rule": "64gb",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch Consoles"
+      },
+      {
+        "value": "256GB",
+        "match_rule": "256gb",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Switch 2 Consoles"
+      },
+      {
+        "value": "512GB",
+        "match_rule": "512gb",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Series Consoles"
+      },
+      {
+        "value": "1TB",
+        "match_rule": "1tb",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Series Consoles"
+      },
+      {
+        "value": "2TB",
+        "match_rule": "2tb",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Series Consoles"
+      },
+      {
+        "value": "500GB",
+        "match_rule": "500gb",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "120GB",
+        "match_rule": "120gb",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox 360 Consoles"
+      },
+      {
+        "value": "250GB",
+        "match_rule": "250gb",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox 360 Consoles"
+      },
+      {
+        "value": "320GB",
+        "match_rule": "320gb",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox 360 Consoles"
+      },
+      {
+        "value": "20GB",
+        "match_rule": "20gb",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox 360 Consoles"
+      },
+      {
+        "value": "0GB",
+        "match_rule": "0gb",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox 360 Consoles"
+      },
+      {
+        "value": "4GB",
+        "match_rule": "4gb",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox 360 Consoles"
+      },
+      {
+        "value": "160GB",
+        "match_rule": "160gb",
+        "source_sku": "SPS3160SEB001",
+        "source_title": "Playstation 3 Slim Console, 160GB, Boxed"
+      },
+      {
+        "value": "825GB",
+        "match_rule": "825gb",
+        "source_sku": "SPS5825GBW001",
+        "source_title": "Playstation 5 Console, 825GB, White, Boxed"
+      },
+      {
+        "value": "8GB",
+        "match_rule": "8gb",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Wii U Consoles"
+      }
+    ],
+    "consoles_pads": [
+      {
+        "value": "1 Set",
+        "match_rule": "1 set",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Wii Consoles"
+      }
+    ],
+    "incl_components": [
+      {
+        "value": "Wii Remote Plus, Nunchuck",
+        "match_rule": "wii remote plus, nunchuck",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Wii Consoles"
+      },
+      {
+        "value": "Wii Remote, Nunchuck",
+        "match_rule": "wii remote, nunchuck",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Wii Consoles"
+      },
+      {
+        "value": "Elite Controller",
+        "match_rule": "elite controller",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox One Consoles"
+      },
+      {
+        "value": "1 Pad - may not match console",
+        "match_rule": "1 pad - may not match console",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Consoles"
+      },
+      {
+        "value": "1 Pad - May not be green",
+        "match_rule": "1 pad - may not be green",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Consoles"
+      },
+      {
+        "value": "2 Crystal Pads",
+        "match_rule": "2 crystal pads",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Consoles"
+      },
+      {
+        "value": "1 Crystal Pad",
+        "match_rule": "1 crystal pad",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Consoles"
+      },
+      {
+        "value": "2 Green Pads",
+        "match_rule": "2 green pads",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Consoles"
+      },
+      {
+        "value": "1 Green Pad",
+        "match_rule": "1 green pad",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox Consoles"
+      },
+      {
+        "value": "Kinect",
+        "match_rule": "kinect",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Xbox 360 Consoles"
+      },
+      {
+        "value": "4x Cover Plates, 4GB MicroSD, Stylus",
+        "match_rule": "4x cover plates, 4gb microsd, stylus",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "2GB SD Card, Stylus, Charger",
+        "match_rule": "2gb sd card, stylus, charger",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "4GB MicroSD, Stylus, Charger",
+        "match_rule": "4gb microsd, stylus, charger",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "4GB MicroSD, Stylus",
+        "match_rule": "4gb microsd, stylus",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "4GB SD Card, Stylus",
+        "match_rule": "4gb sd card, stylus",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Stylus, Charger",
+        "match_rule": "stylus, charger",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Stylus",
+        "match_rule": "stylus",
+        "source_sku": "preloaded",
+        "source_title": "Filter: DS Consoles"
+      },
+      {
+        "value": "Power cable, AV or HDMI Cable, WiiU Gamepad charger & Sensor Bar",
+        "match_rule": "power cable, av or hdmi cable, wiiu gamepad charger & sensor bar",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Wii U Consoles"
+      },
+      {
+        "value": "Power cable, AV or HDMI Cable & WiiU Gamepad charger",
+        "match_rule": "power cable, av or hdmi cable & wiiu gamepad charger",
+        "source_sku": "preloaded",
+        "source_title": "Filter: Wii U Consoles"
+      }
+    ]
+  },
+  "results": [
+    {
+      "sku": "SPS5PSP001",
+      "title": "Playstation Portal Remote Player, White, Boxed",
+      "category": "Playstation5 Accessories",
+      "source": "http",
+      "attributes": {
+        "manufacturer": "Sony"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS5PSPMB001",
+      "title": "Playstation Portal Remote Player, Midnight Black, Boxed",
+      "category": "Playstation5 Accessories",
+      "source": "http",
+      "attributes": {
+        "manufacturer": "Sony"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS5PSP30G001",
+      "title": "Playstation Portal Remote Player, 30th Anniversary Grey, Boxed",
+      "category": "Playstation5 Accessories",
+      "source": "http",
+      "attributes": {
+        "manufacturer": "Sony"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NS64V3WH01",
+      "title": "Switch Console, 64GB OLED + White Joy-Con, Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "model_name": "Switch OLED",
+        "simplecolour": "White",
+        "storage_GB": "64GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NS32V2NE01",
+      "title": "Switch Console, 32GB HAC-001-01 + Neon Red/Blue Joy-Con, Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Neon Red/Blue",
+        "model_name": "Switch (HAC-001-01)",
+        "simplecolour": "Neon Red/Blue",
+        "storage_GB": "32GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454963NS2256B001",
+      "title": "Switch 2 Console, 256GB + Black Joy-Con 2, (No DLC) Boxed",
+      "category": "Switch 2 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Nintendo",
+        "model_name": "Switch 2",
+        "simplecolour": "Black",
+        "storage_GB": "256GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": [
+        {
+          "attribute": "manufacturer",
+          "value": "Nintendo",
+          "reason": "No match pattern found in title"
+        }
+      ]
+    },
+    {
+      "sku": "SWIIWIIE001",
+      "title": "Wii Console, White (No Game), Boxed",
+      "category": "Wii Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "manufacturer": "Nintendo",
+        "model_name": "Wii",
+        "simplecolour": "White"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SWIIWIIWHIRMP001",
+      "title": "Wii Console, White, W/ WiimotePlus (No Game), Boxed",
+      "category": "Wii Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "manufacturer": "Nintendo",
+        "model_name": "Wii",
+        "simplecolour": "White"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SWIIWIIREDRMP003",
+      "title": "Wii Console, Red, W/ WiimotePlus (No Game), Boxed",
+      "category": "Wii Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "manufacturer": "Nintendo",
+        "model_name": "Wii",
+        "simplecolour": "Red"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SWIIWIIBLAC11001",
+      "title": "Wii Console, V2 Black (No Game), Boxed",
+      "category": "Wii Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "manufacturer": "Nintendo",
+        "model_name": "Wii (RVL-201)",
+        "simplecolour": "Black"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXSS512GBW001",
+      "title": "Xbox Series S Console, 512GB, White, Boxed",
+      "category": "Xbox Series Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox Series S",
+        "simplecolour": "White",
+        "storage_GB": "512GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXSS1TBB001",
+      "title": "Xbox Series S Console, 1TB, Carbon Black, Boxed",
+      "category": "Xbox Series Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Carbon Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox Series S",
+        "simplecolour": "Black",
+        "storage_GB": "1TB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXSS1TBRW001",
+      "title": "Xbox Series S Console, 1TB, Robot White, Boxed",
+      "category": "Xbox Series Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Robot White",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox Series S",
+        "simplecolour": "White",
+        "storage_GB": "1TB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXSX1TBB001",
+      "title": "Xbox Series X Console, 1TB, Black, Boxed",
+      "category": "Xbox Series Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Carbon Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox Series X",
+        "simplecolour": "Black",
+        "storage_GB": "1TB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXSXAD1TBRW001",
+      "title": "Xbox Series X All-Digital Console, 1TB, Robot White, Boxed",
+      "category": "Xbox Series Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Robot White",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox Series X",
+        "simplecolour": "White",
+        "storage_GB": "1TB",
+        "edition": "All-Digital"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXSX1TBHB001",
+      "title": "Xbox Series X Console, 1TB, Halo Infinite Black, (No Game), Boxed",
+      "category": "Xbox Series Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox Series X",
+        "simplecolour": "Black",
+        "storage_GB": "1TB",
+        "edition": "Halo Infinite Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXSX2TBGB001",
+      "title": "Xbox Series X Console, 2TB, Galaxy Black, Boxed",
+      "category": "Xbox Series Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Galaxy Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox Series X",
+        "simplecolour": "Black",
+        "storage_GB": "2TB",
+        "edition": "Galaxy Black Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB1S500GW001",
+      "title": "Xbox One S Console, 500GB, White, Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One S",
+        "simplecolour": "White",
+        "storage_GB": "500GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB1S1TBW001",
+      "title": "Xbox One S Console, 1TB, White, Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One S",
+        "simplecolour": "White",
+        "storage_GB": "1TB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB1500GB001",
+      "title": "Xbox One Console, 500GB, Black (No Kinect), Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One",
+        "simplecolour": "Black",
+        "storage_GB": "500GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB11TBB001",
+      "title": "Xbox One Console, 1TB, Black (No Kinect), Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One",
+        "simplecolour": "Black",
+        "storage_GB": "1TB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB11TBCD001",
+      "title": "Xbox One Console, 1TB, Call Of Duty A.W Ed. (No Game), Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Call of Duty: Advanced Warfare",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One",
+        "simplecolour": "Grey/Black",
+        "storage_GB": "1TB",
+        "edition": "Call of Duty: Advanced Warfare Edition"
+      },
+      "unlearnable": [
+        {
+          "attribute": "simplecolour",
+          "value": "Grey/Black",
+          "reason": "No match pattern found in title"
+        }
+      ]
+    },
+    {
+      "sku": "SXB1500GW001",
+      "title": "Xbox One Console, 500GB, White (No Kinect), Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One",
+        "simplecolour": "White",
+        "storage_GB": "500GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB11TBHG001",
+      "title": "Xbox One Console, 1TB, Halo 5 Silver/Black Ltd. Ed. (No Game), Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Halo 5",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One",
+        "simplecolour": "Silver/Black",
+        "storage_GB": "1TB",
+        "edition": "Halo 5 Limited Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB11TBEL001",
+      "title": "Xbox One Elite Console, 1TB Hybrid + Elite Controller, Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One",
+        "simplecolour": "Black",
+        "storage_GB": "1TB",
+        "edition": "Elite Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB1X1TBB001",
+      "title": "Xbox One X Console, 1TB, Black, Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One X",
+        "simplecolour": "Black",
+        "storage_GB": "1TB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB11TBFM001",
+      "title": "Xbox One Console, 1TB, Forza Blue Ltd. Ed. (No Game), Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Blue",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One",
+        "simplecolour": "Blue",
+        "storage_GB": "1TB",
+        "edition": "Forza Motorsport 6 Limited Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB1S2TBW001",
+      "title": "Xbox One S Console, 2TB, White, Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One S",
+        "simplecolour": "White",
+        "storage_GB": "2TB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB1X1TBW001",
+      "title": "Xbox One X Console, 1TB, Robot White, Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One X",
+        "simplecolour": "White",
+        "storage_GB": "1TB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB1X1TBGG001",
+      "title": "Xbox One X Console, 1TB, Gears 5 Ed. White/Grey (No Game), Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Gears 5",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One X",
+        "simplecolour": "White/Grey",
+        "storage_GB": "1TB",
+        "edition": "Gears 5 Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB1S2TBGR001",
+      "title": "Xbox One S Console, 2TB, Gears Of War Red (No Game), Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Gears of War 4",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One S",
+        "simplecolour": "Red",
+        "storage_GB": "2TB",
+        "edition": "Gears of War 4 Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB1X1TBGR001",
+      "title": "Xbox One X Console, Gold Rush Ed. Gold/Grey (No Game), Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Gold",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One X",
+        "simplecolour": "Gold",
+        "storage_GB": "1TB",
+        "edition": "Battlefield V Gold Rush Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB1X1TBCP001",
+      "title": "Xbox One X Console, 1TB, Cyberpunk 2077 Ed. (No Game), Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Cyberpunk 2077",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One X",
+        "simplecolour": "Blue/Yellow",
+        "storage_GB": "1TB",
+        "edition": "Cyberpunk 2077 Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB1S500GBDB001",
+      "title": "Xbox One S Console, 500GB, Deep Blue (No Game), Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Blue",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One S",
+        "simplecolour": "Blue",
+        "storage_GB": "500GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB1S1TBMG001",
+      "title": "Xbox One S Console, 1TB, Military Green (No Game), Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Green",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One S",
+        "simplecolour": "Green",
+        "storage_GB": "1TB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB1S1TBMC001",
+      "title": "Xbox One S Console, 1TB, Minecraft Green Edition (No Game), Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Minecraft",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One S",
+        "simplecolour": "Green",
+        "storage_GB": "1TB",
+        "edition": "Minecraft Green Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB1S1TBGP001",
+      "title": "Xbox One S Console, 1TB, Gradient Purple (No DLC), Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Purple",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One S",
+        "simplecolour": "Purple",
+        "storage_GB": "1TB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB1S500GBSG001",
+      "title": "Xbox One S Console, 500GB, Storm Grey (No Game), Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Grey",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One S",
+        "simplecolour": "Grey",
+        "storage_GB": "500GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB1X1TBHY001",
+      "title": "Xbox One X Console, Hyperspace Ed. White/Dots, Boxed",
+      "category": "Xbox One Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox One X",
+        "simplecolour": "White",
+        "storage_GB": "1TB",
+        "edition": "Hyperspace Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "659556602369",
+      "title": "Xbox Console, Black, Boxed",
+      "category": "Xbox Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox",
+        "simplecolour": "Black",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXBXXBOE008",
+      "title": "Xbox Console, Crystal Ltd. Ed. (With 2 Crystal Pads), Boxed",
+      "category": "Xbox Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox",
+        "simplecolour": "White",
+        "edition": "Crystal Limited Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXBXXBOE006",
+      "title": "Xbox Console, Green Ltd. Ed. (With 2 Green Pads), Boxed",
+      "category": "Xbox Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox",
+        "simplecolour": "Green",
+        "edition": "Green Limited Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXBXXBOE009A",
+      "title": "Xbox Console, Crystal Ltd. Ed. (With 1 Crystal Pad), Boxed",
+      "category": "Xbox Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox",
+        "simplecolour": "White",
+        "edition": "Crystal Limited Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SX360S4A",
+      "title": "Xbox 360S (Slim) Console, 4GB, Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360 S (Slim)",
+        "simplecolour": "Black",
+        "storage_GB": "4GB"
+      },
+      "unlearnable": [
+        {
+          "attribute": "consoles_colour",
+          "value": "Black",
+          "reason": "No match pattern found in title"
+        },
+        {
+          "attribute": "simplecolour",
+          "value": "Black",
+          "reason": "No match pattern found in title"
+        }
+      ]
+    },
+    {
+      "sku": "SX360S250A",
+      "title": "Xbox 360S (Slim) Console, 250GB, Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360 S (Slim)",
+        "simplecolour": "Black",
+        "storage_GB": "250GB"
+      },
+      "unlearnable": [
+        {
+          "attribute": "consoles_colour",
+          "value": "Black",
+          "reason": "No match pattern found in title"
+        },
+        {
+          "attribute": "simplecolour",
+          "value": "Black",
+          "reason": "No match pattern found in title"
+        }
+      ]
+    },
+    {
+      "sku": "SXB3XBOE019",
+      "title": "Xbox 360 Console (HDMI) W/ Wireless Pad, Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360",
+        "simplecolour": "White"
+      },
+      "unlearnable": [
+        {
+          "attribute": "consoles_colour",
+          "value": "White",
+          "reason": "No match pattern found in title"
+        },
+        {
+          "attribute": "simplecolour",
+          "value": "White",
+          "reason": "No match pattern found in title"
+        }
+      ]
+    },
+    {
+      "sku": "SX360E003A",
+      "title": "Xbox 360 \"E\" Console, 500GB, Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360 E",
+        "simplecolour": "Black",
+        "storage_GB": "500GB"
+      },
+      "unlearnable": [
+        {
+          "attribute": "consoles_colour",
+          "value": "Black",
+          "reason": "No match pattern found in title"
+        },
+        {
+          "attribute": "simplecolour",
+          "value": "Black",
+          "reason": "No match pattern found in title"
+        }
+      ]
+    },
+    {
+      "sku": "882224390149",
+      "title": "Xbox 360 Elite Console, 120GB, Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360",
+        "simplecolour": "Black",
+        "storage_GB": "120GB"
+      },
+      "unlearnable": [
+        {
+          "attribute": "consoles_colour",
+          "value": "Black",
+          "reason": "No match pattern found in title"
+        },
+        {
+          "attribute": "simplecolour",
+          "value": "Black",
+          "reason": "No match pattern found in title"
+        }
+      ]
+    },
+    {
+      "sku": "SX360SGEAR31A",
+      "title": "Xbox 360S (Slim) Console, Gears of War 3 Ed. +1Pad (No Game), Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Red/Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360 S (Slim)",
+        "simplecolour": "Red/Black",
+        "storage_GB": "320GB"
+      },
+      "unlearnable": [
+        {
+          "attribute": "storage_GB",
+          "value": "320GB",
+          "reason": "No match pattern found in title"
+        }
+      ]
+    },
+    {
+      "sku": "SXB3XBOE013",
+      "title": "Xbox 360 Console (No HDMI) W/ Wireless Pad, Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360",
+        "simplecolour": "White"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SX360SHALO1A",
+      "title": "Xbox 360S (Slim) Console, 250GB, Halo Reach Ed. +1Pad(No Game), Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Silver",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360 S (Slim)",
+        "simplecolour": "Silver",
+        "storage_GB": "250GB"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SX360E002A",
+      "title": "Xbox 360 \"E\" Console, 250GB, Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360 E",
+        "simplecolour": "Black",
+        "storage_GB": "250GB"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SX360SCODMW31A",
+      "title": "Xbox 360S (Slim) Console, Modern Warfare 3 Ed. +1Pad (No Game), Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Grey",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360 S (Slim)",
+        "simplecolour": "Grey",
+        "storage_GB": "320GB"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SX360E250A",
+      "title": "Xbox 360 Elite Console, 250GB, Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360",
+        "simplecolour": "Black",
+        "storage_GB": "250GB"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SX360E001A",
+      "title": "Xbox 360 \"E\" Console, No HD, Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360 E",
+        "simplecolour": "Black",
+        "storage_GB": "0GB"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "S360ELIE006",
+      "title": "Xbox 360 Console,250GB, Modern Warfare 2 Ed. +2 Pad (No Game), Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360",
+        "simplecolour": "Black",
+        "storage_GB": "250GB"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "S360ELIE003",
+      "title": "Xbox 360 Elite Console, Resident Evil 5 Ltd. Ed. (No Game), Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Red",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360",
+        "simplecolour": "Red",
+        "storage_GB": "120GB"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "882224509374",
+      "title": "Xbox 360 Console, Halo Premium Pack, Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Green",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360",
+        "simplecolour": "Green",
+        "storage_GB": "20GB"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SX360E4A",
+      "title": "Xbox 360 \"E\" Console, 4GB, Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360 E",
+        "simplecolour": "Black",
+        "storage_GB": "4GB"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB3XBOE010",
+      "title": "Xbox 360 Console (No HDMI) W/ Wired Pad, Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360",
+        "simplecolour": "White"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXBOX360320D",
+      "title": "Xbox 360S (Slim) Console, 320GB, Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360 S (Slim)",
+        "simplecolour": "Black",
+        "storage_GB": "320GB"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SXB3XBOE016",
+      "title": "Xbox 360 Console (HDMI) W/ Wired Pad, Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360",
+        "simplecolour": "White"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "S360ELIE006A",
+      "title": "Xbox 360 Console,250GB, Modern Warfare 2 Ed. +1 Pad (No Game), Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360",
+        "simplecolour": "Black",
+        "storage_GB": "250GB"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SX360SNHDA",
+      "title": "Xbox 360S (Slim) Console, No HD, Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360 S (Slim)",
+        "simplecolour": "Black",
+        "storage_GB": "0GB"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SX360SCSEA",
+      "title": "Xbox 360S (Slim) Console 4GB, White S.E +Kinect (No Game), Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360 S (Slim)",
+        "simplecolour": "White",
+        "storage_GB": "4GB"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SX360SCODMW3A",
+      "title": "Xbox 360S (Slim) Console, Modern Warfare 3 Ed. +2Pad (No Game), Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Silver",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360 S (Slim)",
+        "simplecolour": "Silver",
+        "storage_GB": "320GB"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SX360SGEAR3A",
+      "title": "Xbox 360S (Slim) Console, Gears of War 3 Ed. +2Pad (No Game), Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Red/Black",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360 S (Slim)",
+        "simplecolour": "Red/Black",
+        "storage_GB": "320GB"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SX360E005A",
+      "title": "Xbox 360 \"E\" Console, 500GB, Blue SE, Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Blue",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360 E",
+        "simplecolour": "Blue",
+        "storage_GB": "500GB"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SX360SHALOA",
+      "title": "Xbox 360S (Slim) Console, 250GB, Halo Reach Ed. +2Pad(No Game), Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Silver",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360 S (Slim)",
+        "simplecolour": "Silver",
+        "storage_GB": "250GB"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SX360SSTWRA",
+      "title": "Xbox 360S (Slim) Console, Star Wars Ltd. Ed. +Kinect (No Game), Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Blue/White",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360 S (Slim)",
+        "simplecolour": "Blue/White",
+        "storage_GB": "320GB"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "885370472950",
+      "title": "Xbox 360S (Slim) Console, 320GB, Halo 4 Ed. + 2Pad (No Game) Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Blue",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360 S (Slim)",
+        "simplecolour": "Blue",
+        "storage_GB": "320GB"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "885370472950B",
+      "title": "Xbox 360S (Slim) Console, 320GB, Halo 4 Ed. + 1Pad (No Game) Boxed",
+      "category": "Xbox 360 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Blue",
+        "manufacturer": "Microsoft",
+        "model_name": "Xbox 360 S (Slim)",
+        "simplecolour": "Blue",
+        "storage_GB": "320GB"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "711719638742",
+      "title": "Playstation 2 Slimline Console, Black, Boxed",
+      "category": "Playstation2 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 2 Slimline",
+        "simplecolour": "Black",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "711719105701",
+      "title": "Playstation 2 Console, Black, Boxed",
+      "category": "Playstation2 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 2",
+        "simplecolour": "Black",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS2PSTE002",
+      "title": "Playstation 2 Slimline Console, Silver, Boxed",
+      "category": "Playstation2 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Silver",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 2 Slimline",
+        "simplecolour": "Silver",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS2PS2E002P",
+      "title": "Playstation 2 Console, Silver (With 2 Pads), Boxed",
+      "category": "Playstation2 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Silver",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 2",
+        "simplecolour": "Silver",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "711719601036",
+      "title": "Playstation 2 Console, Silver (With 1 Pad), Boxed",
+      "category": "Playstation2 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Silver",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 2",
+        "simplecolour": "Silver",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS3120SEB001",
+      "title": "Playstation 3 Slim Console, 120GB, Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3 Slim",
+        "simplecolour": "Black",
+        "storage_GB": "120GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS3160SEB001",
+      "title": "Playstation 3 Slim Console, 160GB, Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3 Slim",
+        "simplecolour": "Black",
+        "storage_GB": "160GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS3250SEB001",
+      "title": "Playstation 3 Slim Console, 250GB, Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3 Slim",
+        "simplecolour": "Black",
+        "storage_GB": "250GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS312GSSB001",
+      "title": "PS3 Super Slim Console, 12GB, Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3 Super Slim",
+        "simplecolour": "Black",
+        "storage_GB": "12GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS380BE001",
+      "title": "Playstation 3 Console, 80GB, Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3",
+        "simplecolour": "Black",
+        "storage_GB": "80GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS3320SEB001",
+      "title": "Playstation 3 Slim Console, 320GB Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3 Slim",
+        "simplecolour": "Black",
+        "storage_GB": "320GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS3500SSB001",
+      "title": "PS3 Super Slim Console, 500GB, Black, Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3 Super Slim",
+        "simplecolour": "Black",
+        "storage_GB": "500GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4P1TB001",
+      "title": "Playstation 4 Pro Console, 1TB Black, Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Jet Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Pro",
+        "simplecolour": "Black",
+        "storage_GB": "1TB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4500GB001",
+      "title": "Playstation 4 Console, 500GB Black, Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Jet Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4",
+        "simplecolour": "Black",
+        "storage_GB": "500GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4S500GB001",
+      "title": "Playstation 4 Slim Console, 500GB Black, Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Jet Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Slim",
+        "simplecolour": "Black",
+        "storage_GB": "500GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4S1TB001",
+      "title": "Playstation 4 Slim Console, 1TB Black, Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Jet Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Slim",
+        "simplecolour": "Black",
+        "storage_GB": "1TB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS41TBB001",
+      "title": "Playstation 4 Console, 1TB Black, Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Jet Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4",
+        "simplecolour": "Black",
+        "storage_GB": "1TB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4S500GBW001",
+      "title": "Playstation 4 Slim Console, 500GB White, Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Glacier White",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Slim",
+        "simplecolour": "White",
+        "storage_GB": "500GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4S1TBGT001",
+      "title": "Playstation 4 Slim Console, 1TB Gran Turismo Silver (No Game), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Silver",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Slim",
+        "simplecolour": "Silver",
+        "storage_GB": "1TB",
+        "edition": "Gran Turismo Sport Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4S1TBSB001",
+      "title": "Playstation 4 Slim Console 1TB Days Of Play Steel Black (1 SB Pad),Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Slim",
+        "simplecolour": "Black",
+        "storage_GB": "1TB",
+        "edition": "Days of Play 2019 Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4500GBW001",
+      "title": "Playstation 4 Console, 500GB White, Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Glacier White",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4",
+        "simplecolour": "White",
+        "storage_GB": "500GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4500GBDTW001",
+      "title": "Playstation 4 Console, 500GB Destiny TK White LE (No Game), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4",
+        "simplecolour": "White",
+        "storage_GB": "500GB",
+        "edition": "Destiny: The Taken King Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4500GBBSL001",
+      "title": "Playstation 4 Console, 500GB Batman Steel Grey LE (No Game), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Steel Grey",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4",
+        "simplecolour": "Silver",
+        "storage_GB": "500GB",
+        "edition": "Batman Arkham Knight Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS41TBGC001",
+      "title": "Playstation 4 Slim Console, 1TB Green Camouflage (No Game), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Green",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Slim",
+        "simplecolour": "Green",
+        "storage_GB": "1TB",
+        "edition": "Call of Duty: WW2 Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4500GBMGR001",
+      "title": "Playstation 4 Console, 500GB Metal Gear Red LE (No Game), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Red",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4",
+        "simplecolour": "Red",
+        "storage_GB": "500GB",
+        "edition": "Metal Gear Solid 5 Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS41TBSWV001",
+      "title": "Playstation 4 Console, 1TB Star Wars LE (No Game), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4",
+        "simplecolour": "Black",
+        "storage_GB": "1TB",
+        "edition": "Star Wars Battlefront Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4S1TBSWG001",
+      "title": "Playstation 4 Slim Console, 1TB Star Wars Grey (No Game), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Grey",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Slim",
+        "simplecolour": "Grey",
+        "storage_GB": "1TB",
+        "edition": "Star Wars Battlefront II Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4P1TBGW001",
+      "title": "Playstation 4 Pro Console, 1TB Glacier White (No Game/DLC), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Glacier White",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Pro",
+        "simplecolour": "White",
+        "storage_GB": "1TB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4P1TBLU2B001",
+      "title": "Playstation 4 Pro Console, 1TB Last Of Us 2 Black (No Game), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Pro",
+        "simplecolour": "Black",
+        "storage_GB": "1TB",
+        "edition": "Last of Us 2 Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4P1TBDSW001",
+      "title": "Playstation 4 Pro Console, 1TB Death Stranding White (No Game), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Pro",
+        "simplecolour": "White",
+        "storage_GB": "1TB",
+        "edition": "Death Stranding Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS41TBCBL001",
+      "title": "Playstation 4 Console, 1TB Black Ops III LE (No Game), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4",
+        "simplecolour": "Black",
+        "storage_GB": "1TB",
+        "edition": "Call of Duty: Black Ops III Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4S1TBSMR001",
+      "title": "Playstation 4 Slim Console, 1TB Spider-Man Red (No Game), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Red",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Slim",
+        "simplecolour": "Red",
+        "storage_GB": "1TB",
+        "edition": "Spider-Man Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4P2TBTDB001",
+      "title": "Playstation 4 Pro Console, 2TB 500 Million Blue + Blue Camera, Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Blue",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Pro",
+        "simplecolour": "Blue",
+        "storage_GB": "2TB",
+        "edition": "500 Million Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS41TBUCB001",
+      "title": "Playstation 4 Console, 1TB Uncharted Grey Blue (No Game), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Grey Blue",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4",
+        "simplecolour": "Grey",
+        "storage_GB": "1TB",
+        "edition": "Uncharted 4: A Thief's End Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4S500GBG001",
+      "title": "Playstation 4 Slim Console, 500GB Gold (With 2 Gold Pads), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Gold",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Slim",
+        "simplecolour": "Gold",
+        "storage_GB": "500GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4S1TBFXV001",
+      "title": "Playstation 4 Slim Console, 1TB Final Fantasy XV LE (No Game), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Slim",
+        "simplecolour": "Black",
+        "storage_GB": "1TB",
+        "edition": "Final Fantasy XV Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4P1TBSWB001",
+      "title": "Playstation 4 Pro Console, 1TB Star Wars Black (No Game), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Pro",
+        "simplecolour": "Black",
+        "storage_GB": "1TB",
+        "edition": "Star Wars Battlefront II Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4P1TBSMR001",
+      "title": "Playstation 4 Pro Console, 1TB Spider-Man Red (No Game), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Red",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Pro",
+        "simplecolour": "Red",
+        "storage_GB": "1TB",
+        "edition": "Spider-Man Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4S500GBS001",
+      "title": "Playstation 4 Slim Console, 500GB Silver (With 2 Silver Pads), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Silver",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Slim",
+        "simplecolour": "Silver",
+        "storage_GB": "500GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4P1TBGOW001",
+      "title": "Playstation 4 Pro Console, 1TB God Of War Silver (No Game), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Silver",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Pro",
+        "simplecolour": "Silver",
+        "storage_GB": "1TB",
+        "edition": "God of War Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4P1TBMH001",
+      "title": "Playstation 4 Pro Console, 1TB Monster Hunter Black (No Game), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Pro",
+        "simplecolour": "Black",
+        "storage_GB": "1TB",
+        "edition": "Monster Hunter Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4P1TBKH3B001",
+      "title": "Playstation 4 Pro Console, 1TB Kingdom Hearts III Black (No Game), Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Pro",
+        "simplecolour": "Black",
+        "storage_GB": "1TB",
+        "edition": "Kingdom Hearts III Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4S500GBDP001",
+      "title": "Playstation 4 Slim Console, 500GB Days Of Play Blue (2 Blue Pads) Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Blue",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4 Slim",
+        "simplecolour": "Blue",
+        "storage_GB": "500GB",
+        "edition": "Days of Play 2018 Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS4500GB2AV001",
+      "title": "Playstation 4 Console, 500GB 20th Anniversary Edition, Boxed",
+      "category": "Playstation4 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Grey",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 4",
+        "simplecolour": "Grey",
+        "storage_GB": "500GB",
+        "edition": "20th Anniversary Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS5825GBW001",
+      "title": "Playstation 5 Console, 825GB, White, Boxed",
+      "category": "Playstation5 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "model_name": "Playstation 5",
+        "simplecolour": "White",
+        "storage_GB": "825GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS5S1TBW001",
+      "title": "Playstation 5 Slim Console, 1TB, White, Boxed",
+      "category": "Playstation5 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "model_name": "Playstation 5 Slim",
+        "simplecolour": "White",
+        "storage_GB": "1TB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS5SD825GBW001",
+      "title": "Playstation 5 Slim Digital Edition Console, 825GB, White, Boxed",
+      "category": "Playstation5 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "model_name": "Playstation 5 Slim",
+        "simplecolour": "White",
+        "storage_GB": "825GB",
+        "edition": "Digital Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS5S1TBGYG001",
+      "title": "Playstation 5 Slim Console, 1TB, Ghost of Yotei Gold, Boxed",
+      "category": "Playstation5 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Gold",
+        "model_name": "Playstation 5 Slim",
+        "simplecolour": "Gold",
+        "storage_GB": "1TB",
+        "edition": "Ghost of Yotei Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS5SD1TBW001",
+      "title": "Playstation 5 Slim Digital Edition Console, 1TB, White, Boxed",
+      "category": "Playstation5 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "model_name": "Playstation 5 Slim",
+        "simplecolour": "White",
+        "storage_GB": "1TB",
+        "edition": "Digital Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS5D825GBW001",
+      "title": "Playstation 5 Digital Edition Console, 825GB, White, Boxed",
+      "category": "Playstation5 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "model_name": "Playstation 5",
+        "simplecolour": "White",
+        "storage_GB": "825GB",
+        "edition": "Digital Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS5S1TBGYB001",
+      "title": "Playstation 5 Slim Console, 1TB, Ghost of Yotei Black, Boxed",
+      "category": "Playstation5 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "model_name": "Playstation 5 Slim",
+        "simplecolour": "Black",
+        "storage_GB": "1TB",
+        "edition": "Ghost of Yotei Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS5SD1TB30G001",
+      "title": "Playstation 5 Slim Digital Ed. Console, 1TB, 30th Ann. Grey, Boxed",
+      "category": "Playstation5 Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "storage_GB": "1TB",
+        "consoles_colour": "Grey",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Grey",
+        "edition": "Standard Edition",
+        "model_name": "Playstation 5 Slim"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS5825GBSM2001",
+      "title": "Playstation 5 Console, 825GB, Spider-Man w/Spider-Man Controller, Boxed",
+      "category": "Playstation5 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Red/Black",
+        "model_name": "Playstation 5",
+        "simplecolour": "Red/Black",
+        "storage_GB": "825GB",
+        "edition": "Spider-Man 2 Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS5P2TBW001",
+      "title": "Playstation 5 Pro Console, 2TB, White, Boxed",
+      "category": "Playstation5 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "model_name": "Playstation 5 Pro",
+        "simplecolour": "White",
+        "storage_GB": "2TB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS5P2TB30G001",
+      "title": "Playstation 5 Pro Console, 2TB, 30th Anniversary Grey, Boxed",
+      "category": "Playstation5 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Grey",
+        "model_name": "Playstation 5 Pro",
+        "simplecolour": "Grey",
+        "storage_GB": "2TB",
+        "edition": "30th Anniversary Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SSONPSCONNY001",
+      "title": "Sony Playstation Net Yaroze Console DTL-H3002, w/x2 Pad, Black, Boxed",
+      "category": "Playstation1 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "simplecolour": "Black"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SANTMNBLA001",
+      "title": "Analogue NT Mini Noir Console, Black (No Controller), Boxed",
+      "category": "Analogue Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SLEGPS2S862B",
+      "title": "Gun Club, + Manual, Boxed",
+      "category": "Playstation2 Rarities",
+      "source": "http",
+      "attributes": {},
+      "unlearnable": []
+    },
+    {
+      "sku": "SLEGPS2S1053B",
+      "title": "Kuon, + Manual, Boxed",
+      "category": "Playstation2 Rarities",
+      "source": "http",
+      "attributes": {},
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS1G1166B",
+      "title": "Cindy's Fashion World, w/o Manual, Boxed",
+      "category": "Playstation1 Software",
+      "source": "http",
+      "attributes": {},
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS1G1166AB",
+      "title": "Cindy's Fashion World, w/ Manual, Boxed",
+      "category": "Playstation1 Software",
+      "source": "http",
+      "attributes": {},
+      "unlearnable": []
+    },
+    {
+      "sku": "0711719693970",
+      "title": "Playstation 2 Slimline Console, Pink, Boxed",
+      "category": "Playstation2 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Pink",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 2 Slimline",
+        "simplecolour": "Pink",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0711719692P01",
+      "title": "Playstation 2 Slimline Console, Pink (With 2 Pads), Boxed",
+      "category": "Playstation2 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Pink",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 2 Slimline",
+        "simplecolour": "Pink",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "711719691211",
+      "title": "Playstation 2 Console, Aqua Blue (With 1 Pad), Boxed",
+      "category": "Playstation2 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Aqua Blue",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 2",
+        "simplecolour": "Blue",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "711719430650",
+      "title": "Playstation 3 Console, 40GB, Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3",
+        "simplecolour": "Black",
+        "storage_GB": "40GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS3160BE001",
+      "title": "Playstation 3 Console, 160GB Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3",
+        "simplecolour": "Black",
+        "storage_GB": "160GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS3SSRE3201A",
+      "title": "PS3 Slim Console, 320GB, Scarlet Red +1 Pad Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Scarlet Red",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3 Slim",
+        "simplecolour": "Red",
+        "storage_GB": "320GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS3PS3NBCE001A",
+      "title": "Playstation 3 Console, 60GB, (NO PS2), Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3",
+        "simplecolour": "Black",
+        "storage_GB": "60GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS3500SSW001",
+      "title": "PS3 Super Slim Console, 500GB, White, Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3 Super Slim",
+        "simplecolour": "White",
+        "storage_GB": "500GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS3500SSGR1001",
+      "title": "PS3 Super Slim Console, 500GB, Red, +1Pad Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Red",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3 Super Slim",
+        "simplecolour": "Red",
+        "storage_GB": "500GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS3500B001",
+      "title": "Playstation 3 Console, 500GB+, Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3",
+        "simplecolour": "Black",
+        "storage_GB": "500GB+",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "711719699750",
+      "title": "Playstation 3 Console, 60GB, (PS2 Comp.), Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3",
+        "simplecolour": "Black",
+        "storage_GB": "60GB",
+        "edition": "PS2 Compatible Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS3SSRE320A",
+      "title": "PS3 Slim Console, 320GB, Scarlet Red +2 Pads Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Scarlet Red",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3 Slim",
+        "simplecolour": "Red",
+        "storage_GB": "320GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS3SSIL320A",
+      "title": "Playstation 3 Slim Console, 320GB, Silver, Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Silver",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3 Slim",
+        "simplecolour": "Silver",
+        "storage_GB": "320GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS3500SSAB001",
+      "title": "PS3 Super Slim Console, 500GB, Blue, +2Pads Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Blue",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3 Super Slim",
+        "simplecolour": "Blue",
+        "storage_GB": "500GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS3500SSGR001",
+      "title": "PS3 Super Slim Console, 500GB, Red, +2Pads Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Red",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3 Super Slim",
+        "simplecolour": "Red",
+        "storage_GB": "500GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS3500SSAB1001",
+      "title": "PS3 Super Slim Console, 500GB, Blue, +1Pad Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Blue",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3 Super Slim",
+        "simplecolour": "Blue",
+        "storage_GB": "500GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SPS3SWHI320A",
+      "title": "PS3 Slim Console, 320GB, White +2 Pads, Boxed",
+      "category": "Playstation3 Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "manufacturer": "Sony",
+        "model_name": "PlayStation 3 Slim",
+        "simplecolour": "White",
+        "storage_GB": "320GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NSL32CP01",
+      "title": "Nintendo Switch Lite Console, 32GB Coral Pink, Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Coral Pink",
+        "model_name": "Switch Lite",
+        "simplecolour": "Coral Pink",
+        "storage_GB": "32GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NSL32GR01",
+      "title": "Nintendo Switch Lite Console, 32GB Grey, Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Grey",
+        "model_name": "Switch Lite",
+        "simplecolour": "Grey",
+        "storage_GB": "32GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NSL32TB01",
+      "title": "Nintendo Switch Lite Console, 32GB Turquoise, Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Turquoise",
+        "model_name": "Switch Lite",
+        "simplecolour": "Turquoise",
+        "storage_GB": "32GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NSL32BL01",
+      "title": "Nintendo Switch Lite Console, 32GB Blue, Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Blue",
+        "model_name": "Switch Lite",
+        "simplecolour": "Blue",
+        "storage_GB": "32GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NS32V2GR01",
+      "title": "Switch Console, 32GB HAC-001-01 + Grey Joy-Con, Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Grey",
+        "model_name": "Switch (HAC-001-01)",
+        "simplecolour": "Grey",
+        "storage_GB": "32GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NSL32YE01",
+      "title": "Nintendo Switch Lite Console, 32GB Yellow, Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Yellow",
+        "model_name": "Switch Lite",
+        "simplecolour": "Yellow",
+        "storage_GB": "32GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NSL32ACTB01",
+      "title": "Switch Lite Console, 32GB Timmy & Tommy Aloha Turquoise, (No DLC) Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Turquoise",
+        "model_name": "Switch Lite",
+        "simplecolour": "Turquoise",
+        "storage_GB": "32GB",
+        "edition": "Animal Crossing: New Horizons Timmy & Tommy Aloha Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NSL32ZEHY01",
+      "title": "Nintendo Switch Lite Console, 32GB Hyrule Ed. Gold, (No DLC) Boxed",
+      "category": "Switch Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Gold",
+        "model_name": "Switch Lite",
+        "simplecolour": "Gold",
+        "storage_GB": "32GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NSL32ZG01",
+      "title": "Nintendo Switch Lite Console, 32GB Zacian & Zamazenta Grey, Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Grey",
+        "model_name": "Switch Lite",
+        "simplecolour": "Grey",
+        "storage_GB": "32GB",
+        "edition": "Zacian & Zamazenta Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NSL32ACCP01",
+      "title": "Switch Lite Console, 32GB Isabelle Aloha Coral Pink, (No DLC) Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Coral Pink",
+        "model_name": "Switch Lite",
+        "simplecolour": "Coral Pink",
+        "storage_GB": "32GB",
+        "edition": "Animal Crossing: New Horizons Isabelle Aloha Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NS32NE01",
+      "title": "Nintendo Switch Console, 32GB + Neon Red/Blue Joy-Con, Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Neon Red/Blue",
+        "model_name": "Switch",
+        "simplecolour": "Neon Red/Blue",
+        "storage_GB": "32GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NS64V3NE01",
+      "title": "Switch Console, 64GB OLED + Neon Red/Blue Joy-Con, Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Neon Red/Blue",
+        "model_name": "Switch OLED",
+        "simplecolour": "Neon Red/Blue",
+        "storage_GB": "64GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NS64V3MR01",
+      "title": "Switch Console, 64GB OLED Mario Red + Red Joy-Con, Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Red",
+        "model_name": "Switch OLED",
+        "simplecolour": "Red",
+        "storage_GB": "64GB",
+        "edition": "Mario Red Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NS32GR01",
+      "title": "Nintendo Switch Console, 32GB + Grey Joy-Con, Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Grey",
+        "model_name": "Switch",
+        "simplecolour": "Grey",
+        "storage_GB": "32GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NS64V3ZE01",
+      "title": "Switch Console, 64GB OLED Legend of Zelda + Gold Joy-Con, Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Gold",
+        "model_name": "Switch OLED",
+        "simplecolour": "Gold",
+        "storage_GB": "64GB",
+        "edition": "Legend of Zelda: Tears of the Kingdom Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NS64V3SV01",
+      "title": "Switch Console, 64GB OLED Scarlet/Violet + Red/Purple Joy-Con, Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Red/Purple",
+        "model_name": "Switch OLED",
+        "simplecolour": "Red/Purple",
+        "storage_GB": "64GB",
+        "edition": "Pokemon Scarlet and Violet Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NS32ACN01",
+      "title": "Switch Console, 32GB Animal Crossing Pastel/White Joy-Con No Game, Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Pastel/White",
+        "model_name": "Switch",
+        "simplecolour": "Pastel/White",
+        "storage_GB": "32GB",
+        "edition": "Animal Crossing Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NS64V3SP01",
+      "title": "Switch Console, 64GB OLED Splatoon 3 + Blue/Yellow Joy-Con, Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Blue/Yellow",
+        "model_name": "Switch OLED",
+        "simplecolour": "Blue/Yellow",
+        "storage_GB": "64GB",
+        "edition": "Splatoon 3 Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NS32PLG01",
+      "title": "Switch Console, 32GB Lets Go+Yellow/Brown Joy-Con No Game/Ball, Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Yellow/Brown",
+        "model_name": "Switch",
+        "simplecolour": "Yellow/Brown",
+        "storage_GB": "32GB",
+        "edition": "Pikachu & Eevee Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NS32V2MR01",
+      "title": "Switch Console, 32GB Mario Red Joy-Con W/Case, Grip & Straps, Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Red",
+        "model_name": "Switch",
+        "simplecolour": "Red",
+        "storage_GB": "32GB",
+        "edition": "Mario Red & Blue Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NSL32DP01",
+      "title": "Nintendo Switch Lite Console, 32GB Dialga & Palkia Black, Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "model_name": "Switch Lite",
+        "simplecolour": "Black",
+        "storage_GB": "32GB",
+        "edition": "Dialga & Palkia Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NS32SBU01",
+      "title": "Switch Console, 32GB Smash Bros+Smash Grey Joy-Con, (No Game) Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Grey",
+        "model_name": "Switch",
+        "simplecolour": "Grey",
+        "storage_GB": "32GB",
+        "edition": "Super Smash Bros Ultimate Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NS32V2FN01",
+      "title": "Switch Console, 32GB Fortnite + Yellow/Blue Joy-Con, (No DLC) Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Yellow/Blue",
+        "model_name": "Switch",
+        "simplecolour": "Yellow/Blue",
+        "storage_GB": "32GB",
+        "edition": "Fortnite Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NS32SR01",
+      "title": "Nintendo Switch Console, 32GB + Solid Red Joy-Con (No Game), Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Solid Red",
+        "model_name": "Switch",
+        "simplecolour": "Solid Red",
+        "storage_GB": "32GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NS32DI01",
+      "title": "Nintendo Switch Console, 32GB Diablo+Grey Joy-Con, W/Case (No Game) Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Grey",
+        "model_name": "Switch",
+        "simplecolour": "Grey",
+        "storage_GB": "32GB",
+        "edition": "Diablo Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NS32V2SR01",
+      "title": "Switch Console, 32GB HAC-001-01 + Solid Red Joy-Con (No Game), Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Solid Red",
+        "model_name": "Switch (HAC-001-01)",
+        "simplecolour": "Solid Red",
+        "storage_GB": "32GB",
+        "edition": "Standard Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454964NS32V2MH01",
+      "title": "Switch Console, 32GB Monster Hunter + Grey Joy-Con (No Game), Boxed",
+      "category": "Switch Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Grey",
+        "model_name": "Switch",
+        "simplecolour": "Grey",
+        "storage_GB": "32GB",
+        "edition": "Monster Hunter Rise Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454965003DCB01",
+      "title": "Nintendo 3DS Console, Cosmos Black, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Cosmos Black",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS",
+        "simplecolour": "Black"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454962DBB01",
+      "title": "Nintendo 2DS Console, Black/Blue, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black & Blue",
+        "manufacturer": "Nintendo",
+        "model_name": "2DS",
+        "simplecolour": "Black"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454965003DAB01",
+      "title": "Nintendo 3DS Console, Aqua Blue, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Aqua Blue",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS",
+        "simplecolour": "Blue"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650MR01",
+      "title": "Nintendo 3DS Console, Metallic Red, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Metallic Red",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS",
+        "simplecolour": "Red"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454962DBB08",
+      "title": "Nintendo 2DS Console, White/Pink, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White & Pink",
+        "manufacturer": "Nintendo",
+        "model_name": "2DS",
+        "simplecolour": "Pink"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650IW01",
+      "title": "Nintendo 3DS Console, Ice White (No Game), Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Ice White",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS",
+        "simplecolour": "White"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454962DPSM01",
+      "title": "Nintendo 2DS Console, Pokemon Sun/Moon Blue (No Game), Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Blue",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Blue",
+        "manufacturer": "Nintendo",
+        "model_name": "2DS"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454962DWR01",
+      "title": "Nintendo 2DS Console, White/Red, Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "White",
+        "consoles_condition": "Boxed",
+        "simplecolour": "White",
+        "manufacturer": "Nintendo",
+        "model_name": "2DS"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454962DPR01",
+      "title": "Nintendo 2DS Console, Transparent Red, Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Transparent Red",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Red",
+        "manufacturer": "Nintendo",
+        "model_name": "2DS"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650N2DXBT01",
+      "title": "NEW 2DS XL Console, w/AC Adapter, Black & Turquoise, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black & Turquoise",
+        "manufacturer": "Nintendo",
+        "model_name": "New 2DS XL",
+        "simplecolour": "Black/Turquoise"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650N2DXBLG01",
+      "title": "NEW 2DS XL Console, w/AC Adapter, Black & Lime Green, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black & Lime Green",
+        "manufacturer": "Nintendo",
+        "model_name": "New 2DS XL",
+        "simplecolour": "Black/Lime Green"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650NXLMM01",
+      "title": "NEW 3DS XL Console, Majora's Mask Edition (No Game), Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Majora's Mask Edition",
+        "manufacturer": "Nintendo",
+        "model_name": "New 3DS XL",
+        "simplecolour": "Gold"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650XLBB01",
+      "title": "Nintendo 3DS XL Console, Blue, Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Blue",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Blue",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS XL"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650NXLBL01",
+      "title": "NEW 3DS XL Console, Metallic Black, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Metallic Black",
+        "manufacturer": "Nintendo",
+        "model_name": "New 3DS XL",
+        "simplecolour": "Black"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650XLWB01",
+      "title": "Nintendo 3DS XL Console, White, Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "White",
+        "consoles_condition": "Boxed",
+        "simplecolour": "White",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS XL"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650N2DXPK01",
+      "title": "NEW 2DS XL Console, w/AC Adapter, Pikachu Edition, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Pikachu Edition",
+        "manufacturer": "Nintendo",
+        "model_name": "New 2DS XL",
+        "simplecolour": "Yellow"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650N2DXPB01",
+      "title": "NEW 2DS XL Console, w/AC Adapter, Pokeball Edition, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Pokeball Edition",
+        "manufacturer": "Nintendo",
+        "model_name": "New 2DS XL",
+        "simplecolour": "Red"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650NXLBE01",
+      "title": "NEW 3DS XL Console, Metallic Blue, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Metallic Blue",
+        "manufacturer": "Nintendo",
+        "model_name": "New 3DS XL",
+        "simplecolour": "Blue"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "045496XLZB01",
+      "title": "Nintendo 3DS XL Console, Zelda Ed. (No Game), Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Red/Black",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Red/Black",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS XL"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650XLSBL01",
+      "title": "Nintendo 3DS XL Console, Black, Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Black",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Black",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS XL"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650NXLSNES01",
+      "title": "NEW 3DS XL Console, SNES Ed., Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "SNES Edition",
+        "manufacturer": "Nintendo",
+        "model_name": "New 3DS XL",
+        "simplecolour": "Grey"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "045496500ZE01",
+      "title": "Nintendo 3DS Console, Zelda 25th Anniversary Ed. (No Game), Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Red/Black",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Red/Black",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650XLSB01",
+      "title": "Nintendo 3DS XL Console, Silver, Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Silver",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Silver",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS XL"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650XLPRB01",
+      "title": "Nintendo 3DS XL Console, Pokemon Red, Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Red",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Red",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS XL"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650N3DSB01",
+      "title": "NEW 3DS Console, Black, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Black",
+        "manufacturer": "Nintendo",
+        "model_name": "New 3DS",
+        "simplecolour": "Black"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650NXLWH01",
+      "title": "NEW 3DS XL Console, Pearl White, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Pearl White",
+        "manufacturer": "Nintendo",
+        "model_name": "New 3DS XL",
+        "simplecolour": "White"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650XLFEB01",
+      "title": "Nintendo 3DS XL Console, Fire Emblem Awakening Ed., Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Red/Black",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Red/Black",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS XL"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650N3DSW01",
+      "title": "NEW 3DS Console, White, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White",
+        "manufacturer": "Nintendo",
+        "model_name": "New 3DS",
+        "simplecolour": "White"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650XLRB01",
+      "title": "Nintendo 3DS XL Console, Red, Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Red",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Red",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS XL"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650N3DSAC01",
+      "title": "NEW 3DS Animal Crossing: Happy Home Designer Ed. (No Game), Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Animal Crossing: Happy Home Designer Edition",
+        "manufacturer": "Nintendo",
+        "model_name": "New 3DS",
+        "simplecolour": "White"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650XLYOB01",
+      "title": "Nintendo 3DS XL Console, Yoshi Ed., Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Red/Black",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Red/Black",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS XL"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650XLSSB01",
+      "title": "Nintendo 3DS XL Console, Super Smash Bros. Ed. (No Game), Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Red/Black",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Red/Black",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS XL"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650XLSE01",
+      "title": "NEW 3DS XL Console, Samus Edition Ed., Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Samus Edition",
+        "manufacturer": "Nintendo",
+        "model_name": "New 3DS XL",
+        "simplecolour": "Orange"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650NXLMHG01",
+      "title": "NEW 3DS XL Console, Monster Hunter Gen Ed. (No Game), Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Monster Hunter Generations Edition",
+        "manufacturer": "Nintendo",
+        "model_name": "New 3DS XL",
+        "simplecolour": "Red & Black"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650NXLHE01",
+      "title": "NEW 3DS XL Console, Hyrule Edition (No Game), Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Hyrule Edition",
+        "manufacturer": "Nintendo",
+        "model_name": "New 3DS XL",
+        "simplecolour": "Gold"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "045496500TE01",
+      "title": "Nintendo 3DS Console, \"Chotto\" Toad Ed., Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Red/Black",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Red/Black",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "045496500ME01",
+      "title": "Nintendo 3DS Console, \"Chotto\" Mario Ed., Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Red/Black",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Red/Black",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650XLYB01",
+      "title": "Nintendo 3DS XL Console, Pikachu, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Pikachu Edition",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS XL",
+        "simplecolour": "Yellow"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650NXLPSM01",
+      "title": "NEW 3DS XL Console, Pokemon Sun & Moon, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Solgaleo & Lunala Edition",
+        "manufacturer": "Nintendo",
+        "model_name": "New 3DS XL",
+        "simplecolour": "Black"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650N2DXAC01",
+      "title": "NEW 2DS XL Console, w/AC Adapter, Animal Crossing Edition, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Animal Crossing Edition",
+        "manufacturer": "Nintendo",
+        "model_name": "New 2DS XL",
+        "simplecolour": "White/Green"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454965004CP01",
+      "title": "Nintendo 3DS Console, Coral Pink (No Game), Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Coral Pink",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Coral Pink",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650XLPB01",
+      "title": "Nintendo 3DS XL Console, Pink, Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Pink",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Pink",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS XL"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650XLACB01",
+      "title": "Nintendo 3DS XL Console, Animal Crossing Ed., Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Red/Black",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Red/Black",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS XL"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650NXLOB01",
+      "title": "NEW 3DS XL Console, Orange & Black, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Orange & Black",
+        "manufacturer": "Nintendo",
+        "model_name": "New 3DS XL",
+        "simplecolour": "Orange/Black"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650N3DSAE01",
+      "title": "NEW 3DS Console, Ambassador Edition, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Ambassador Edition",
+        "manufacturer": "Nintendo",
+        "model_name": "New 3DS",
+        "simplecolour": "White"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650N2DXWO01",
+      "title": "NEW 2DS XL Console, w/AC Adapter, White & Orange, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White & Orange",
+        "manufacturer": "Nintendo",
+        "model_name": "New 2DS XL",
+        "simplecolour": "White/Orange"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650N2DXWL01",
+      "title": "NEW 2DS XL Console, w/AC Adapter, White & Lavender, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "White & Lavender",
+        "manufacturer": "Nintendo",
+        "model_name": "New 2DS XL",
+        "simplecolour": "White/Lavender"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454962DPB01",
+      "title": "Nintendo 2DS Console, Transparent Blue, Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Transparent Blue",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Blue",
+        "manufacturer": "Nintendo",
+        "model_name": "2DS"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650NXLMH01",
+      "title": "NEW 3DS XL Console, Monster Hunter 4 Ed. (No Game), Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Monster Hunter 4 Edition",
+        "manufacturer": "Nintendo",
+        "model_name": "New 3DS XL",
+        "simplecolour": "Silver"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650XLPBB01",
+      "title": "Nintendo 3DS XL Console, Pokemon Blue, Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Blue",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Blue",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS XL"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650NXLHH01",
+      "title": "NEW 3DS XL Animal Crossing: Happy Home Designer Ed. (No Game), Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Animal Crossing: Happy Home Designer Edition",
+        "manufacturer": "Nintendo",
+        "model_name": "New 3DS XL",
+        "simplecolour": "White"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650NXLFF01",
+      "title": "NEW 3DS XL Console, Fire Emblem Fates White/Black, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Fire Emblem Fates Edtion",
+        "manufacturer": "Nintendo",
+        "model_name": "New 3DS XL",
+        "simplecolour": "White/Black"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "0454962DPY01",
+      "title": "Nintendo 2DS Console, Transparent Yellow, Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Transparent Yellow",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Yellow",
+        "manufacturer": "Nintendo",
+        "model_name": "2DS"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650N2DXMC01",
+      "title": "NEW 2DS XL Console, w/AC Adapter, Minecraft Creeper Ed (No Game), Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Minecraft Creeper Edition",
+        "manufacturer": "Nintendo",
+        "model_name": "New 2DS XL",
+        "simplecolour": "Green"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650XLPW01",
+      "title": "NEW 3DS XL Console, Pink & White, Boxed",
+      "category": "3DS Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "consoles_colour": "Pink & White",
+        "manufacturer": "Nintendo",
+        "model_name": "New 3DS XL",
+        "simplecolour": "Pink/White"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "04549650XLLB01",
+      "title": "Nintendo 3DS XL Console, Luigi Ed., Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Red/Black",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Red/Black",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS XL"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "045496500PP01",
+      "title": "Nintendo 3DS Console, \"Chotto\" Peach Ed., Boxed",
+      "category": "3DS Consoles",
+      "source": "rule_match",
+      "attributes": {
+        "consoles_colour": "Red/Black",
+        "consoles_condition": "Boxed",
+        "simplecolour": "Red/Black",
+        "manufacturer": "Nintendo",
+        "model_name": "3DS"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SWIIWIIBLK001",
+      "title": "Wii Console, Black (No Game), Boxed",
+      "category": "Wii Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "manufacturer": "Nintendo",
+        "model_name": "Wii",
+        "simplecolour": "Black"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SWIIWIIBLKRMP001",
+      "title": "Wii Console, Black, W/ WiimotePlus (No Game), Boxed",
+      "category": "Wii Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "manufacturer": "Nintendo",
+        "model_name": "Wii",
+        "simplecolour": "Black"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SWIIWIIMINR001",
+      "title": "Wii Mini Console, Red, Boxed",
+      "category": "Wii Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "manufacturer": "Nintendo",
+        "model_name": "Wii Mini",
+        "simplecolour": "Red"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SWIIWIIBLUE11001",
+      "title": "Wii Console, V2 Blue (No Game), Boxed",
+      "category": "Wii Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "manufacturer": "Nintendo",
+        "model_name": "Wii (RVL-201)",
+        "simplecolour": "Blue"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SWIIWIIWHIT11001",
+      "title": "Wii Console, V2 White (No Game), Boxed",
+      "category": "Wii Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "manufacturer": "Nintendo",
+        "model_name": "Wii (RVL-201)",
+        "simplecolour": "White"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SWIIWIIRED001",
+      "title": "Wii Console, Red (No Game), Boxed",
+      "category": "Wii Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "manufacturer": "Nintendo",
+        "model_name": "Wii",
+        "simplecolour": "Red"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SWIIU32GBP001",
+      "title": "Wii U Console, 32GB Premium Black (No Game), Boxed",
+      "category": "Wii U Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "manufacturer": "Nintendo",
+        "model_name": "Wii U",
+        "simplecolour": "Black",
+        "storage_GB": "32GB",
+        "edition": "Premium Edition"
+      },
+      "unlearnable": [
+        {
+          "attribute": "manufacturer",
+          "value": "Nintendo",
+          "reason": "No match pattern found in title"
+        }
+      ]
+    },
+    {
+      "sku": "SWIIU8GWB001",
+      "title": "Wii U Console, 8GB Basic Pack White, Boxed",
+      "category": "Wii U Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "manufacturer": "Nintendo",
+        "model_name": "Wii U",
+        "simplecolour": "White",
+        "storage_GB": "8GB",
+        "edition": "Basic Edition"
+      },
+      "unlearnable": []
+    },
+    {
+      "sku": "SWIIU32GBPZ001",
+      "title": "Wii U Console, 32GB Legend of Zelda Limited Ed. (No Game), Boxed",
+      "category": "Wii U Consoles",
+      "source": "http",
+      "attributes": {
+        "consoles_condition": "Boxed",
+        "manufacturer": "Nintendo",
+        "model_name": "Wii U",
+        "simplecolour": "Black",
+        "storage_GB": "32GB",
+        "edition": "Legend of Zelda: The Wind Waker HD Edition"
+      },
+      "unlearnable": []
+    }
+  ]
+}
