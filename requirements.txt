@@ -21,6 +21,9 @@ openai
 pytest
 pytest-django
 
+# Streaming JSON parsing (process_data_results.json is large)
+ijson
+
 # Desktop launcher
 pywebview
 

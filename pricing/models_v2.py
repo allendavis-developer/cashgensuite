@@ -33,9 +33,18 @@ class ProductCategory(models.Model):
         on_delete=models.CASCADE,
         related_name='children',
         db_column='parent_category_id',
-        help_text="Parent category. Root categories point to themselves."
+        help_text="Parent category. Root categories point to themselves.",
+        null=True,
+        blank=True
     )
     name = models.CharField(max_length=255, db_index=True)
+    cex_category_id = models.IntegerField(
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="CeX API category ID (e.g., 810, 1063, 1143)"
+    )
 
     class Meta:
         db_table = 'pricing_product_category'
@@ -43,6 +52,7 @@ class ProductCategory(models.Model):
         verbose_name_plural = 'Product Categories'
         indexes = [
             models.Index(fields=['parent_category', 'name']),
+            models.Index(fields=['cex_category_id']),
         ]
 
     def __str__(self):
@@ -209,8 +219,15 @@ class Variant(models.Model):
         ]
 
     def __str__(self):
-        product_name = self.product.name if self.product else "Unknown Product"
-        return f"{product_name} ({self.condition_grade.code}) - {self.cex_sku}"
+        # Imported / raw variants often have no Product attached yet.
+        # Prefer showing the scraped listing title, then fall back to SKU.
+        label = None
+        if self.product_id:
+            label = self.product.name
+        else:
+            title = (self.title or "").strip()
+            label = title if title else self.cex_sku
+        return f"{label} ({self.condition_grade.code}) - {self.cex_sku}"
 
 
 class VariantAttributeValue(models.Model):
@@ -318,3 +335,150 @@ class VariantStatus(models.Model):
 
     def __str__(self):
         return f"{self.variant.cex_sku} - {self.status} from {self.effective_from}"
+
+
+# =============================================================================
+# Rule-Based Attribute Matching Models
+# =============================================================================
+
+class MatchRule(models.Model):
+    """
+    Stores learned match rules for attribute extraction from SKU titles.
+    
+    A match rule maps a pattern in the title to an attribute value.
+    For example: match_rule="playstation 5 pro" → attribute_value="PlayStation 5 Pro"
+    
+    Rules are GLOBAL (not per-category) so a "boxed" rule learned from
+    one category works across all categories.
+    """
+    match_rule_id = models.AutoField(primary_key=True)
+    attribute_name = models.CharField(
+        max_length=100,
+        db_index=True,
+        help_text="Attribute name (e.g., 'model_name', 'consoles_condition')"
+    )
+    attribute_value = models.CharField(
+        max_length=255,
+        db_index=True,
+        help_text="The value this rule matches to (e.g., 'PlayStation 5 Pro', 'Boxed')"
+    )
+    match_pattern = models.JSONField(
+        help_text="Match pattern - string for single match, list for multi-word match (all must appear)"
+    )
+    source_sku = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="SKU this rule was learned from (or 'preloaded' for filter-based rules)"
+    )
+    source_title = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="Title this rule was learned from"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'pricing_match_rule'
+        verbose_name = 'Match Rule'
+        verbose_name_plural = 'Match Rules'
+        unique_together = [['attribute_name', 'attribute_value', 'match_pattern']]
+        indexes = [
+            models.Index(fields=['attribute_name']),
+            models.Index(fields=['attribute_name', 'attribute_value']),
+        ]
+
+    def __str__(self):
+        pattern = self.match_pattern
+        if isinstance(pattern, list):
+            pattern_str = f"{pattern} (ALL)"
+        else:
+            pattern_str = f'"{pattern}"'
+        return f"{self.attribute_name}={self.attribute_value} via {pattern_str}"
+
+
+class CategorySkuPrefix(models.Model):
+    """
+    Maps SKU prefixes to categories for quick category detection without HTTP.
+    
+    Prefixes are dynamically computed from observed SKUs.
+    For example: prefix="SPS5" → category="PlayStation 5 Consoles"
+    """
+    prefix_id = models.AutoField(primary_key=True)
+    prefix = models.CharField(
+        max_length=20,
+        unique=True,
+        db_index=True,
+        help_text="SKU prefix (e.g., 'SPS5', 'SXB1')"
+    )
+    category = models.ForeignKey(
+        ProductCategory,
+        on_delete=models.CASCADE,
+        related_name='sku_prefixes',
+        db_column='category_id'
+    )
+    sku_count = models.IntegerField(
+        default=1,
+        help_text="Number of SKUs used to compute this prefix"
+    )
+
+    class Meta:
+        db_table = 'pricing_category_sku_prefix'
+        verbose_name = 'Category SKU Prefix'
+        verbose_name_plural = 'Category SKU Prefixes'
+        indexes = [
+            models.Index(fields=['prefix']),
+            models.Index(fields=['category']),
+        ]
+
+    def __str__(self):
+        return f"{self.prefix}* → {self.category.name}"
+
+
+class CategoryRequirement(models.Model):
+    """
+    Stores which attributes are required for each category.
+    
+    This is user-defined when a category is first encountered.
+    For example: PlayStation 5 Consoles requires ['model_name', 'storage_GB', 'edition']
+    """
+    requirement_id = models.AutoField(primary_key=True)
+    category = models.ForeignKey(
+        ProductCategory,
+        on_delete=models.CASCADE,
+        related_name='requirements',
+        db_column='category_id'
+    )
+    attribute_name = models.CharField(
+        max_length=100,
+        db_index=True,
+        help_text="Required attribute name"
+    )
+    is_skipped = models.BooleanField(
+        default=False,
+        help_text="True if user chose to skip this attribute (unlearnable)"
+    )
+    always_fetch = models.BooleanField(
+        default=False,
+        help_text="True if this attribute is un-teachable and should always be fetched from the API for this category"
+    )
+
+    class Meta:
+        db_table = 'pricing_category_requirement'
+        verbose_name = 'Category Requirement'
+        verbose_name_plural = 'Category Requirements'
+        unique_together = [['category', 'attribute_name']]
+        indexes = [
+            models.Index(fields=['category']),
+            models.Index(fields=['category', 'attribute_name']),
+        ]
+
+    def __str__(self):
+        status_parts = []
+        if self.is_skipped:
+            status_parts.append("skipped")
+        if self.always_fetch and not self.is_skipped:
+            status_parts.append("always_fetch")
+        status = f" ({', '.join(status_parts)})" if status_parts else ""
+        return f"{self.category.name} requires {self.attribute_name}{status}"

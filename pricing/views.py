@@ -1720,7 +1720,7 @@ def save_overnight_scraped_data(request):
         traceback.print_exc()
         connection.close()
         return JsonResponse({'success': False, 'error': str(e)})
-
+ 
 from decimal import Decimal
 import json
 

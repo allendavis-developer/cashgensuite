@@ -1,0 +1,1659 @@
+{
+  "summary": {
+    "total_unlearnable": 12,
+    "unique_attributes": 12,
+    "unique_skus": 7
+  },
+  "unlearnable": [
+    {
+      "sku": "SLAPAPPMBA7201B",
+      "title": "MacBook Air 7,2/i5-5250U/4GB Ram/128GB SSD/13\"/OSX/B",
+      "attribute_name": "year_of_production",
+      "expected_value": "2015",
+      "reason": "Auto-learning failed - no matching tokens found between title and attribute value",
+      "title_tokens": [
+        "128gb",
+        "128gb ssd",
+        "128gb ssd 13\"",
+        "13\"",
+        "13\" osx b",
+        "2",
+        "2 i5",
+        "2 i5 5250u",
+        "4gb",
+        "4gb ram 128gb",
+        "5250u",
+        "5250u 4gb",
+        "5250u 4gb ram",
+        "7",
+        "7 2",
+        "7 2 i5",
+        "air 7",
+        "air 7 2",
+        "i5 5250u",
+        "macbook",
+        "macbook air",
+        "macbook air 7",
+        "osx",
+        "osx b",
+        "ram",
+        "ram 128gb",
+        "ram 128gb ssd",
+        "ssd",
+        "ssd 13\"",
+        "ssd 13\" osx"
+      ],
+      "value_tokens": [
+        "2015"
+      ],
+      "candidate_matches": [],
+      "existing_rules_for_attribute": [
+        {
+          "value": "2008",
+          "match_rule": "2008",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "2009",
+          "match_rule": "2009",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "2010",
+          "match_rule": "2010",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "2011",
+          "match_rule": "2011",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "2012",
+          "match_rule": "2012",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "2013",
+          "match_rule": "2013",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "2014",
+          "match_rule": "2014",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "2015",
+          "match_rule": "2015",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "2016",
+          "match_rule": "2016",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "2017",
+          "match_rule": "2017",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "2018",
+          "match_rule": "2018",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "2019",
+          "match_rule": "2019",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "2020",
+          "match_rule": "2020",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "2022",
+          "match_rule": "2022",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "2023",
+          "match_rule": "2023",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "2024",
+          "match_rule": "2024",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "2025",
+          "match_rule": "2025",
+          "source_sku": "preloaded"
+        }
+      ],
+      "suggestions": [
+        "No common tokens found between title and value - value may not appear in title"
+      ]
+    },
+    {
+      "sku": "SLAPAPPMBA7201B",
+      "title": "MacBook Air 7,2/i5-5250U/4GB Ram/128GB SSD/13\"/OSX/B",
+      "attribute_name": "manufacturer",
+      "expected_value": "Apple",
+      "reason": "Auto-learning failed - no matching tokens found between title and attribute value",
+      "title_tokens": [
+        "128gb",
+        "128gb ssd",
+        "128gb ssd 13\"",
+        "13\"",
+        "13\" osx b",
+        "2",
+        "2 i5",
+        "2 i5 5250u",
+        "4gb",
+        "4gb ram 128gb",
+        "5250u",
+        "5250u 4gb",
+        "5250u 4gb ram",
+        "7",
+        "7 2",
+        "7 2 i5",
+        "air 7",
+        "air 7 2",
+        "i5 5250u",
+        "macbook",
+        "macbook air",
+        "macbook air 7",
+        "osx",
+        "osx b",
+        "ram",
+        "ram 128gb",
+        "ram 128gb ssd",
+        "ssd",
+        "ssd 13\"",
+        "ssd 13\" osx"
+      ],
+      "value_tokens": [
+        "apple"
+      ],
+      "candidate_matches": [],
+      "existing_rules_for_attribute": [
+        {
+          "value": "Apple",
+          "match_rule": "apple",
+          "source_sku": "preloaded"
+        }
+      ],
+      "suggestions": [
+        "No common tokens found between title and value - value may not appear in title"
+      ]
+    },
+    {
+      "sku": "SLAPAPPMBA7201B",
+      "title": "MacBook Air 7,2/i5-5250U/4GB Ram/128GB SSD/13\"/OSX/B",
+      "attribute_name": "operating_system",
+      "expected_value": "Mac OS",
+      "reason": "Auto-learning failed - no matching tokens found between title and attribute value",
+      "title_tokens": [
+        "128gb",
+        "128gb ssd",
+        "128gb ssd 13\"",
+        "13\"",
+        "13\" osx b",
+        "2",
+        "2 i5",
+        "2 i5 5250u",
+        "4gb",
+        "4gb ram 128gb",
+        "5250u",
+        "5250u 4gb",
+        "5250u 4gb ram",
+        "7",
+        "7 2",
+        "7 2 i5",
+        "air 7",
+        "air 7 2",
+        "i5 5250u",
+        "macbook",
+        "macbook air",
+        "macbook air 7",
+        "osx",
+        "osx b",
+        "ram",
+        "ram 128gb",
+        "ram 128gb ssd",
+        "ssd",
+        "ssd 13\"",
+        "ssd 13\" osx"
+      ],
+      "value_tokens": [
+        "mac",
+        "mac os",
+        "os"
+      ],
+      "candidate_matches": [],
+      "existing_rules_for_attribute": [
+        {
+          "value": "MacOS Monterey",
+          "match_rule": "macos monterey",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "macOS 11.0.1",
+          "match_rule": "macos 11.0.1",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "High Sierra",
+          "match_rule": "high sierra",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "El Capitan",
+          "match_rule": "el capitan",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Catalina",
+          "match_rule": "catalina",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Monterey",
+          "match_rule": "monterey",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Mac OS",
+          "match_rule": "mac os",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "MacOS",
+          "match_rule": "macos",
+          "source_sku": "preloaded"
+        }
+      ],
+      "suggestions": [
+        "No common tokens found between title and value - value may not appear in title"
+      ]
+    },
+    {
+      "sku": "SLAPAPPMBA7201B",
+      "title": "MacBook Air 7,2/i5-5250U/4GB Ram/128GB SSD/13\"/OSX/B",
+      "attribute_name": "esl_aud_3.5",
+      "expected_value": "true",
+      "reason": "Auto-learning failed - no matching tokens found between title and attribute value",
+      "title_tokens": [
+        "128gb",
+        "128gb ssd",
+        "128gb ssd 13\"",
+        "13\"",
+        "13\" osx b",
+        "2",
+        "2 i5",
+        "2 i5 5250u",
+        "4gb",
+        "4gb ram 128gb",
+        "5250u",
+        "5250u 4gb",
+        "5250u 4gb ram",
+        "7",
+        "7 2",
+        "7 2 i5",
+        "air 7",
+        "air 7 2",
+        "i5 5250u",
+        "macbook",
+        "macbook air",
+        "macbook air 7",
+        "osx",
+        "osx b",
+        "ram",
+        "ram 128gb",
+        "ram 128gb ssd",
+        "ssd",
+        "ssd 13\"",
+        "ssd 13\" osx"
+      ],
+      "value_tokens": [
+        "true"
+      ],
+      "candidate_matches": [],
+      "existing_rules_for_attribute": [],
+      "suggestions": [
+        "No common tokens found between title and value - value may not appear in title"
+      ]
+    },
+    {
+      "sku": "SLAPAPPMBA7201B",
+      "title": "MacBook Air 7,2/i5-5250U/4GB Ram/128GB SSD/13\"/OSX/B",
+      "attribute_name": "model_number",
+      "expected_value": "A1466",
+      "reason": "Auto-learning failed - no matching tokens found between title and attribute value",
+      "title_tokens": [
+        "128gb",
+        "128gb ssd",
+        "128gb ssd 13\"",
+        "13\"",
+        "13\" osx b",
+        "2",
+        "2 i5",
+        "2 i5 5250u",
+        "4gb",
+        "4gb ram 128gb",
+        "5250u",
+        "5250u 4gb",
+        "5250u 4gb ram",
+        "7",
+        "7 2",
+        "7 2 i5",
+        "air 7",
+        "air 7 2",
+        "i5 5250u",
+        "macbook",
+        "macbook air",
+        "macbook air 7",
+        "osx",
+        "osx b",
+        "ram",
+        "ram 128gb",
+        "ram 128gb ssd",
+        "ssd",
+        "ssd 13\"",
+        "ssd 13\" osx"
+      ],
+      "value_tokens": [
+        "a1466"
+      ],
+      "candidate_matches": [],
+      "existing_rules_for_attribute": [
+        {
+          "value": "MacBook Pro",
+          "match_rule": "macbook pro",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A1278",
+          "match_rule": "a1278",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A1286",
+          "match_rule": "a1286",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A1297",
+          "match_rule": "a1297",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A1307",
+          "match_rule": "a1307",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A1369",
+          "match_rule": "a1369",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A1370",
+          "match_rule": "a1370",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A1398",
+          "match_rule": "a1398",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A1425",
+          "match_rule": "a1425",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A1465",
+          "match_rule": "a1465",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A1466",
+          "match_rule": "a1466",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A1502",
+          "match_rule": "a1502",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A1534",
+          "match_rule": "a1534",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A1706",
+          "match_rule": "a1706",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A1707",
+          "match_rule": "a1707",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A1708",
+          "match_rule": "a1708",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A1932",
+          "match_rule": "a1932",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A1989",
+          "match_rule": "a1989",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A1990",
+          "match_rule": "a1990",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A2141",
+          "match_rule": "a2141",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A2159",
+          "match_rule": "a2159",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A2179",
+          "match_rule": "a2179",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A2338",
+          "match_rule": "a2338",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A2681",
+          "match_rule": "a2681",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A2779",
+          "match_rule": "a2779",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A2780",
+          "match_rule": "a2780",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A2918",
+          "match_rule": "a2918",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A2941",
+          "match_rule": "a2941",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A2991",
+          "match_rule": "a2991",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A2992",
+          "match_rule": "a2992",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A3112",
+          "match_rule": "a3112",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A3113",
+          "match_rule": "a3113",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A3114",
+          "match_rule": "a3114",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A3240",
+          "match_rule": "a3240",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A3241",
+          "match_rule": "a3241",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A3401",
+          "match_rule": "a3401",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A3403",
+          "match_rule": "a3403",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "A3434",
+          "match_rule": "a3434",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "NA",
+          "match_rule": "na",
+          "source_sku": "preloaded"
+        }
+      ],
+      "suggestions": [
+        "No common tokens found between title and value - value may not appear in title"
+      ]
+    },
+    {
+      "sku": "SLAPAPPMB81G01B",
+      "title": "MacBook 8,1/M-5Y31/8GB Ram/256GB SSD/12\"/RD/OSX/Gold/B",
+      "attribute_name": "cpu_family",
+      "expected_value": "Core M",
+      "reason": "Auto-learning failed - no matching tokens found between title and attribute value",
+      "title_tokens": [
+        "1",
+        "1 m 5y31",
+        "12\" rd",
+        "12\" rd osx",
+        "256gb",
+        "256gb ssd",
+        "256gb ssd 12\"",
+        "5y31",
+        "5y31 8gb",
+        "5y31 8gb ram",
+        "8",
+        "8 1",
+        "8gb",
+        "8gb ram",
+        "8gb ram 256gb",
+        "gold b",
+        "m",
+        "m 5y31",
+        "m 5y31 8gb",
+        "macbook",
+        "macbook 8 1",
+        "osx",
+        "osx gold b",
+        "ram",
+        "ram 256gb",
+        "rd",
+        "rd osx gold",
+        "ssd",
+        "ssd 12\"",
+        "ssd 12\" rd"
+      ],
+      "value_tokens": [
+        "core",
+        "core m",
+        "m"
+      ],
+      "candidate_matches": [
+        "m"
+      ],
+      "existing_rules_for_attribute": [
+        {
+          "value": "Intel Core i3",
+          "match_rule": "intel core i3",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Intel Core i5",
+          "match_rule": "intel core i5",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Intel Core i7",
+          "match_rule": "intel core i7",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Intel Core i9",
+          "match_rule": "intel core i9",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Apple M1 Pro",
+          "match_rule": "apple m1 pro",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Apple M2 Max",
+          "match_rule": "apple m2 max",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Apple M2 Pro",
+          "match_rule": "apple m2 pro",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Apple M3 Max",
+          "match_rule": "apple m3 max",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Apple M3 Pro",
+          "match_rule": "apple m3 pro",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Apple M4 Pro",
+          "match_rule": "apple m4 pro",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Intel Core",
+          "match_rule": "intel core",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Apple M1",
+          "match_rule": "apple m1",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Apple M2",
+          "match_rule": "apple m2",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Apple M3",
+          "match_rule": "apple m3",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Apple M4",
+          "match_rule": "apple m4",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Apple M5",
+          "match_rule": "apple m5",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Core SL",
+          "match_rule": "core sl",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Core SU",
+          "match_rule": "core su",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Core i3",
+          "match_rule": "core i3",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Core i5",
+          "match_rule": "core i5",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Core i7",
+          "match_rule": "core i7",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Core i9",
+          "match_rule": "core i9",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Core M",
+          "match_rule": "core m",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Core P",
+          "match_rule": "core p",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Apple",
+          "match_rule": "apple",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Core i5",
+          "match_rule": "i5",
+          "source_sku": "SLAPAPPMBA7201B"
+        },
+        {
+          "value": "Core i7",
+          "match_rule": "i7",
+          "source_sku": "SLAPAPPMBA71166B"
+        }
+      ],
+      "suggestions": []
+    },
+    {
+      "sku": "SLAPAPPBMP13102808B",
+      "title": "MacBook Pro 10,2/i7-3540M/8GB Ram/751GB SSD/13\"/B",
+      "attribute_name": "storage_GB",
+      "expected_value": null,
+      "reason": "Required attribute not in API response - cannot learn rule",
+      "title_tokens": [
+        "10 2 i7",
+        "13\"",
+        "13\" b",
+        "2",
+        "2 i7",
+        "3540m 8gb",
+        "3540m 8gb ram",
+        "751gb",
+        "751gb ssd",
+        "751gb ssd 13\"",
+        "8gb",
+        "8gb ram",
+        "8gb ram 751gb",
+        "b",
+        "i7",
+        "i7 3540m",
+        "i7 3540m 8gb",
+        "macbook",
+        "macbook pro",
+        "macbook pro 10",
+        "macbook pro 10,2/i7-3540m/8gb ram/751gb ssd/13\"/b",
+        "pro",
+        "pro 10",
+        "pro 10 2",
+        "ram",
+        "ram 751gb",
+        "ram 751gb ssd",
+        "ssd",
+        "ssd 13\"",
+        "ssd 13\" b"
+      ],
+      "value_tokens": [],
+      "candidate_matches": [],
+      "existing_rules_for_attribute": [
+        {
+          "value": "256 GB SSD",
+          "match_rule": "256 gb ssd",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "512GB SSD",
+          "match_rule": "512gb ssd",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "1TB SSD",
+          "match_rule": "1tb ssd",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "2TB SSD",
+          "match_rule": "2tb ssd",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "1.5TB",
+          "match_rule": "1.5tb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "120GB",
+          "match_rule": "120gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "128GB",
+          "match_rule": "128gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "160GB",
+          "match_rule": "160gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "240GB",
+          "match_rule": "240gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "250GB",
+          "match_rule": "250gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "256GB",
+          "match_rule": "256gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "320GB",
+          "match_rule": "320gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "480GB",
+          "match_rule": "480gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "500GB",
+          "match_rule": "500gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "512GB",
+          "match_rule": "512gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "525GB",
+          "match_rule": "525gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "750GB",
+          "match_rule": "750gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "960GB",
+          "match_rule": "960gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "512B",
+          "match_rule": "512b",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "64GB",
+          "match_rule": "64gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "1TB",
+          "match_rule": "1tb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "2TB",
+          "match_rule": "2tb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "4TB",
+          "match_rule": "4tb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "8TB",
+          "match_rule": "8tb",
+          "source_sku": "preloaded"
+        }
+      ],
+      "suggestions": [
+        "No common tokens found between title and value - value may not appear in title",
+        "Value \"\" appears as substring in title - may need exact match rule"
+      ]
+    },
+    {
+      "sku": "SLAPAPPMBP910038C",
+      "title": "MacBook Pro 9,1/i7-3615QM/16GB Ram/1TB SSD/650M/DVD-RW15\"/Unibody/C",
+      "attribute_name": "screensize_inches",
+      "expected_value": "15",
+      "reason": "Auto-learning failed - no matching tokens found between title and attribute value",
+      "title_tokens": [
+        "1",
+        "16gb",
+        "16gb ram",
+        "16gb ram 1tb",
+        "1tb",
+        "1tb ssd 650m",
+        "3615qm",
+        "3615qm 16gb ram",
+        "650m dvd",
+        "650m dvd rw15\"",
+        "9",
+        "9 1",
+        "9 1 i7",
+        "c",
+        "dvd",
+        "dvd rw15\" unibody",
+        "i7",
+        "i7 3615qm 16gb",
+        "macbook",
+        "macbook pro",
+        "pro",
+        "pro 9",
+        "pro 9 1",
+        "ram",
+        "ram 1tb ssd",
+        "rw15\"",
+        "ssd",
+        "ssd 650m dvd",
+        "unibody",
+        "unibody c"
+      ],
+      "value_tokens": [
+        "15"
+      ],
+      "candidate_matches": [],
+      "existing_rules_for_attribute": [
+        {
+          "value": "13 inches - 2560x1600",
+          "match_rule": "13 inches - 2560x1600",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "11\"'",
+          "match_rule": "11\"'",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "13''",
+          "match_rule": "13''",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "11\"",
+          "match_rule": "11\"",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "12\"",
+          "match_rule": "12\"",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "13\"",
+          "match_rule": "13\"",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "15\"",
+          "match_rule": "15\"",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "16\"",
+          "match_rule": "16\"",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "17\"",
+          "match_rule": "17\"",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "11",
+          "match_rule": "11",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "12",
+          "match_rule": "12",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "13",
+          "match_rule": "13",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "14",
+          "match_rule": "14",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "15",
+          "match_rule": "15",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "16",
+          "match_rule": "16",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "17",
+          "match_rule": "17",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "13\"",
+          "match_rule": "13",
+          "source_sku": "SLAPAPPMBA7201B"
+        },
+        {
+          "value": "11\"",
+          "match_rule": "11",
+          "source_sku": "SLAPAPPMBA71166B"
+        },
+        {
+          "value": "12\"",
+          "match_rule": "12",
+          "source_sku": "SLAPAPPMB81G01B"
+        }
+      ],
+      "suggestions": [
+        "No common tokens found between title and value - value may not appear in title",
+        "Value \"15\" appears as substring in title - may need exact match rule"
+      ]
+    },
+    {
+      "sku": "SLAPAPPMBP81I72701B",
+      "title": "MacBook Pro 8,1/i7-2620M/4GB Ram/500GB SDD/3000/13\"/B",
+      "attribute_name": "hard_drive_type",
+      "expected_value": null,
+      "reason": "Required attribute not in API response - cannot learn rule",
+      "title_tokens": [
+        "1",
+        "13\"",
+        "13\" b",
+        "2620m",
+        "2620m 4gb",
+        "2620m 4gb ram",
+        "3000",
+        "3000 13\"",
+        "3000 13\" b",
+        "4gb",
+        "4gb ram 500gb",
+        "500gb",
+        "500gb sdd",
+        "8",
+        "8 1",
+        "8 1 i7",
+        "i7",
+        "i7 2620m",
+        "i7 2620m 4gb",
+        "macbook",
+        "macbook pro",
+        "macbook pro 8",
+        "pro",
+        "pro 8",
+        "pro 8 1",
+        "ram",
+        "ram 500gb",
+        "ram 500gb sdd",
+        "sdd",
+        "sdd 3000 13\""
+      ],
+      "value_tokens": [],
+      "candidate_matches": [],
+      "existing_rules_for_attribute": [
+        {
+          "value": "HDD + SSD",
+          "match_rule": "hdd + ssd",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "HDD",
+          "match_rule": "hdd",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "SSD",
+          "match_rule": "ssd",
+          "source_sku": "preloaded"
+        }
+      ],
+      "suggestions": [
+        "No common tokens found between title and value - value may not appear in title",
+        "Value \"\" appears as substring in title - may need exact match rule"
+      ]
+    },
+    {
+      "sku": "SLAPAPPMBP7180B",
+      "title": "MacBook Pro7,1/P8600/8GB Ram/320GB HDD/320M/DVD-RW/13\"/Unibody/B",
+      "attribute_name": "generation",
+      "expected_value": null,
+      "reason": "Required attribute not in API response - cannot learn rule",
+      "title_tokens": [
+        "1",
+        "1 p8600",
+        "13\"",
+        "13\" unibody",
+        "320gb",
+        "320m",
+        "320m dvd rw",
+        "8gb",
+        "8gb ram",
+        "8gb ram 320gb",
+        "b",
+        "dvd",
+        "dvd rw",
+        "dvd rw 13\"",
+        "hdd 320m",
+        "hdd 320m dvd",
+        "macbook",
+        "macbook pro7 1",
+        "p8600",
+        "p8600 8gb",
+        "p8600 8gb ram",
+        "pro7 1",
+        "pro7 1 p8600",
+        "ram",
+        "ram 320gb",
+        "ram 320gb hdd",
+        "rw 13\"",
+        "rw 13\" unibody",
+        "unibody",
+        "unibody b"
+      ],
+      "value_tokens": [],
+      "candidate_matches": [],
+      "existing_rules_for_attribute": [
+        {
+          "value": "3rd Gen",
+          "match_rule": "3rd gen",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "\"14,2\"",
+          "match_rule": "\"14,2\"",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "\"14,7\"",
+          "match_rule": "\"14,7\"",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "14,10",
+          "match_rule": "14,10",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "14,15",
+          "match_rule": "14,15",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "15,10",
+          "match_rule": "15,10",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "15,11",
+          "match_rule": "15,11",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "16,12",
+          "match_rule": "16,12",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "16,13",
+          "match_rule": "16,13",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "10,1",
+          "match_rule": "10,1",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "10,2",
+          "match_rule": "10,2",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "11,1",
+          "match_rule": "11,1",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "11,2",
+          "match_rule": "11,2",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "11,3",
+          "match_rule": "11,3",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "11,4",
+          "match_rule": "11,4",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "11,5",
+          "match_rule": "11,5",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "12,1",
+          "match_rule": "12,1",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "13,1",
+          "match_rule": "13,1",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "13,2",
+          "match_rule": "13,2",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "13,3",
+          "match_rule": "13,3",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "14,1",
+          "match_rule": "14,1",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "14,2",
+          "match_rule": "14,2",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "14,3",
+          "match_rule": "14,3",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "14,5",
+          "match_rule": "14,5",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "14,6",
+          "match_rule": "14,6",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "14,9",
+          "match_rule": "14,9",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "15,1",
+          "match_rule": "15,1",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "15,2",
+          "match_rule": "15,2",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "15,3",
+          "match_rule": "15,3",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "15,4",
+          "match_rule": "15,4",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "15,6",
+          "match_rule": "15,6",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "15,7",
+          "match_rule": "15,7",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "15,8",
+          "match_rule": "15,8",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "15,9",
+          "match_rule": "15,9",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "16,1",
+          "match_rule": "16,1",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "16,7",
+          "match_rule": "16,7",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "16,8",
+          "match_rule": "16,8",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "17,2",
+          "match_rule": "17,2",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "2,1",
+          "match_rule": "2,1",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "3,1",
+          "match_rule": "3,1",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "3,2",
+          "match_rule": "3,2",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "4,1",
+          "match_rule": "4,1",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "4,2",
+          "match_rule": "4,2",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "5,1",
+          "match_rule": "5,1",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "5,2",
+          "match_rule": "5,2",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "5,3",
+          "match_rule": "5,3",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "5,5",
+          "match_rule": "5,5",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "6,1",
+          "match_rule": "6,1",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "6,2",
+          "match_rule": "6,2",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "7,1",
+          "match_rule": "7,1",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "7,2",
+          "match_rule": "7,2",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "8,1",
+          "match_rule": "8,1",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "8,2",
+          "match_rule": "8,2",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "8,3",
+          "match_rule": "8,3",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "9,1",
+          "match_rule": "9,1",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "9,2",
+          "match_rule": "9,2",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "NA",
+          "match_rule": "na",
+          "source_sku": "preloaded"
+        }
+      ],
+      "suggestions": [
+        "No common tokens found between title and value - value may not appear in title",
+        "Value \"\" appears as substring in title - may need exact match rule"
+      ]
+    },
+    {
+      "sku": "SLAPAPPMBP9193B",
+      "title": "MacBookPro 9,1/i7-3615QM/16GBRam/512GBSSD+1TBHDD/650M/DVD-RW/15\"/Unibody/B",
+      "attribute_name": "model_name",
+      "expected_value": null,
+      "reason": "Required attribute not in API response - cannot learn rule",
+      "title_tokens": [
+        "1",
+        "15\"",
+        "15\" unibody",
+        "15\" unibody b",
+        "16gbram",
+        "16gbram 512gbssd+1tbhdd",
+        "16gbram 512gbssd+1tbhdd 650m",
+        "3615qm",
+        "3615qm 16gbram",
+        "3615qm 16gbram 512gbssd+1tbhdd",
+        "512gbssd+1tbhdd",
+        "512gbssd+1tbhdd 650m",
+        "512gbssd+1tbhdd 650m dvd",
+        "650m dvd",
+        "650m dvd rw",
+        "9",
+        "9 1",
+        "9 1 i7",
+        "b",
+        "dvd",
+        "dvd rw",
+        "i7",
+        "macbookpro",
+        "macbookpro 9",
+        "macbookpro 9 1",
+        "rw",
+        "rw 15\"",
+        "rw 15\" unibody",
+        "unibody",
+        "unibody b"
+      ],
+      "value_tokens": [],
+      "candidate_matches": [],
+      "existing_rules_for_attribute": [
+        {
+          "value": "MacBook Air",
+          "match_rule": "macbook air",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Macbook Pro",
+          "match_rule": "macbook pro",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Macbook",
+          "match_rule": "macbook",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "Macbook Air",
+          "match_rule": "macbook air",
+          "source_sku": "SLAPAPPMBA71166B"
+        }
+      ],
+      "suggestions": [
+        "No common tokens found between title and value - value may not appear in title",
+        "Value \"\" appears as substring in title - may need exact match rule"
+      ]
+    },
+    {
+      "sku": "SLAPAPPMBP9193B",
+      "title": "MacBookPro 9,1/i7-3615QM/16GBRam/512GBSSD+1TBHDD/650M/DVD-RW/15\"/Unibody/B",
+      "attribute_name": "ram",
+      "expected_value": null,
+      "reason": "Required attribute not in API response - cannot learn rule",
+      "title_tokens": [
+        "1",
+        "15\"",
+        "15\" unibody",
+        "15\" unibody b",
+        "16gbram",
+        "16gbram 512gbssd+1tbhdd",
+        "16gbram 512gbssd+1tbhdd 650m",
+        "3615qm",
+        "3615qm 16gbram",
+        "3615qm 16gbram 512gbssd+1tbhdd",
+        "512gbssd+1tbhdd",
+        "512gbssd+1tbhdd 650m",
+        "512gbssd+1tbhdd 650m dvd",
+        "650m dvd",
+        "650m dvd rw",
+        "9",
+        "9 1",
+        "9 1 i7",
+        "b",
+        "dvd",
+        "dvd rw",
+        "i7",
+        "macbookpro",
+        "macbookpro 9",
+        "macbookpro 9 1",
+        "rw",
+        "rw 15\"",
+        "rw 15\" unibody",
+        "unibody",
+        "unibody b"
+      ],
+      "value_tokens": [],
+      "candidate_matches": [],
+      "existing_rules_for_attribute": [
+        {
+          "value": "8GB 1867 MHz DDR3",
+          "match_rule": "8gb 1867 mhz ddr3",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "128GB",
+          "match_rule": "128gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "10GB",
+          "match_rule": "10gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "12GB",
+          "match_rule": "12gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "16GB",
+          "match_rule": "16gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "18GB",
+          "match_rule": "18gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "24GB",
+          "match_rule": "24gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "32GB",
+          "match_rule": "32gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "36GB",
+          "match_rule": "36gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "48GB",
+          "match_rule": "48gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "64GB",
+          "match_rule": "64gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "96GB",
+          "match_rule": "96gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "2GB",
+          "match_rule": "2gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "4GB",
+          "match_rule": "4gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "6GB",
+          "match_rule": "6gb",
+          "source_sku": "preloaded"
+        },
+        {
+          "value": "8GB",
+          "match_rule": "8gb",
+          "source_sku": "preloaded"
+        }
+      ],
+      "suggestions": [
+        "No common tokens found between title and value - value may not appear in title",
+        "Value \"\" appears as substring in title - may need exact match rule"
+      ]
+    }
+  ]
+}

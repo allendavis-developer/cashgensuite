@@ -17,6 +17,9 @@ from .models_v2 import (
     VariantAttributeValue,
     VariantPriceHistory,
     VariantStatus,
+    MatchRule,
+    CategorySkuPrefix,
+    CategoryRequirement,
 )
 
 
@@ -257,6 +260,7 @@ class VariantAttributeValueAdmin(admin.ModelAdmin):
         qs = super().get_queryset(request)
         return qs.select_related(
             'variant__product',
+            'variant__condition_grade',
             'attribute_value__attribute__category'
         )
     
@@ -352,6 +356,54 @@ class VariantStatusAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         # Status history should generally not be deleted
         return False
+
+
+# -------------------------------
+# RULE / CONFIG MODELS ADMIN
+# -------------------------------
+
+@admin.register(MatchRule)
+class MatchRuleAdmin(admin.ModelAdmin):
+    list_display = (
+        'attribute_name',
+        'attribute_value',
+        'match_pattern_display',
+        'source_sku',
+        'created_at',
+    )
+    list_filter = ('attribute_name', 'created_at')
+    search_fields = ('attribute_name', 'attribute_value', 'source_sku', 'source_title')
+    ordering = ('-created_at',)
+    readonly_fields = ('created_at',)
+
+    def match_pattern_display(self, obj):
+        pattern = obj.match_pattern
+        # JSONField: string, list, or dict (regex)
+        if isinstance(pattern, list):
+            return f'{pattern} (ALL)'
+        if isinstance(pattern, dict):
+            regex = pattern.get('regex', '')
+            return f'regex: {regex}'
+        return str(pattern)
+    match_pattern_display.short_description = 'Match Pattern'
+
+
+@admin.register(CategorySkuPrefix)
+class CategorySkuPrefixAdmin(admin.ModelAdmin):
+    list_display = ('prefix', 'category', 'sku_count')
+    list_filter = ('category',)
+    search_fields = ('prefix', 'category__name')
+    autocomplete_fields = ['category']
+    ordering = ('prefix',)
+
+
+@admin.register(CategoryRequirement)
+class CategoryRequirementAdmin(admin.ModelAdmin):
+    list_display = ('category', 'attribute_name', 'is_skipped', 'always_fetch')
+    list_filter = ('is_skipped', 'always_fetch', 'category')
+    search_fields = ('attribute_name', 'category__name')
+    autocomplete_fields = ['category']
+    ordering = ('category__name', 'attribute_name')
 
 
 # -------------------------------
